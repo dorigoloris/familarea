@@ -1,2 +1,464 @@
-<h1>FamilArea</h1>
-<p>Il tuo spazio condiviso.</p>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FamilArea</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #0d2b4f;
+      background: #ffffff;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 6%;
+      border-bottom: 1px solid #eef2f6;
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.96);
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: #4d8b4f;
+    }
+
+    nav {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+
+    nav a {
+      color: #0d2b4f;
+      text-decoration: none;
+      font-size: 15px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .btn-primary {
+      background: #0d2b4f;
+      color: white;
+    }
+
+    .btn-green {
+      background: #4d8b4f;
+      color: white;
+    }
+
+    .hero {
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      align-items: center;
+      gap: 40px;
+      padding: 60px 6%;
+      background: linear-gradient(90deg, #ffffff 0%, #ffffff 48%, #f4f7f2 100%);
+    }
+
+    .hero h1 {
+      font-size: clamp(48px, 6vw, 78px);
+      line-height: 1.02;
+      letter-spacing: -3px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 span {
+      color: #4d8b4f;
+    }
+
+    .hero p {
+      font-size: 21px;
+      max-width: 590px;
+      color: #334d69;
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .private-note {
+      font-size: 14px;
+      color: #64758a;
+    }
+
+    .hero-image {
+      min-height: 520px;
+      border-radius: 28px;
+      background:
+        linear-gradient(rgba(13,43,79,.08), rgba(13,43,79,.08)),
+        url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1400&q=85') center/cover;
+      box-shadow: 0 24px 60px rgba(20, 44, 68, .16);
+    }
+
+    section {
+      padding: 80px 6%;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 38px;
+      margin-bottom: 14px;
+      letter-spacing: -1px;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: #64758a;
+      max-width: 760px;
+      margin: 0 auto 44px;
+      font-size: 18px;
+    }
+
+    .areas {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 18px;
+    }
+
+    .area-card {
+      border-radius: 20px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(20, 44, 68, .08);
+    }
+
+    .area-card img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      display: block;
+    }
+
+    .area-card div {
+      padding: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .features {
+      background: #f7f9fb;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 18px;
+    }
+
+    .feature {
+      background: white;
+      border: 1px solid #e8edf2;
+      border-radius: 18px;
+      padding: 26px 20px;
+      text-align: center;
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .feature p {
+      color: #64758a;
+      font-size: 14px;
+    }
+
+    .values {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+    }
+
+    .values-image {
+      min-height: 460px;
+      border-radius: 24px;
+      background:
+        url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=85') center/cover;
+    }
+
+    .value-list {
+      display: grid;
+      gap: 24px;
+    }
+
+    .value-item {
+      padding: 22px 0;
+      border-bottom: 1px solid #e7edf2;
+    }
+
+    .value-item h3 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .value-item p {
+      color: #64758a;
+    }
+
+    .cta {
+      background: #0d2b4f;
+      color: white;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 42px;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      color: #dbe5ef;
+      max-width: 700px;
+      margin: 0 auto 28px;
+      font-size: 18px;
+    }
+
+    footer {
+      background: #081f39;
+      color: white;
+      padding: 28px 6%;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1000px) {
+      nav {
+        display: none;
+      }
+
+      .hero,
+      .values {
+        grid-template-columns: 1fr;
+      }
+
+      .areas,
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .hero-image {
+        min-height: 380px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero {
+        padding-top: 40px;
+      }
+
+      .hero h1 {
+        font-size: 48px;
+      }
+
+      .areas,
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      section {
+        padding: 56px 6%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Famil<span>Area</span></div>
+
+  <nav>
+    <a href="#chi-siamo">Chi siamo</a>
+    <a href="#funzionalita">Funzionalità</a>
+    <a href="#per-chi">Per chi è</a>
+    <a href="#sicurezza">Sicurezza</a>
+    <a href="#contatti">Contatti</a>
+  </nav>
+
+  <a class="btn btn-green" href="#contatti">In arrivo</a>
+</header>
+
+<main>
+
+  <section class="hero" id="chi-siamo">
+    <div>
+      <h1>
+        Più spazio<br>
+        per le persone.<br>
+        <span>Meno impegni<br>da gestire.</span>
+      </h1>
+
+      <p>
+        FamilArea riunisce impegni, scadenze, liste e attività condivise
+        in uno spazio semplice, privato e comune.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#per-chi">Scopri FamilArea</a>
+        <a class="btn" style="border:1px solid #0d2b4f;color:#0d2b4f" href="#funzionalita">
+          Come funziona
+        </a>
+      </div>
+
+      <div class="private-note">Privato. Solo con invito.</div>
+    </div>
+
+    <div class="hero-image"></div>
+  </section>
+
+  <section id="per-chi">
+    <h2 class="section-title">Uno spazio per ogni parte della tua vita</h2>
+    <p class="section-subtitle">
+      FamilArea nasce per la famiglia, ma può vivere ovunque ci siano persone,
+      attività e cose da organizzare insieme.
+    </p>
+
+    <div class="areas">
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Famiglia</div>
+      </div>
+
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Scuola</div>
+      </div>
+
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Sport</div>
+      </div>
+
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Amici</div>
+      </div>
+
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Corsi e formazione</div>
+      </div>
+
+      <div class="area-card">
+        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=700&q=80" alt="">
+        <div>Interessi comuni</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="funzionalita">
+    <h2 class="section-title">Tutto ciò che serve, insieme</h2>
+    <p class="section-subtitle">
+      Uno spazio condiviso per tenere ordine nelle cose importanti.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature">
+        <strong>Calendari</strong>
+        <p>Appuntamenti ed eventi condivisi.</p>
+      </div>
+
+      <div class="feature">
+        <strong>Promemoria</strong>
+        <p>Scadenze e cose da ricordare.</p>
+      </div>
+
+      <div class="feature">
+        <strong>Liste</strong>
+        <p>Cose da fare, spesa e attività comuni.</p>
+      </div>
+
+      <div class="feature">
+        <strong>Inviti e permessi</strong>
+        <p>Decidi chi partecipa e cosa può vedere.</p>
+      </div>
+
+      <div class="feature">
+        <strong>Comunicazioni</strong>
+        <p>Informazioni condivise nel posto giusto.</p>
+      </div>
+
+      <div class="feature">
+        <strong>Tutto in ordine</strong>
+        <p>Ogni Area ha persone, strumenti e contenuti.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="sicurezza">
+    <div class="values">
+      <div class="values-image"></div>
+
+      <div>
+        <div class="value-list">
+          <div class="value-item">
+            <h3>Privato e sicuro</h3>
+            <p>Solo chi inviti può entrare nella tua Area.</p>
+          </div>
+
+          <div class="value-item">
+            <h3>Flessibile</h3>
+            <p>Ogni Area è diversa, perché diverse sono le persone e i loro obiettivi.</p>
+          </div>
+
+          <div class="value-item">
+            <h3>Sempre con te</h3>
+            <p>Un unico spazio per avere tutto a portata di mano, ovunque ti trovi.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="contatti">
+    <h2>Le cose importanti stanno meglio se le condividi nel posto giusto.</h2>
+    <p>
+      FamilArea sta prendendo forma. Un nuovo modo di organizzare ciò che fai insieme alle persone che contano.
+    </p>
+    <a class="btn btn-green" href="mailto:info@familarea.com">Entra in arrivo</a>
+  </section>
+
+</main>
+
+<footer>
+  <div><strong>FamilArea</strong></div>
+  <div>Organizza. Condividi. Semplifica.</div>
+  <div>Privato. Solo con invito.</div>
+</footer>
+
+</body>
+</html>
