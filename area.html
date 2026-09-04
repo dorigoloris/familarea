@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Area - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
 </head>
 
 <body>
@@ -18,8 +19,15 @@
 
   <p><a id="add-member-link" href="#">Aggiungi membro</a></p>
 
+  <section id="activities-section" hidden>
+    <h2>AttivitÃ </h2>
+    <p id="activities-message"></p>
+    <ul id="activities-list"></ul>
+    <p><a id="new-activity-link" href="#">+ Nuova attivitÃ </a></p>
+  </section>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
+  <script src="supabase-public-config.js"></script>
   <script src="area.js"></script>
 
 </body>

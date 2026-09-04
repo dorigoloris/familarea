@@ -1,89 +1,9 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const areaNameElement = document.getElementById('area-name');
-const message = document.getElementById('message');
-const membersList = document.getElementById('members-list');
-const addMemberLink = document.getElementById('add-member-link');
-
-async function loadArea() {
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-
-  if (!sessionData.session) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const areaId = params.get('area_id');
-
-  if (!areaId) {
-    message.textContent = 'Area non specificata.';
-    return;
-  }
-
-  addMemberLink.href = `aggiungi-membro.html?area_id=${encodeURIComponent(areaId)}`;
-
-  const { data: area, error: areaError } = await supabaseClient
-    .from('areas')
-    .select('id, name, area_type')
-    .eq('id', areaId)
-    .single();
-
-  if (areaError) {
-    message.textContent = `Errore Area: ${areaError.message}`;
-    return;
-  }
-
-  areaNameElement.textContent = area.name;
-
-  const { data: memberships, error: membersError } = await supabaseClient
-    .from('area_memberships')
-    .select(`
-      role,
-      profile_id,
-      profiles (
-        first_name,
-        last_name
-      )
-    `)
-    .eq('area_id', areaId);
-
-  if (membersError) {
-    message.textContent = `Errore membri: ${membersError.message}`;
-    return;
-  }
-
-  membersList.innerHTML = '';
-
-  memberships.forEach((membership) => {
-    const li = document.createElement('li');
-
-    const firstName = membership.profiles?.first_name || '';
-    const lastName = membership.profiles?.last_name || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-
-    let roleLabel = membership.role;
-
-    if (membership.role === 'admin') {
-      roleLabel = 'Amministratore';
-    } else if (membership.role === 'member') {
-      roleLabel = 'Membro';
-    } else if (membership.role === 'managed') {
-      roleLabel = 'Profilo gestito';
-    }
-
-    li.textContent = `${fullName} — ${roleLabel}`;
-    li.style.cursor = 'pointer';
-
-    li.addEventListener('click', () => {
-      window.location.href =
-        `membro.html?area_id=${encodeURIComponent(areaId)}&profile_id=${encodeURIComponent(membership.profile_id)}`;
-    });
-
-    membersList.appendChild(li);
-  });
-
-  message.textContent = 'Area caricata correttamente.';
-}
-
+const areaNameElement=document.getElementById('area-name'),message=document.getElementById('message'),membersList=document.getElementById('members-list'),addMemberLink=document.getElementById('add-member-link'),activitiesSection=document.getElementById('activities-section'),activitiesMessage=document.getElementById('activities-message'),activitiesList=document.getElementById('activities-list'),newActivityLink=document.getElementById('new-activity-link');
+const typeLabel=(v)=>({task:'Da fare',reminder:'Promemoria',deadline:'Scadenza',appointment:'Appuntamento'})[v]||'Attivit\u00e0';
+const priorityLabel=(v)=>({low:'Bassa',normal:'Normale',high:'Alta'})[v]||'Normale';
+const statusLabel=(v)=>({open:'Aperta',completed:'Completata',cancelled:'Annullata'})[v]||'Aperta';
+const formatDateTime=(v)=>v?new Date(v).toLocaleString('it-IT'):'Nessuna scadenza';
+async function loadActivities(areaId){activitiesSection.hidden=false;activitiesMessage.textContent='Caricamento attivit\u00e0...';const{data,error}=await supabaseClient.rpc('get_area_activities',{p_area_id:areaId,p_status:'open'});if(error){activitiesMessage.textContent='Impossibile caricare le attivit\u00e0.';return}activitiesList.replaceChildren();if(!data?.length){const i=document.createElement('li');i.textContent='Nessuna attivit\u00e0 aperta.';activitiesList.appendChild(i)}else data.forEach((a)=>{const i=document.createElement('li');i.className='activity-card';const t=document.createElement('strong');t.className='activity-card-title';t.textContent=a.title;const m=document.createElement('div');m.className='activity-card-meta';[['activity-type-badge',typeLabel(a.activity_type)],[`activity-priority-badge activity-priority-${a.priority}`,priorityLabel(a.priority)],['activity-status-badge',statusLabel(a.status)]].forEach(([c,x])=>{const s=document.createElement('span');s.className=c;s.textContent=x;m.appendChild(s)});const d=document.createElement('div');d.className='activity-card-due';d.textContent=`Scadenza: ${formatDateTime(a.due_at)}`;i.append(t,m,d);activitiesList.appendChild(i)});activitiesMessage.textContent=''}
+async function loadArea(){const{data:s}=await supabaseClient.auth.getSession();if(!s.session){window.location.href='login.html';return}const areaId=new URLSearchParams(window.location.search).get('area_id');if(!areaId){message.textContent='Area non specificata.';return}addMemberLink.href=`aggiungi-membro.html?area_id=${encodeURIComponent(areaId)}`;newActivityLink.href=`nuova-attivita.html?area_id=${encodeURIComponent(areaId)}`;const{data:area,error:e}=await supabaseClient.from('areas').select('id,name,area_type').eq('id',areaId).single();if(e){message.textContent=`Errore Area: ${e.message}`;return}areaNameElement.textContent=area.name;const{data:ms,error:me}=await supabaseClient.from('area_memberships').select('role,profile_id,profiles(first_name,last_name)').eq('area_id',areaId);if(me){message.textContent=`Errore membri: ${me.message}`;return}membersList.innerHTML='';ms.forEach((m)=>{const li=document.createElement('li'),name=`${m.profiles?.first_name||''} ${m.profiles?.last_name||''}`.trim(),role={admin:'Amministratore',member:'Membro',managed:'Profilo gestito'}[m.role]||m.role;li.textContent=`${name} — ${role}`;li.style.cursor='pointer';li.addEventListener('click',()=>window.location.href=`membro.html?area_id=${encodeURIComponent(areaId)}&profile_id=${encodeURIComponent(m.profile_id)}`);membersList.appendChild(li)});message.textContent='Area caricata correttamente.';await loadActivities(areaId)}
 loadArea();

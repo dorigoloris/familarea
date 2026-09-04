@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuova attività - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page-card">
+    <p><a id="back-link" href="#">Torna all'Area</a></p>
+    <h1>Nuova attività</h1>
+    <p id="message">Caricamento...</p>
+
+    <form id="activity-form" hidden>
+      <div><label for="title">Titolo</label><input id="title" type="text" required></div>
+      <br>
+      <div><label for="activity-type">Tipo</label><select id="activity-type"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></div>
+      <br>
+      <div><label for="priority">Priorità</label><select id="priority"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></div>
+      <br>
+      <div><label for="notes">Note</label><textarea id="notes"></textarea></div>
+      <br>
+      <div><label for="due-at">Scadenza / data e ora</label><input id="due-at" type="datetime-local"></div>
+      <br>
+      <fieldset><legend>Assegnatari</legend><div id="assignees"></div></fieldset>
+      <br>
+      <button type="submit">Crea attività</button>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="nuova-attivita.js"></script>
+</body>
+</html>
