@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheda membro - FamilArea</title>
+</head>
+
+<body>
+
+  <h1 id="member-name">Scheda membro</h1>
+
+  <p id="message">Caricamento...</p>
+
+  <div id="view-mode">
+    <dl>
+      <dt>Nome</dt>
+      <dd id="member-first-name"></dd>
+
+      <dt>Cognome</dt>
+      <dd id="member-last-name"></dd>
+
+      <dt>Data di nascita</dt>
+      <dd id="member-birth-date"></dd>
+
+      <dt>Ruolo nell'Area</dt>
+      <dd id="member-role"></dd>
+    </dl>
+
+    <button type="button" id="edit-button" hidden>Modifica</button>
+  </div>
+
+  <form id="edit-form" hidden>
+    <div>
+      <label for="edit-first-name">Nome</label><br>
+      <input type="text" id="edit-first-name" required>
+    </div>
+
+    <br>
+
+    <div>
+      <label for="edit-last-name">Cognome</label><br>
+      <input type="text" id="edit-last-name">
+    </div>
+
+    <br>
+
+    <div>
+      <label for="edit-birth-date">Data di nascita</label><br>
+      <input type="date" id="edit-birth-date">
+    </div>
+
+    <br>
+
+    <button type="submit">Salva</button>
+    <button type="button" id="cancel-button">Annulla</button>
+  </form>
+
+  <p><a id="back-to-area-link" href="#">Torna all'Area</a></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="membro.js"></script>
+
+</body>
+</html>

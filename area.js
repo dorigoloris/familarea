@@ -73,6 +73,13 @@ async function loadArea() {
     }
 
     li.textContent = `${fullName} — ${roleLabel}`;
+    li.style.cursor = 'pointer';
+
+    li.addEventListener('click', () => {
+      window.location.href =
+        `membro.html?area_id=${encodeURIComponent(areaId)}&profile_id=${encodeURIComponent(membership.profile_id)}`;
+    });
+
     membersList.appendChild(li);
   });
 
