@@ -28,6 +28,38 @@
     </dl>
 
     <button type="button" id="edit-button" hidden>Modifica</button>
+
+    <section id="contacts-section" hidden>
+      <h2>Contatti</h2>
+      <p id="contacts-message" aria-live="polite"></p>
+
+      <h3>Email</h3>
+      <ul id="email-contacts-list"></ul>
+      <button type="button" id="add-email-button">Aggiungi email</button>
+
+      <h3>Cellulari</h3>
+      <ul id="phone-contacts-list"></ul>
+      <button type="button" id="add-phone-button">Aggiungi cellulare</button>
+
+      <form id="contact-form" hidden>
+        <h3 id="contact-form-title"></h3>
+
+        <div id="contact-email-field" hidden>
+          <label for="contact-email-input">Email</label><br>
+          <input type="email" id="contact-email-input" autocomplete="email">
+        </div>
+
+        <div id="contact-phone-field" hidden>
+          <label for="contact-phone-input">Cellulare</label><br>
+          <span aria-hidden="true">+39 </span><input type="tel" id="contact-phone-input" inputmode="tel" autocomplete="tel-national" placeholder="3331234567">
+        </div>
+
+        <br>
+
+        <button type="submit" id="contact-save-button">Salva</button>
+        <button type="button" id="contact-cancel-button">Annulla</button>
+      </form>
+    </section>
   </div>
 
   <form id="edit-form" hidden>

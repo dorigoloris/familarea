@@ -56,14 +56,28 @@ create table if not exists public.area_memberships (
 
 create table if not exists public.profile_contacts (
   id            uuid primary key default gen_random_uuid(),
+  area_id       uuid not null references public.areas (id) on delete cascade,
   profile_id    uuid not null references public.profiles (id) on delete cascade,
   contact_type  text not null check (contact_type in ('email','phone')),
   contact_value text not null check (char_length(btrim(contact_value)) > 0),
+  is_primary    boolean not null default false,
   created_at    timestamptz not null default now(),
-  unique (profile_id, contact_type, contact_value)
+  constraint profile_contacts_area_profile_membership_fkey
+    foreign key (area_id, profile_id)
+    references public.area_memberships (area_id, profile_id)
+    on delete cascade,
+  constraint profile_contacts_email_normalized_check
+    check (contact_type <> 'email' or contact_value = lower(btrim(contact_value))),
+  constraint profile_contacts_phone_e164_check
+    check (contact_type <> 'phone' or contact_value ~ '^\+[1-9][0-9]{1,14}$'),
+  unique (area_id, profile_id, contact_type, contact_value)
 );
 comment on table public.profile_contacts is
   'Contatti aggiuntivi (email/telefono) per un profilo, tipicamente usati per profili gestiti senza account. Non ancora usata dal client: nessuna policy di accesso definita finché non serve.';
+
+create unique index if not exists profile_contacts_one_primary_per_type
+  on public.profile_contacts (area_id, profile_id, contact_type)
+  where is_primary = true;
 
 alter table public.profiles          enable row level security;
 alter table public.areas             enable row level security;
@@ -315,6 +329,240 @@ comment on function public.update_area_member(uuid, uuid, text, text, date) is
 
 revoke all on function public.update_area_member(uuid, uuid, text, text, date) from public;
 grant execute on function public.update_area_member(uuid, uuid, text, text, date) to authenticated;
+
+-- =============================================================================
+-- 5c. RPC: contatti contestuali all'Area — solo admin dell'Area
+-- =============================================================================
+
+create or replace function public.require_area_contact_admin(p_area_id uuid, p_profile_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+end;
+$$;
+revoke all on function public.require_area_contact_admin(uuid, uuid) from public;
+
+create or replace function public.get_area_member_contacts(
+  p_area_id uuid,
+  p_profile_id uuid
+)
+returns table (
+  id uuid,
+  contact_type text,
+  contact_value text,
+  is_primary boolean,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+
+  return query
+  select pc.id, pc.contact_type, pc.contact_value, pc.is_primary, pc.created_at
+  from public.profile_contacts pc
+  where pc.area_id = p_area_id and pc.profile_id = p_profile_id
+  order by pc.contact_type, pc.is_primary desc, pc.created_at, pc.id;
+end;
+$$;
+
+create or replace function public.add_area_member_contact(
+  p_area_id uuid,
+  p_profile_id uuid,
+  p_contact_type text,
+  p_contact_value text,
+  p_is_primary boolean default false
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+  v_contact_type text := lower(btrim(p_contact_type));
+  v_contact_value text;
+  v_is_primary boolean;
+  v_existing_count integer;
+  v_contact_id uuid;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+  if v_contact_type is null or v_contact_type not in ('email', 'phone') then raise exception 'Tipo di contatto non valido'; end if;
+
+  v_contact_value := case when v_contact_type = 'email' then lower(btrim(p_contact_value)) else btrim(p_contact_value) end;
+  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto Ã¨ obbligatorio'; end if;
+  if v_contact_type = 'phone' and v_contact_value !~ '^\+[1-9][0-9]{1,14}$' then
+    raise exception 'Il telefono deve essere nel formato internazionale E.164';
+  end if;
+
+  perform 1 from public.profiles where id = p_profile_id for update;
+  select count(*) into v_existing_count from public.profile_contacts
+  where area_id = p_area_id and profile_id = p_profile_id and contact_type = v_contact_type;
+  v_is_primary := v_existing_count = 0 or coalesce(p_is_primary, false);
+  if v_is_primary then
+    update public.profile_contacts set is_primary = false
+    where area_id = p_area_id and profile_id = p_profile_id and contact_type = v_contact_type;
+  end if;
+
+  insert into public.profile_contacts (area_id, profile_id, contact_type, contact_value, is_primary)
+  values (p_area_id, p_profile_id, v_contact_type, v_contact_value, v_is_primary)
+  returning id into v_contact_id;
+  return v_contact_id;
+end;
+$$;
+
+create or replace function public.update_area_member_contact(
+  p_area_id uuid,
+  p_profile_id uuid,
+  p_contact_id uuid,
+  p_contact_value text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+  v_contact_type text;
+  v_contact_value text;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+  perform 1 from public.profiles where id = p_profile_id for update;
+  select contact_type into v_contact_type from public.profile_contacts
+  where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
+  if v_contact_type is null then raise exception 'Contatto non trovato per il profilo e l''Area indicati'; end if;
+
+  v_contact_value := case when v_contact_type = 'email' then lower(btrim(p_contact_value)) else btrim(p_contact_value) end;
+  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto Ã¨ obbligatorio'; end if;
+  if v_contact_type = 'phone' and v_contact_value !~ '^\+[1-9][0-9]{1,14}$' then
+    raise exception 'Il telefono deve essere nel formato internazionale E.164';
+  end if;
+  update public.profile_contacts set contact_value = v_contact_value where id = p_contact_id;
+end;
+$$;
+
+create or replace function public.set_area_member_contact_primary(
+  p_area_id uuid,
+  p_profile_id uuid,
+  p_contact_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+  v_contact_type text;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+  perform 1 from public.profiles where id = p_profile_id for update;
+  select contact_type into v_contact_type from public.profile_contacts
+  where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
+  if v_contact_type is null then raise exception 'Contatto non trovato per il profilo e l''Area indicati'; end if;
+  update public.profile_contacts set is_primary = false
+  where area_id = p_area_id and profile_id = p_profile_id and contact_type = v_contact_type;
+  update public.profile_contacts set is_primary = true where id = p_contact_id;
+end;
+$$;
+
+create or replace function public.delete_area_member_contact(
+  p_area_id uuid,
+  p_profile_id uuid,
+  p_contact_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+  v_contact_type text;
+  v_was_primary boolean;
+  v_replacement_id uuid;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
+    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+  end if;
+  if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
+    raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+  perform 1 from public.profiles where id = p_profile_id for update;
+  select contact_type, is_primary into v_contact_type, v_was_primary from public.profile_contacts
+  where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
+  if v_contact_type is null then raise exception 'Contatto non trovato per il profilo e l''Area indicati'; end if;
+  delete from public.profile_contacts where id = p_contact_id;
+  if v_was_primary then
+    select id into v_replacement_id from public.profile_contacts
+    where area_id = p_area_id and profile_id = p_profile_id and contact_type = v_contact_type
+    order by created_at, id limit 1;
+    if v_replacement_id is not null then
+      update public.profile_contacts set is_primary = true where id = v_replacement_id;
+    end if;
+  end if;
+end;
+$$;
+
+revoke all on function public.get_area_member_contacts(uuid, uuid) from public;
+revoke all on function public.add_area_member_contact(uuid, uuid, text, text, boolean) from public;
+revoke all on function public.update_area_member_contact(uuid, uuid, uuid, text) from public;
+revoke all on function public.set_area_member_contact_primary(uuid, uuid, uuid) from public;
+revoke all on function public.delete_area_member_contact(uuid, uuid, uuid) from public;
+
+grant execute on function public.get_area_member_contacts(uuid, uuid) to authenticated;
+grant execute on function public.add_area_member_contact(uuid, uuid, text, text, boolean) to authenticated;
+grant execute on function public.update_area_member_contact(uuid, uuid, uuid, text) to authenticated;
+grant execute on function public.set_area_member_contact_primary(uuid, uuid, uuid) to authenticated;
+grant execute on function public.delete_area_member_contact(uuid, uuid, uuid) to authenticated;
 
 -- =============================================================================
 -- 6. GRANT / REVOKE a livello di tabella
