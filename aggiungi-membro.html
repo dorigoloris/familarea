@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aggiungi membro - FamilArea</title>
+</head>
+
+<body>
+
+  <h1>Aggiungi un membro</h1>
+
+  <form id="member-form">
+
+    <div>
+      <label for="first-name">Nome</label><br>
+      <input type="text" id="first-name" required>
+    </div>
+
+    <br>
+
+    <div>
+      <label for="last-name">Cognome</label><br>
+      <input type="text" id="last-name">
+    </div>
+
+    <br>
+
+    <div>
+      <label for="birth-date">Data di nascita</label><br>
+      <input type="date" id="birth-date">
+    </div>
+
+    <br>
+
+    <div>
+      <label for="role">Ruolo</label><br>
+      <select id="role">
+        <option value="managed">Profilo gestito</option>
+        <option value="member">Membro</option>
+        <option value="admin">Amministratore</option>
+      </select>
+    </div>
+
+    <br>
+
+    <button type="submit">Aggiungi membro</button>
+
+  </form>
+
+  <p id="message"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="aggiungi-membro.js"></script>
+
+</body>
+</html>

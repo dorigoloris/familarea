@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accedi - FamilArea</title>
+</head>
+
+<body>
+
+  <h1>Accedi a FamilArea</h1>
+
+  <form id="login-form">
+    <div>
+      <label for="email">Email</label><br>
+      <input type="email" id="email" required>
+    </div>
+
+    <br>
+
+    <div>
+      <label for="password">Password</label><br>
+      <input type="password" id="password" required>
+    </div>
+
+    <br>
+
+    <button type="submit">Accedi</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="login.js"></script>
+
+</body>
+</html>

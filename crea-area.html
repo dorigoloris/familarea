@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crea Area - FamilArea</title>
+</head>
+
+<body>
+
+  <h1>Crea la tua prima Area</h1>
+
+  <form id="area-form">
+    <div>
+      <label for="area-name">Nome Area</label><br>
+      <input type="text" id="area-name" required>
+    </div>
+
+    <br>
+
+    <div>
+      <label for="area-type">Tipo di Area</label><br>
+      <select id="area-type">
+        <option value="family">Famiglia</option>
+        <option value="school">Scuola</option>
+        <option value="sport">Sport</option>
+        <option value="friends">Amici</option>
+        <option value="course">Corso</option>
+        <option value="travel">Viaggio</option>
+        <option value="other">Altro</option>
+      </select>
+    </div>
+
+    <br>
+
+    <button type="submit">Crea Area</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="crea-area.js"></script>
+
+</body>
+</html>
