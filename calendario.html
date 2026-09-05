@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card calendar-page">
+    <p><a class="btn" href="mie-aree.html">Dashboard</a></p>
+    <h1>Calendario</h1>
+    <p id="calendar-message" aria-live="polite">Caricamento calendario...</p>
+
+    <div id="calendar-content" hidden>
+      <section class="calendar-section" aria-labelledby="month-title">
+        <div class="calendar-controls">
+          <button id="previous-month" type="button" aria-label="Mese precedente">Precedente</button>
+          <h2 id="month-title" aria-live="polite"></h2>
+          <button id="next-month" type="button" aria-label="Mese successivo">Successivo</button>
+        </div>
+        <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+          </div>
+          <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+      </section>
+
+      <section id="undated-section" class="calendar-section" aria-labelledby="undated-title">
+        <h2 id="undated-title">Senza data</h2>
+        <p id="undated-empty" class="empty-state" hidden>Nessuna attività aperta senza data.</p>
+        <div id="undated-list" class="dashboard-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="calendario.js"></script>
+</body>
+</html>
