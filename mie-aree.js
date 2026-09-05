@@ -2,19 +2,149 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const message = document.getElementById('message');
 const areasList = document.getElementById('areas-list');
+const dashboardMessage = document.getElementById('dashboard-message');
 
-async function loadMyAreas() {
+const activitySections = {
+  today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
+  upcoming: { list: document.getElementById('upcoming-list'), empty: document.getElementById('upcoming-empty') },
+  todo: { list: document.getElementById('todo-list'), empty: document.getElementById('todo-empty') }
+};
 
-  const { data: sessionData } = await supabaseClient.auth.getSession();
+const activityTypeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' };
+const priorityLabels = { low: 'Bassa', normal: 'Normale', high: 'Alta' };
+const statusLabels = { open: 'Aperta', completed: 'Completata', cancelled: 'Cancellata' };
 
-  if (!sessionData.session) {
-    window.location.href = 'login.html';
-    return;
+function getTodayBounds() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+function toValidDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function datesFor(activity) {
+  return [activity.due_at, activity.starts_at].map(toValidDate).filter(Boolean);
+}
+
+function fallsOnToday(activity, start, end) {
+  return datesFor(activity).some((date) => date >= start && date < end);
+}
+
+function upcomingTime(activity, end) {
+  return datesFor(activity).filter((date) => date >= end).sort((first, second) => first - second)[0] || null;
+}
+
+function compareActivities(first, second, dateForActivity) {
+  const firstDate = dateForActivity(first);
+  const secondDate = dateForActivity(second);
+  if (firstDate && secondDate && firstDate.getTime() !== secondDate.getTime()) return firstDate - secondDate;
+  if (firstDate) return -1;
+  if (secondDate) return 1;
+  const createdDifference = new Date(first.created_at) - new Date(second.created_at);
+  if (createdDifference !== 0) return createdDifference;
+  return String(first.activity_id).localeCompare(String(second.activity_id));
+}
+
+function formatActivityDate(activity) {
+  const formatter = new Intl.DateTimeFormat('it-IT', {
+    dateStyle: 'medium',
+    ...(activity.is_all_day ? {} : { timeStyle: 'short' })
+  });
+  const dates = [];
+  const startsAt = toValidDate(activity.starts_at);
+  const dueAt = toValidDate(activity.due_at);
+  if (startsAt) dates.push(`Inizio: ${formatter.format(startsAt)}`);
+  if (dueAt) dates.push(`Scadenza: ${formatter.format(dueAt)}`);
+  return dates.join(' · ');
+}
+
+function createBadge(text, className) {
+  const badge = document.createElement('span');
+  badge.className = className;
+  badge.textContent = text;
+  return badge;
+}
+
+function createActivityCard(activity) {
+  const card = document.createElement('article');
+  card.className = 'activity-card';
+
+  const title = document.createElement('h3');
+  title.className = 'activity-card-title';
+  title.textContent = activity.title;
+
+  const area = document.createElement('p');
+  area.className = 'activity-card-area';
+  area.textContent = activity.area_name;
+
+  const meta = document.createElement('div');
+  meta.className = 'activity-card-meta';
+  meta.appendChild(createBadge(activityTypeLabels[activity.activity_type] || activity.activity_type, 'activity-type-badge'));
+  meta.appendChild(createBadge(`Priorità: ${priorityLabels[activity.priority] || activity.priority}`, `activity-priority-badge activity-priority-${activity.priority}`));
+  meta.appendChild(createBadge(`Stato: ${statusLabels[activity.status] || activity.status}`, `activity-status-badge activity-status-${activity.status}`));
+
+  const dateText = formatActivityDate(activity);
+  const date = document.createElement('p');
+  date.className = 'activity-card-due';
+  date.textContent = dateText;
+  date.hidden = !dateText;
+
+  const link = document.createElement('a');
+  link.className = 'btn activity-open-link';
+  link.textContent = 'Apri';
+  link.href = `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}`;
+
+  card.appendChild(title);
+  card.appendChild(area);
+  card.appendChild(meta);
+  card.appendChild(date);
+  card.appendChild(link);
+  return card;
+}
+
+function renderActivities(section, activities) {
+  section.list.replaceChildren();
+  section.empty.hidden = activities.length > 0;
+  activities.forEach((activity) => section.list.appendChild(createActivityCard(activity)));
+}
+
+async function loadDashboardActivities() {
+  try {
+    const { data: activities, error } = await supabaseClient.rpc('get_my_visible_activities');
+    if (error) throw error;
+
+    const visibleActivities = activities || [];
+    const { start, end } = getTodayBounds();
+    const activeActivities = visibleActivities.filter((activity) => activity.status !== 'cancelled');
+    const today = activeActivities
+      .filter((activity) => fallsOnToday(activity, start, end))
+      .sort((first, second) => compareActivities(first, second, (activity) => {
+        return datesFor(activity).filter((date) => date >= start && date < end).sort((a, b) => a - b)[0] || null;
+      }));
+    const upcoming = activeActivities
+      .filter((activity) => upcomingTime(activity, end))
+      .sort((first, second) => compareActivities(first, second, (activity) => upcomingTime(activity, end)))
+      .slice(0, 10);
+    const todo = visibleActivities
+      .filter((activity) => activity.status === 'open')
+      .sort((first, second) => compareActivities(first, second, (activity) => toValidDate(activity.due_at) || toValidDate(activity.starts_at)));
+
+    renderActivities(activitySections.today, today);
+    renderActivities(activitySections.upcoming, upcoming);
+    renderActivities(activitySections.todo, todo);
+  } catch (error) {
+    console.error('Errore nel caricamento delle attività della Dashboard:', error);
+    dashboardMessage.textContent = 'Non è stato possibile caricare le attività. Riprova più tardi.';
   }
+}
 
-  const userId = sessionData.session.user.id;
-
-  // Recupera il profilo collegato all'utente autenticato
+async function loadMyAreas(userId) {
   const { data: profile, error: profileError } = await supabaseClient
     .from('profiles')
     .select('id')
@@ -26,17 +156,12 @@ async function loadMyAreas() {
     return;
   }
 
-  // Recupera le Aree a cui appartiene il profilo
   const { data: memberships, error: membershipsError } = await supabaseClient
     .from('area_memberships')
     .select(`
       role,
       area_id,
-      areas (
-        id,
-        name,
-        area_type
-      )
+      areas (id, name, area_type)
     `)
     .eq('profile_id', profile.id);
 
@@ -45,56 +170,42 @@ async function loadMyAreas() {
     return;
   }
 
-  areasList.innerHTML = '';
-
+  areasList.replaceChildren();
   if (!memberships || memberships.length === 0) {
     message.textContent = 'Non hai ancora nessuna Area.';
     return;
   }
 
   memberships.forEach((membership) => {
-
     const area = membership.areas;
-
-    if (!area) {
-      return;
-    }
-
-    const container = document.createElement('div');
-
-    const title = document.createElement('h2');
+    if (!area) return;
+    const container = document.createElement('article');
+    container.className = 'area-card';
+    const title = document.createElement('h3');
     title.textContent = area.name;
-
     const info = document.createElement('p');
-
-    let roleLabel = membership.role;
-
-    if (membership.role === 'admin') {
-      roleLabel = 'Amministratore';
-    } else if (membership.role === 'member') {
-      roleLabel = 'Membro';
-    } else if (membership.role === 'managed') {
-      roleLabel = 'Profilo gestito';
-    }
-
-    info.textContent = `${area.area_type} — ${roleLabel}`;
-
-    const button = document.createElement('button');
-    button.textContent = 'Apri Area';
-
-    button.addEventListener('click', () => {
-      window.location.href =
-        `area.html?area_id=${encodeURIComponent(area.id)}`;
-    });
-
+    const roleLabels = { admin: 'Amministratore', member: 'Membro', managed: 'Profilo gestito' };
+    info.textContent = `${area.area_type} — ${roleLabels[membership.role] || membership.role}`;
+    const link = document.createElement('a');
+    link.className = 'btn';
+    link.textContent = 'Apri Area';
+    link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
     container.appendChild(title);
     container.appendChild(info);
-    container.appendChild(button);
-
+    container.appendChild(link);
     areasList.appendChild(container);
   });
 
   message.textContent = '';
 }
 
-loadMyAreas();
+async function initialiseDashboard() {
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  if (!sessionData.session) {
+    window.location.href = 'login.html';
+    return;
+  }
+  await Promise.all([loadDashboardActivities(), loadMyAreas(sessionData.session.user.id)]);
+}
+
+initialiseDashboard();

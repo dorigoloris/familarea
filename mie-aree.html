@@ -12,13 +12,37 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <h1>Le mie Aree</h1>
+  <main class="page-card dashboard">
+    <h1>La tua Dashboard</h1>
+    <p id="dashboard-message" aria-live="polite"></p>
 
-  <p><a href="crea-area.html">Crea nuova Area</a></p>
+    <section class="dashboard-section" aria-labelledby="today-title">
+      <h2 id="today-title">Oggi</h2>
+      <p id="today-empty" class="empty-state" hidden>Nessuna attività per oggi.</p>
+      <div id="today-list" class="dashboard-list"></div>
+    </section>
 
-  <p id="message">Caricamento...</p>
+    <section class="dashboard-section" aria-labelledby="upcoming-title">
+      <h2 id="upcoming-title">Prossimamente</h2>
+      <p id="upcoming-empty" class="empty-state" hidden>Nessuna attività in programma.</p>
+      <div id="upcoming-list" class="dashboard-list"></div>
+    </section>
 
-  <div id="areas-list"></div>
+    <section class="dashboard-section" aria-labelledby="todo-title">
+      <h2 id="todo-title">Da fare</h2>
+      <p id="todo-empty" class="empty-state" hidden>Nessuna attività da fare.</p>
+      <div id="todo-list" class="dashboard-list"></div>
+    </section>
+
+    <section class="dashboard-section" aria-labelledby="areas-title">
+      <div class="section-heading">
+        <h2 id="areas-title">Le mie Aree</h2>
+        <a class="btn" href="crea-area.html">Crea nuova Area</a>
+      </div>
+      <p id="message" aria-live="polite">Caricamento...</p>
+      <div id="areas-list" class="dashboard-list"></div>
+    </section>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
