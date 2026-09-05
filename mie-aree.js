@@ -1,8 +1,14 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const calendarUtils = window.FamilAreaCalendarUtils;
 
 const message = document.getElementById('message');
 const areasList = document.getElementById('areas-list');
 const dashboardMessage = document.getElementById('dashboard-message');
+const dashboardCalendarSection = document.getElementById('dashboard-calendar-section');
+const dashboardMonthTitle = document.getElementById('dashboard-month-title');
+const dashboardCalendarGrid = document.getElementById('dashboard-calendar-grid');
+const dashboardPreviousMonthButton = document.getElementById('dashboard-previous-month');
+const dashboardNextMonthButton = document.getElementById('dashboard-next-month');
 
 const activitySections = {
   today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
@@ -13,6 +19,8 @@ const activitySections = {
 const activityTypeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' };
 const priorityLabels = { low: 'Bassa', normal: 'Normale', high: 'Alta' };
 const statusLabels = { open: 'Aperta', completed: 'Completata', cancelled: 'Cancellata' };
+let dashboardCalendarActivities = [];
+let dashboardDisplayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function getTodayBounds() {
   const now = new Date();
@@ -22,14 +30,8 @@ function getTodayBounds() {
   return { start, end };
 }
 
-function toValidDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
 function datesFor(activity) {
-  return [activity.due_at, activity.starts_at].map(toValidDate).filter(Boolean);
+  return [activity.due_at, activity.starts_at].map(calendarUtils.toValidDate).filter(Boolean);
 }
 
 function fallsOnToday(activity, start, end) {
@@ -57,8 +59,8 @@ function formatActivityDate(activity) {
     ...(activity.is_all_day ? {} : { timeStyle: 'short' })
   });
   const dates = [];
-  const startsAt = toValidDate(activity.starts_at);
-  const dueAt = toValidDate(activity.due_at);
+  const startsAt = calendarUtils.toValidDate(activity.starts_at);
+  const dueAt = calendarUtils.toValidDate(activity.due_at);
   if (startsAt) dates.push(`Inizio: ${formatter.format(startsAt)}`);
   if (dueAt) dates.push(`Scadenza: ${formatter.format(dueAt)}`);
   return dates.join(' · ');
@@ -114,6 +116,20 @@ function renderActivities(section, activities) {
   activities.forEach((activity) => section.list.appendChild(createActivityCard(activity)));
 }
 
+function renderDashboardCalendar() {
+  calendarUtils.renderMonthCalendar({
+    month: dashboardDisplayedMonth,
+    titleElement: dashboardMonthTitle,
+    gridElement: dashboardCalendarGrid,
+    activities: dashboardCalendarActivities
+  });
+}
+
+function changeDashboardMonth(offset) {
+  dashboardDisplayedMonth = new Date(dashboardDisplayedMonth.getFullYear(), dashboardDisplayedMonth.getMonth() + offset, 1);
+  renderDashboardCalendar();
+}
+
 async function loadDashboardActivities() {
   try {
     const { data: activities, error } = await supabaseClient.rpc('get_my_visible_activities');
@@ -122,6 +138,8 @@ async function loadDashboardActivities() {
     const visibleActivities = activities || [];
     const { start, end } = getTodayBounds();
     const activeActivities = visibleActivities.filter((activity) => activity.status !== 'cancelled');
+    dashboardCalendarActivities = activeActivities;
+    renderDashboardCalendar();
     const today = activeActivities
       .filter((activity) => fallsOnToday(activity, start, end))
       .sort((first, second) => compareActivities(first, second, (activity) => {
@@ -133,7 +151,7 @@ async function loadDashboardActivities() {
       .slice(0, 10);
     const todo = visibleActivities
       .filter((activity) => activity.status === 'open')
-      .sort((first, second) => compareActivities(first, second, (activity) => toValidDate(activity.due_at) || toValidDate(activity.starts_at)));
+      .sort((first, second) => compareActivities(first, second, (activity) => calendarUtils.toValidDate(activity.due_at) || calendarUtils.toValidDate(activity.starts_at)));
 
     renderActivities(activitySections.today, today);
     renderActivities(activitySections.upcoming, upcoming);
@@ -141,6 +159,7 @@ async function loadDashboardActivities() {
   } catch (error) {
     console.error('Errore nel caricamento delle attività della Dashboard:', error);
     dashboardMessage.textContent = 'Non è stato possibile caricare le attività. Riprova più tardi.';
+    dashboardCalendarSection.hidden = true;
   }
 }
 
@@ -208,4 +227,7 @@ async function initialiseDashboard() {
   await Promise.all([loadDashboardActivities(), loadMyAreas(sessionData.session.user.id)]);
 }
 
+dashboardPreviousMonthButton.addEventListener('click', () => changeDashboardMonth(-1));
+dashboardNextMonthButton.addEventListener('click', () => changeDashboardMonth(1));
+renderDashboardCalendar();
 initialiseDashboard();

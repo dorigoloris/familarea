@@ -16,6 +16,21 @@
     <h1>La tua Dashboard</h1>
     <p id="dashboard-message" aria-live="polite"></p>
 
+    <section id="dashboard-calendar-section" class="dashboard-section calendar-section" aria-labelledby="dashboard-month-title">
+      <div class="calendar-controls">
+        <button id="dashboard-previous-month" type="button" aria-label="Mese precedente">Precedente</button>
+        <h2 id="dashboard-month-title" aria-live="polite"></h2>
+        <button id="dashboard-next-month" type="button" aria-label="Mese successivo">Successivo</button>
+      </div>
+      <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+        </div>
+        <div id="dashboard-calendar-grid" class="calendar-grid"></div>
+      </div>
+      <p><a href="calendario.html">Apri calendario completo</a></p>
+    </section>
+
     <section class="dashboard-section" aria-labelledby="today-title">
       <h2 id="today-title">Oggi</h2>
       <p id="today-empty" class="empty-state" hidden>Nessuna attività per oggi.</p>
@@ -38,7 +53,6 @@
       <div class="section-heading">
         <h2 id="areas-title">Le mie Aree</h2>
         <div class="section-actions">
-          <a class="btn" href="calendario.html">Calendario</a>
           <a class="btn" href="crea-area.html">Crea nuova Area</a>
         </div>
       </div>
@@ -50,6 +64,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
+  <script src="calendar-utils.js"></script>
   <script src="mie-aree.js"></script>
 
 </body>
