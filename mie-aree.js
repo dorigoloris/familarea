@@ -9,6 +9,8 @@ const dashboardMonthTitle = document.getElementById('dashboard-month-title');
 const dashboardCalendarGrid = document.getElementById('dashboard-calendar-grid');
 const dashboardPreviousMonthButton = document.getElementById('dashboard-previous-month');
 const dashboardNextMonthButton = document.getElementById('dashboard-next-month');
+const dashboardTodayButton = document.getElementById('dashboard-today');
+const headerUserName = document.getElementById('header-user-name');
 
 const activitySections = {
   today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
@@ -110,10 +112,10 @@ function createActivityCard(activity) {
   return card;
 }
 
-function renderActivities(section, activities) {
+function renderActivities(section, activities, displayLimit) {
   section.list.replaceChildren();
   section.empty.hidden = activities.length > 0;
-  activities.forEach((activity) => section.list.appendChild(createActivityCard(activity)));
+  activities.slice(0, displayLimit).forEach((activity) => section.list.appendChild(createActivityCard(activity)));
 }
 
 function renderDashboardCalendar() {
@@ -127,6 +129,12 @@ function renderDashboardCalendar() {
 
 function changeDashboardMonth(offset) {
   dashboardDisplayedMonth = new Date(dashboardDisplayedMonth.getFullYear(), dashboardDisplayedMonth.getMonth() + offset, 1);
+  renderDashboardCalendar();
+}
+
+function showCurrentMonth() {
+  const now = new Date();
+  dashboardDisplayedMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   renderDashboardCalendar();
 }
 
@@ -153,9 +161,9 @@ async function loadDashboardActivities() {
       .filter((activity) => activity.status === 'open')
       .sort((first, second) => compareActivities(first, second, (activity) => calendarUtils.toValidDate(activity.due_at) || calendarUtils.toValidDate(activity.starts_at)));
 
-    renderActivities(activitySections.today, today);
-    renderActivities(activitySections.upcoming, upcoming);
-    renderActivities(activitySections.todo, todo);
+    renderActivities(activitySections.today, today, 5);
+    renderActivities(activitySections.upcoming, upcoming, 5);
+    renderActivities(activitySections.todo, todo, 5);
   } catch (error) {
     console.error('Errore nel caricamento delle attività della Dashboard:', error);
     dashboardMessage.textContent = 'Non è stato possibile caricare le attività. Riprova più tardi.';
@@ -200,6 +208,10 @@ async function loadMyAreas(userId) {
     if (!area) return;
     const container = document.createElement('article');
     container.className = 'area-card';
+    const icon = document.createElement('span');
+    icon.className = 'area-card-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '⌂';
     const title = document.createElement('h3');
     title.textContent = area.name;
     const info = document.createElement('p');
@@ -209,6 +221,7 @@ async function loadMyAreas(userId) {
     link.className = 'btn';
     link.textContent = 'Apri Area';
     link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
+    container.appendChild(icon);
     container.appendChild(title);
     container.appendChild(info);
     container.appendChild(link);
@@ -224,10 +237,17 @@ async function initialiseDashboard() {
     window.location.href = 'login.html';
     return;
   }
+  const user = sessionData.session.user;
+  const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
+  if (userName) {
+    headerUserName.textContent = userName;
+    headerUserName.hidden = false;
+  }
   await Promise.all([loadDashboardActivities(), loadMyAreas(sessionData.session.user.id)]);
 }
 
 dashboardPreviousMonthButton.addEventListener('click', () => changeDashboardMonth(-1));
 dashboardNextMonthButton.addEventListener('click', () => changeDashboardMonth(1));
+dashboardTodayButton.addEventListener('click', showCurrentMonth);
 renderDashboardCalendar();
 initialiseDashboard();

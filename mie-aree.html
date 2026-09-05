@@ -3,69 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Le mie Aree - FamilArea</title>
+  <title>Dashboard - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-
-<body>
-
-  <button class="logout-button" type="button" data-logout>Esci</button>
-  <p id="logout-message" aria-live="polite"></p>
-
-  <main class="page-card dashboard">
-    <h1>La tua Dashboard</h1>
-    <p id="dashboard-message" aria-live="polite"></p>
-
-    <section id="dashboard-calendar-section" class="dashboard-section calendar-section" aria-labelledby="dashboard-month-title">
-      <div class="calendar-controls">
-        <button id="dashboard-previous-month" type="button" aria-label="Mese precedente">Precedente</button>
-        <h2 id="dashboard-month-title" aria-live="polite"></h2>
-        <button id="dashboard-next-month" type="button" aria-label="Mese successivo">Successivo</button>
+<body class="dashboard-page">
+  <header class="app-header">
+    <a class="app-brand" href="mie-aree.html" aria-label="FamilArea, Dashboard">Famil<span>Area</span></a>
+    <div class="header-actions"><span id="header-user-name" class="header-user-name" hidden></span><button class="logout-button" type="button" data-logout>Esci</button></div>
+    <p id="logout-message" aria-live="polite"></p>
+  </header>
+  <div class="dashboard-shell">
+    <nav class="dashboard-sidebar" aria-label="Navigazione principale">
+      <a class="sidebar-link is-active" href="mie-aree.html" aria-current="page"><span aria-hidden="true">⌂</span> Dashboard</a>
+      <a class="sidebar-link" href="#areas-title"><span aria-hidden="true">▦</span> Le mie Aree</a>
+      <a class="sidebar-link" href="calendario.html"><span aria-hidden="true">□</span> Calendario</a>
+      <span class="sidebar-link" aria-disabled="true"><span aria-hidden="true">✓</span> Attività</span>
+    </nav>
+    <main class="dashboard-content">
+      <div class="dashboard-intro"><p class="eyebrow">FamilArea</p><h1>La tua Dashboard</h1><p>Qui trovi una panoramica dei tuoi impegni e delle tue Aree.</p><p id="dashboard-message" aria-live="polite"></p></div>
+      <section id="dashboard-calendar-section" class="dashboard-section dashboard-calendar-card" aria-labelledby="dashboard-month-title">
+        <div class="dashboard-calendar-heading"><div><p class="section-kicker">I tuoi impegni</p><h2 id="dashboard-month-title" aria-live="polite"></h2></div></div>
+        <div class="calendar-controls" aria-label="Navigazione del mese"><button id="dashboard-previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente">← <span>Precedente</span></button><button id="dashboard-today" class="calendar-today-button" type="button">Oggi</button><button id="dashboard-next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span> →</button><a class="calendar-full-link" href="calendario.html">Apri calendario completo <span aria-hidden="true">→</span></a></div>
+        <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario"><div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div><div id="dashboard-calendar-grid" class="calendar-grid"></div></div>
+      </section>
+      <div class="dashboard-summary-grid">
+        <section class="dashboard-section summary-card summary-card-today" aria-labelledby="today-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">☀</span><h2 id="today-title">Oggi</h2></div><p id="today-empty" class="empty-state" hidden>Nessuna attività per oggi.</p><div id="today-list" class="dashboard-list"></div></section>
+        <section class="dashboard-section summary-card" aria-labelledby="upcoming-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">◷</span><h2 id="upcoming-title">Prossimamente</h2></div><p id="upcoming-empty" class="empty-state" hidden>Nessuna attività in programma.</p><div id="upcoming-list" class="dashboard-list"></div></section>
+        <section class="dashboard-section summary-card summary-card-todo" aria-labelledby="todo-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">✓</span><h2 id="todo-title">Da fare</h2></div><p id="todo-empty" class="empty-state" hidden>Nessuna attività da fare.</p><div id="todo-list" class="dashboard-list"></div></section>
       </div>
-      <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
-        <div class="calendar-weekdays" aria-hidden="true">
-          <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-        </div>
-        <div id="dashboard-calendar-grid" class="calendar-grid"></div>
-      </div>
-      <p><a href="calendario.html">Apri calendario completo</a></p>
-    </section>
-
-    <section class="dashboard-section" aria-labelledby="today-title">
-      <h2 id="today-title">Oggi</h2>
-      <p id="today-empty" class="empty-state" hidden>Nessuna attività per oggi.</p>
-      <div id="today-list" class="dashboard-list"></div>
-    </section>
-
-    <section class="dashboard-section" aria-labelledby="upcoming-title">
-      <h2 id="upcoming-title">Prossimamente</h2>
-      <p id="upcoming-empty" class="empty-state" hidden>Nessuna attività in programma.</p>
-      <div id="upcoming-list" class="dashboard-list"></div>
-    </section>
-
-    <section class="dashboard-section" aria-labelledby="todo-title">
-      <h2 id="todo-title">Da fare</h2>
-      <p id="todo-empty" class="empty-state" hidden>Nessuna attività da fare.</p>
-      <div id="todo-list" class="dashboard-list"></div>
-    </section>
-
-    <section class="dashboard-section" aria-labelledby="areas-title">
-      <div class="section-heading">
-        <h2 id="areas-title">Le mie Aree</h2>
-        <div class="section-actions">
-          <a class="btn" href="crea-area.html">Crea nuova Area</a>
-        </div>
-      </div>
-      <p id="message" aria-live="polite">Caricamento...</p>
-      <div id="areas-list" class="dashboard-list"></div>
-    </section>
-  </main>
-
+      <section class="dashboard-section areas-section" aria-labelledby="areas-title"><div class="section-heading"><div><p class="section-kicker">I tuoi spazi</p><h2 id="areas-title">Le mie Aree</h2></div><div class="section-actions"><a class="btn create-area-button" href="crea-area.html">+ Crea nuova Area</a></div></div><p id="message" aria-live="polite">Caricamento...</p><div id="areas-list" class="dashboard-list areas-grid"></div></section>
+    </main>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="calendar-utils.js"></script>
   <script src="mie-aree.js"></script>
-
 </body>
 </html>

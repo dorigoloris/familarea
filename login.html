@@ -5,36 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Accedi - FamilArea</title>
   <link rel="stylesheet" href="app.css">
+  <style>
+    .login-page{min-height:100vh;padding:0;background:linear-gradient(135deg,#f1f8f8 0%,#f7fafc 52%,#edf5eb 100%)}
+    .login-page::before,.login-page::after{display:none}
+    .login-layout{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(430px,.88fr)}
+    .login-branding{position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;margin:0;padding:clamp(46px,8vw,126px);background:linear-gradient(145deg,#f4faf4 0%,#eaf4ef 100%);border:0;border-radius:0;box-shadow:none}
+    .login-branding::before{content:'';position:absolute;width:530px;height:530px;right:-230px;top:-210px;border-radius:50%;background:#dcefdc}
+    .login-branding::after{content:'';position:absolute;left:-90px;bottom:-105px;width:560px;height:240px;border-radius:50% 50% 0 0;background:#d0e8ce;box-shadow:260px 66px 0 20px #b8d9bd}
+    .login-brand-content{position:relative;z-index:1;max-width:575px}
+    .login-logo{display:inline-block;margin-bottom:58px;color:#0d2b4f;font-size:clamp(32px,3.2vw,48px);font-weight:800;letter-spacing:-2.5px;text-decoration:none}
+    .login-logo span{color:#4d8b4f}.login-logo::after{content:'';display:block;width:68px;height:8px;margin:7px 0 0 4px;border-radius:999px;background:#a8cfaa}
+    .login-tagline{margin:0 0 15px;color:#4d8b4f;font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .login-branding h1{margin:0 0 18px;font-size:clamp(43px,4.3vw,65px);line-height:1.04;letter-spacing:-3.4px;color:#0d2b4f}
+    .login-intro{max-width:505px;margin:0 0 36px;font-size:18px;color:#587087}
+    .login-benefits{display:grid;gap:17px;margin:0;padding:0;list-style:none;background:transparent;border:0;border-radius:0;box-shadow:none}
+    .login-benefits li{display:grid;grid-template-columns:42px 1fr;gap:13px;align-items:start;padding:0;border:0}
+    .benefit-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.78);box-shadow:0 5px 15px rgba(43,83,57,.07);font-size:19px}
+    .benefit-text{display:block;color:#4e6478;font-size:14px}.benefit-text strong{display:block;margin-bottom:1px;color:#0d2b4f;font-size:15px}
+    .login-quote{position:relative;z-index:1;max-width:465px;margin:47px 0 0;color:#3f7143;font-size:15px;font-style:italic;font-weight:700}
+    .login-panel{display:flex;align-items:center;justify-content:center;margin:0;padding:clamp(30px,5vw,80px);background:rgba(255,255,255,.56);border:0;border-radius:0;box-shadow:none}
+    .login-card{width:min(100%,470px);padding:clamp(31px,4vw,49px);background:#fff;border:1px solid #e3ebf0;border-radius:25px;box-shadow:0 22px 56px rgba(18,49,74,.13)}
+    .login-card h2{margin:0 0 8px;font-size:34px;letter-spacing:-1.4px;color:#0d2b4f}.login-card>p:first-of-type{margin:0 0 30px;color:#64758a}
+    .login-card form{max-width:none;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}.login-field{margin-bottom:21px}.login-card label{display:block;margin-bottom:7px;font-size:14px}.login-card input{height:51px;margin:0;padding:12px 14px;border:1px solid #d4e0e7;border-radius:12px}.login-card input:focus{border-color:#4d8b4f;outline:3px solid rgba(77,139,79,.16)}
+    .login-actions{display:flex;justify-content:flex-end;margin:-7px 0 23px}.login-actions a{font-size:13px;text-decoration:none}.login-card button[type="submit"]{width:100%;margin:0;padding:14px 18px;border-radius:12px;background:#4d8b4f;font-size:16px;box-shadow:0 7px 14px rgba(77,139,79,.22)}.login-card button[type="submit"]:hover{background:#3e783f}
+    .login-message{min-height:23px;margin:15px 0 0;font-size:14px;font-weight:700}.login-divider{display:flex;align-items:center;gap:13px;margin:30px 0 23px;color:#8a9aaa;font-size:12px;font-weight:700}.login-divider::before,.login-divider::after{content:'';height:1px;flex:1;background:#e2e9ee}
+    .login-register{margin:0;text-align:center;font-size:14px}.login-register span{display:block;margin-bottom:5px;color:#64758a}.login-register a{font-size:15px;text-decoration:none}.login-security{margin:29px 0 0;padding:12px 14px;border-radius:11px;background:#f1f7ef;color:#557559;font-size:12px;text-align:center}.login-security strong{color:#39753c}
+    @media(max-width:850px){.login-layout{grid-template-columns:1fr}.login-panel{order:1;min-height:620px}.login-branding{order:2;min-height:480px;padding:58px 9vw}.login-logo{margin-bottom:38px}.login-quote{margin-top:35px}.login-branding::after{bottom:-140px}}
+    @media(max-width:560px){.login-panel{min-height:0;padding:28px 18px}.login-card{padding:29px 23px;border-radius:20px}.login-card h2{font-size:30px}.login-branding{min-height:0;padding:43px 27px 118px}.login-logo{margin-bottom:32px;font-size:36px}.login-branding h1{font-size:42px;letter-spacing:-2.3px}.login-intro{font-size:16px;margin-bottom:29px}.login-benefits{gap:14px}.login-quote{margin-top:29px;font-size:14px}.login-branding::before{width:300px;height:300px;right:-150px;top:-155px}.login-branding::after{left:-180px;width:460px;height:175px}.login-actions{margin-bottom:20px}}
+  </style>
 </head>
-
-<body>
-
-  <h1>Accedi a FamilArea</h1>
-
-  <form id="login-form">
-    <div>
-      <label for="email">Email</label><br>
-      <input type="email" id="email" required>
-    </div>
-
-    <br>
-
-    <div>
-      <label for="password">Password</label><br>
-      <input type="password" id="password" required>
-    </div>
-
-    <br>
-
-    <button type="submit">Accedi</button>
-  </form>
-
-  <p id="message"></p>
-  <p><a href="recupera-password.html">Password dimenticata?</a></p>
-
+<body class="login-page">
+  <main class="login-layout">
+    <section class="login-branding" aria-labelledby="login-brand-title">
+      <div class="login-brand-content">
+        <a class="login-logo" href="index.html" aria-label="FamilArea, pagina iniziale">Famil<span>Area</span></a>
+        <p class="login-tagline">Più tempo per ciò che conta</p>
+        <h1 id="login-brand-title">Organizza oggi i tuoi domani</h1>
+        <p class="login-intro">Un unico spazio per la tua famiglia, i tuoi gruppi e i tuoi interessi.</p>
+        <ul class="login-benefits">
+          <li><span class="benefit-icon" aria-hidden="true">◷</span><span class="benefit-text"><strong>Condividi impegni</strong>Calendari, promemoria, eventi</span></li>
+          <li><span class="benefit-icon" aria-hidden="true">♡</span><span class="benefit-text"><strong>Resta in contatto</strong>Famiglia, scuola, gruppi, hobby</span></li>
+          <li><span class="benefit-icon" aria-hidden="true">✦</span><span class="benefit-text"><strong>Vivi meglio</strong>Più organizzazione, più tempo per le cose che ami</span></li>
+        </ul>
+        <p class="login-quote">“Le cose belle iniziano sempre con una buona organizzazione.”</p>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <h2 id="login-title">Bentornato!</h2>
+        <p>Accedi a FamilArea per continuare</p>
+        <form id="login-form">
+          <div class="login-field"><label for="email">Email</label><input type="email" id="email" required></div>
+          <div class="login-field"><label for="password">Password</label><input type="password" id="password" required></div>
+          <div class="login-actions"><a href="recupera-password.html">Password dimenticata?</a></div>
+          <button type="submit">Accedi</button>
+        </form>
+        <p id="message" class="login-message" aria-live="polite"></p>
+        <div class="login-divider" aria-hidden="true">oppure</div>
+        <p class="login-register"><span>Non hai ancora un account?</span><a href="registrati.html">Registrati a FamilArea</a></p>
+        <p class="login-security"><strong>I tuoi dati sono al sicuro</strong><br>Privati per impostazione predefinita</p>
+      </div>
+    </section>
+  </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="login.js"></script>
-
 </body>
 </html>
