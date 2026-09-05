@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
   <main class="page-card">
     <p><a id="back-link" href="#">Torna all'Area</a></p>
     <h1>Nuova attività</h1>
@@ -37,6 +39,7 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
   <script src="nuova-attivita.js"></script>
 </body>
 </html>
