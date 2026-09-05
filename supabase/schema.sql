@@ -1,11 +1,11 @@
 -- =============================================================================
--- FamilArea — schema di riferimento (verificato contro il database remoto)
+-- FamilArea â€” schema di riferimento (verificato contro il database remoto)
 -- =============================================================================
--- Questo file NON è stato eseguito contro il database remoto.
+-- Questo file NON Ã¨ stato eseguito contro il database remoto.
 -- Rispecchia la configurazione verificata manualmente su Supabase il 2026-09-04:
 -- GRANT, RLS/FORCE RLS, funzioni SECURITY DEFINER, policy e privilegi EXECUTE
 -- sono stati confermati uno per uno contro il progetto reale (flusso testato:
--- Login → Le mie Aree → apertura Area → elenco membri).
+-- Login â†’ Le mie Aree â†’ apertura Area â†’ elenco membri).
 --
 -- Convenzioni:
 --  - tutte le scritture su profiles/areas/area_memberships avvengono SOLO
@@ -13,7 +13,7 @@
 --    o tramite il trigger handle_new_user. Al ruolo "authenticated" non viene
 --    mai concesso INSERT/DELETE diretto su queste tabelle.
 --  - le funzioni helper usate nelle policy RLS (is_area_member, can_view_profile)
---    sono SECURITY DEFINER di proprietà del proprietario delle tabelle: essendo
+--    sono SECURITY DEFINER di proprietÃ  del proprietario delle tabelle: essendo
 --    l'owner, per default bypassano la RLS all'interno del proprio corpo e
 --    quindi NON generano ricorsione quando vengono richiamate da una policy.
 --    Questo richiede che le 4 tabelle abbiano FORCE ROW LEVEL SECURITY = false
@@ -35,7 +35,7 @@ create table if not exists public.profiles (
   created_at  timestamptz not null default now()
 );
 comment on table public.profiles is
-  'Un profilo per ogni persona nota a FamilArea. user_id è NULL per i profili "gestiti" (senza account) creati da add_area_member.';
+  'Un profilo per ogni persona nota a FamilArea. user_id Ã¨ NULL per i profili "gestiti" (senza account) creati da add_area_member.';
 
 create table if not exists public.areas (
   id          uuid primary key default gen_random_uuid(),
@@ -73,7 +73,7 @@ create table if not exists public.profile_contacts (
   unique (area_id, profile_id, contact_type, contact_value)
 );
 comment on table public.profile_contacts is
-  'Contatti aggiuntivi (email/telefono) per un profilo, tipicamente usati per profili gestiti senza account. Non ancora usata dal client: nessuna policy di accesso definita finché non serve.';
+  'Contatti aggiuntivi (email/telefono) per un profilo, tipicamente usati per profili gestiti senza account. Non ancora usata dal client: nessuna policy di accesso definita finchÃ© non serve.';
 
 create unique index if not exists profile_contacts_one_primary_per_type
   on public.profile_contacts (area_id, profile_id, contact_type)
@@ -85,6 +85,7 @@ create table if not exists public.area_activities (
   activity_type text not null check (activity_type in ('task','reminder','deadline','appointment')),
   status text not null default 'open' check (status in ('open','completed','cancelled')),
   priority text not null default 'normal' check (priority in ('low','normal','high')),
+  visibility text not null default 'area' check (visibility in ('private','creator_assignees','area')),
   starts_at timestamptz, due_at timestamptz, is_all_day boolean not null default false,
   created_by_profile_id uuid references public.profiles(id) on delete set null,
   completed_by_profile_id uuid references public.profiles(id) on delete set null,
@@ -112,7 +113,7 @@ alter table public.profile_contacts  enable row level security;
 alter table public.area_activities   enable row level security;
 alter table public.activity_assignees enable row level security;
 
--- confermato sul remoto: FORCE RLS = false su tutte e 4 (necessario perché le
+-- confermato sul remoto: FORCE RLS = false su tutte e 4 (necessario perchÃ© le
 -- funzioni SECURITY DEFINER sotto possano bypassare la RLS come table owner).
 alter table public.profiles          no force row level security;
 alter table public.areas             no force row level security;
@@ -166,7 +167,7 @@ as $$
     );
 $$;
 comment on function public.can_view_profile(uuid) is
-  'Vero se il profilo è quello dell''utente autenticato, oppure condivide con lui almeno un''Area.';
+  'Vero se il profilo Ã¨ quello dell''utente autenticato, oppure condivide con lui almeno un''Area.';
 
 revoke all on function public.is_area_member(uuid)   from public;
 revoke all on function public.can_view_profile(uuid) from public;
@@ -237,13 +238,13 @@ begin
 end;
 $$;
 comment on function public.create_area(text, text) is
-  'Crea una nuova Area e assegna il chiamante come admin. Il profilo del chiamante deve già esistere (creato da handle_new_user).';
+  'Crea una nuova Area e assegna il chiamante come admin. Il profilo del chiamante deve giÃ  esistere (creato da handle_new_user).';
 
 revoke all on function public.create_area(text, text) from public;
 grant execute on function public.create_area(text, text) to authenticated;
 
 -- =============================================================================
--- 5. RPC: aggiunta membro (profilo senza account) — solo admin dell'Area
+-- 5. RPC: aggiunta membro (profilo senza account) â€” solo admin dell'Area
 -- =============================================================================
 
 create or replace function public.add_area_member(
@@ -280,7 +281,7 @@ begin
       and profile_id = v_caller_profile_id
       and role = 'admin'
   ) then
-    raise exception 'permission denied: solo un admin dell''Area può aggiungere membri';
+    raise exception 'permission denied: solo un admin dell''Area puÃ² aggiungere membri';
   end if;
 
   insert into public.profiles (first_name, last_name, birth_date)
@@ -300,7 +301,7 @@ revoke all on function public.add_area_member(uuid, text, text, date, text) from
 grant execute on function public.add_area_member(uuid, text, text, date, text) to authenticated;
 
 -- =============================================================================
--- 5b. RPC: modifica anagrafica di un membro — solo admin dell'Area
+-- 5b. RPC: modifica anagrafica di un membro â€” solo admin dell'Area
 -- =============================================================================
 
 create or replace function public.update_area_member(
@@ -332,7 +333,7 @@ begin
       and profile_id = v_caller_profile_id
       and role = 'admin'
   ) then
-    raise exception 'permission denied: solo un admin dell''Area può modificare i membri';
+    raise exception 'permission denied: solo un admin dell''Area puÃ² modificare i membri';
   end if;
 
   if not exists (
@@ -344,7 +345,7 @@ begin
   end if;
 
   if btrim(coalesce(p_first_name, '')) = '' then
-    raise exception 'Il nome è obbligatorio';
+    raise exception 'Il nome Ã¨ obbligatorio';
   end if;
 
   update public.profiles
@@ -355,13 +356,13 @@ begin
 end;
 $$;
 comment on function public.update_area_member(uuid, uuid, text, text, date) is
-  'Aggiorna nome, cognome e data di nascita di un membro dell''Area. Richiede che il chiamante sia admin di quella Area; non modifica user_id né altre colonne.';
+  'Aggiorna nome, cognome e data di nascita di un membro dell''Area. Richiede che il chiamante sia admin di quella Area; non modifica user_id nÃ© altre colonne.';
 
 revoke all on function public.update_area_member(uuid, uuid, text, text, date) from public;
 grant execute on function public.update_area_member(uuid, uuid, text, text, date) to authenticated;
 
 -- =============================================================================
--- 5c. RPC: contatti contestuali all'Area — solo admin dell'Area
+-- 5c. RPC: contatti contestuali all'Area â€” solo admin dell'Area
 -- =============================================================================
 
 create or replace function public.require_area_contact_admin(p_area_id uuid, p_profile_id uuid)
@@ -376,7 +377,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -406,7 +407,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -443,7 +444,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -451,7 +452,7 @@ begin
   if v_contact_type is null or v_contact_type not in ('email', 'phone') then raise exception 'Tipo di contatto non valido'; end if;
 
   v_contact_value := case when v_contact_type = 'email' then lower(btrim(p_contact_value)) else btrim(p_contact_value) end;
-  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto Ã¨ obbligatorio'; end if;
+  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto ÃƒÂ¨ obbligatorio'; end if;
   if v_contact_type = 'phone' and v_contact_value !~ '^\+[1-9][0-9]{1,14}$' then
     raise exception 'Il telefono deve essere nel formato internazionale E.164';
   end if;
@@ -491,7 +492,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -502,7 +503,7 @@ begin
   if v_contact_type is null then raise exception 'Contatto non trovato per il profilo e l''Area indicati'; end if;
 
   v_contact_value := case when v_contact_type = 'email' then lower(btrim(p_contact_value)) else btrim(p_contact_value) end;
-  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto Ã¨ obbligatorio'; end if;
+  if coalesce(v_contact_value, '') = '' then raise exception 'Il valore del contatto ÃƒÂ¨ obbligatorio'; end if;
   if v_contact_type = 'phone' and v_contact_value !~ '^\+[1-9][0-9]{1,14}$' then
     raise exception 'Il telefono deve essere nel formato internazionale E.164';
   end if;
@@ -527,7 +528,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -561,7 +562,7 @@ begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin') then
-    raise exception 'permission denied: solo un admin dell''Area puÃ² gestire i contatti';
+    raise exception 'permission denied: solo un admin dell''Area puÃƒÂ² gestire i contatti';
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
@@ -597,7 +598,7 @@ grant execute on function public.delete_area_member_contact(uuid, uuid, uuid) to
 -- =============================================================================
 -- 6. GRANT / REVOKE a livello di tabella
 -- =============================================================================
--- 5d. AttivitÃ  condivise — helper, trigger e RPC
+-- 5d. AttivitÃƒÂ  condivise â€” helper, trigger e RPC
 -- =============================================================================
 
 create or replace function public.current_area_activity_role(p_area_id uuid)
@@ -610,55 +611,116 @@ returns trigger language plpgsql set search_path = public, pg_temp as $$ begin n
 drop trigger if exists area_activities_set_updated_at on public.area_activities;
 create trigger area_activities_set_updated_at before update on public.area_activities for each row execute function public.set_area_activity_updated_at();
 
-create or replace function public.get_area_activities(p_area_id uuid,p_status text default null,p_activity_type text default null,p_assigned_to_me boolean default false,p_due_from timestamptz default null,p_due_to timestamptz default null)
-returns table(id uuid,title text,notes text,activity_type text,status text,priority text,starts_at timestamptz,due_at timestamptz,is_all_day boolean,created_by_profile_id uuid,completed_by_profile_id uuid,completed_at timestamptz,created_at timestamptz,updated_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid; begin
- select profile_id into v_profile from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
- return query select a.id,a.title,a.notes,a.activity_type,a.status,a.priority,a.starts_at,a.due_at,a.is_all_day,a.created_by_profile_id,a.completed_by_profile_id,a.completed_at,a.created_at,a.updated_at from public.area_activities a
- where a.area_id=p_area_id and (p_status is null or a.status=p_status) and (p_activity_type is null or a.activity_type=p_activity_type) and (p_due_from is null or a.due_at>=p_due_from) and (p_due_to is null or a.due_at<=p_due_to)
- and (not p_assigned_to_me or exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id and aa.profile_id=v_profile) or not exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id)) order by a.due_at nulls last,a.created_at desc; end; $$;
-create or replace function public.get_area_activity(p_area_id uuid,p_activity_id uuid)
-returns table(id uuid,title text,notes text,activity_type text,status text,priority text,starts_at timestamptz,due_at timestamptz,is_all_day boolean,created_by_profile_id uuid,completed_by_profile_id uuid,completed_at timestamptz,created_at timestamptz,updated_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp as $$ begin
- if not exists(select 1 from public.current_area_activity_role(p_area_id)) then raise exception 'permission denied'; end if;
- return query select a.id,a.title,a.notes,a.activity_type,a.status,a.priority,a.starts_at,a.due_at,a.is_all_day,a.created_by_profile_id,a.completed_by_profile_id,a.completed_at,a.created_at,a.updated_at from public.area_activities a where a.id=p_activity_id and a.area_id=p_area_id; if not found then raise exception 'AttivitÃ  non trovata'; end if; end; $$;
-create or replace function public.create_area_activity(p_area_id uuid,p_title text,p_notes text,p_activity_type text,p_priority text,p_starts_at timestamptz,p_due_at timestamptz,p_is_all_day boolean,p_assignee_profile_ids uuid[] default '{}')
-returns uuid language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid; v_role text; v_id uuid; v_ids uuid[]:=coalesce(p_assignee_profile_ids,'{}'); begin
- select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
- if btrim(coalesce(p_title,''))='' or p_activity_type not in ('task','reminder','deadline','appointment') or p_priority not in ('low','normal','high') or (p_starts_at is not null and p_due_at is not null and p_due_at<p_starts_at) then raise exception 'Dati attivitÃ  non validi'; end if;
- if v_role='member' and exists(select 1 from unnest(v_ids) x where x is distinct from v_profile) then raise exception 'permission denied'; end if;
- if exists(select 1 from unnest(v_ids) x left join public.area_memberships am on am.area_id=p_area_id and am.profile_id=x where am.profile_id is null) then raise exception 'Assegnatario non appartenente all''Area'; end if;
- insert into public.area_activities(area_id,title,notes,activity_type,priority,starts_at,due_at,is_all_day,created_by_profile_id) values(p_area_id,btrim(p_title),p_notes,p_activity_type,p_priority,p_starts_at,p_due_at,coalesce(p_is_all_day,false),v_profile) returning id into v_id;
- insert into public.activity_assignees(activity_id,area_id,profile_id,assigned_by_profile_id) select v_id,p_area_id,x,v_profile from (select distinct unnest(v_ids) x) s; return v_id; end; $$;
-create or replace function public.update_area_activity(p_area_id uuid,p_activity_id uuid,p_title text,p_notes text,p_activity_type text,p_priority text,p_starts_at timestamptz,p_due_at timestamptz,p_is_all_day boolean)
-returns void language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid;v_role text;v_creator uuid; begin
- select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
- select created_by_profile_id into v_creator from public.area_activities where id=p_activity_id and area_id=p_area_id; if not found then raise exception 'AttivitÃ  non trovata'; end if;
- if v_role<>'admin' and v_creator is distinct from v_profile then raise exception 'permission denied'; end if;
- if btrim(coalesce(p_title,''))='' or p_activity_type not in ('task','reminder','deadline','appointment') or p_priority not in ('low','normal','high') or (p_starts_at is not null and p_due_at is not null and p_due_at<p_starts_at) then raise exception 'Dati attivitÃ  non validi'; end if;
- update public.area_activities set title=btrim(p_title),notes=p_notes,activity_type=p_activity_type,priority=p_priority,starts_at=p_starts_at,due_at=p_due_at,is_all_day=coalesce(p_is_all_day,false) where id=p_activity_id and area_id=p_area_id; end; $$;
-create or replace function public.set_area_activity_assignees(p_area_id uuid,p_activity_id uuid,p_assignee_profile_ids uuid[])
-returns void language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid;v_role text;v_ids uuid[]:=coalesce(p_assignee_profile_ids,'{}'); begin
- select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_role<>'admin' then raise exception 'permission denied'; end if;
- if not exists(select 1 from public.area_activities where id=p_activity_id and area_id=p_area_id) then raise exception 'AttivitÃ  non trovata'; end if;
- if exists(select 1 from unnest(v_ids) x left join public.area_memberships am on am.area_id=p_area_id and am.profile_id=x where am.profile_id is null) then raise exception 'Assegnatario non appartenente all''Area'; end if;
- delete from public.activity_assignees where activity_id=p_activity_id and area_id=p_area_id; insert into public.activity_assignees(activity_id,area_id,profile_id,assigned_by_profile_id) select p_activity_id,p_area_id,x,v_profile from(select distinct unnest(v_ids) x)s; end; $$;
-create or replace function public.set_area_activity_status(p_area_id uuid,p_activity_id uuid,p_status text)
-returns void language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid;v_role text;begin
- select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null or p_status not in ('open','completed','cancelled') then raise exception 'permission denied'; end if;
- if not exists(select 1 from public.area_activities where id=p_activity_id and area_id=p_area_id) then raise exception 'AttivitÃ  non trovata'; end if;
- if v_role<>'admin' and (p_status<>'completed' or (exists(select 1 from public.activity_assignees where activity_id=p_activity_id) and not exists(select 1 from public.activity_assignees where activity_id=p_activity_id and profile_id=v_profile))) then raise exception 'permission denied'; end if;
- update public.area_activities set status=p_status,completed_at=case when p_status='completed' then now() else null end,completed_by_profile_id=case when p_status='completed' then v_profile else null end where id=p_activity_id and area_id=p_area_id; end; $$;
-create or replace function public.delete_area_activity(p_area_id uuid,p_activity_id uuid)
-returns void language plpgsql security definer set search_path = public, pg_temp as $$ declare v_profile uuid;v_role text;v_creator uuid;v_status text;begin
- select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
- select created_by_profile_id,status into v_creator,v_status from public.area_activities where id=p_activity_id and area_id=p_area_id; if not found then raise exception 'AttivitÃ  non trovata'; end if;
- if v_role<>'admin' and (v_creator is distinct from v_profile or v_status<>'open') then raise exception 'permission denied'; end if; delete from public.area_activities where id=p_activity_id and area_id=p_area_id; end; $$;
+-- Le firme cambiate vengono eliminate esplicitamente: nessun overload RPC.
+drop function if exists public.get_area_activities(uuid,text,text,boolean,timestamptz,timestamptz);
+drop function if exists public.get_area_activity(uuid,uuid);
+drop function if exists public.create_area_activity(uuid,text,text,text,text,timestamptz,timestamptz,boolean,uuid[]);
+drop function if exists public.update_area_activity(uuid,uuid,text,text,text,text,timestamptz,timestamptz,boolean);
+drop function if exists public.set_area_activity_assignees(uuid,uuid,uuid[]);
+drop function if exists public.set_area_activity_status(uuid,uuid,text);
+drop function if exists public.delete_area_activity(uuid,uuid);
 
-revoke all on function public.current_area_activity_role(uuid),public.set_area_activity_updated_at(),public.get_area_activities(uuid,text,text,boolean,timestamptz,timestamptz),public.get_area_activity(uuid,uuid),public.create_area_activity(uuid,text,text,text,text,timestamptz,timestamptz,boolean,uuid[]),public.update_area_activity(uuid,uuid,text,text,text,text,timestamptz,timestamptz,boolean),public.set_area_activity_assignees(uuid,uuid,uuid[]),public.set_area_activity_status(uuid,uuid,text),public.delete_area_activity(uuid,uuid) from public;
-grant execute on function public.get_area_activities(uuid,text,text,boolean,timestamptz,timestamptz),public.get_area_activity(uuid,uuid),public.create_area_activity(uuid,text,text,text,text,timestamptz,timestamptz,boolean,uuid[]),public.update_area_activity(uuid,uuid,text,text,text,text,timestamptz,timestamptz,boolean),public.set_area_activity_assignees(uuid,uuid,uuid[]),public.set_area_activity_status(uuid,uuid,text),public.delete_area_activity(uuid,uuid) to authenticated;
+create function public.get_area_activities(p_area_id uuid,p_status text default null,p_activity_type text default null,p_assigned_to_me boolean default false,p_due_from timestamptz default null,p_due_to timestamptz default null)
+returns table(id uuid,title text,notes text,activity_type text,status text,priority text,starts_at timestamptz,due_at timestamptz,is_all_day boolean,created_by_profile_id uuid,completed_by_profile_id uuid,completed_at timestamptz,created_at timestamptz,updated_at timestamptz)
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid;
+begin
+  select profile_id into v_profile from public.current_area_activity_role(p_area_id);
+  if v_profile is null then raise exception 'permission denied'; end if;
+  return query select a.id,a.title,a.notes,a.activity_type,a.status,a.priority,a.starts_at,a.due_at,a.is_all_day,a.created_by_profile_id,a.completed_by_profile_id,a.completed_at,a.created_at,a.updated_at
+  from public.area_activities a
+  where a.area_id=p_area_id
+    and (p_status is null or a.status=p_status) and (p_activity_type is null or a.activity_type=p_activity_type)
+    and (p_due_from is null or a.due_at>=p_due_from) and (p_due_to is null or a.due_at<=p_due_to)
+    and (a.visibility='area' or a.created_by_profile_id=v_profile or (a.visibility='creator_assignees' and exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id and aa.profile_id=v_profile)))
+    and (not p_assigned_to_me or exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id and aa.profile_id=v_profile) or not exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id))
+  order by a.due_at nulls last,a.created_at desc;
+end; $$;
 
--- =============================================================================
+create function public.get_area_activity(p_area_id uuid,p_activity_id uuid)
+returns table(id uuid,title text,notes text,activity_type text,status text,priority text,visibility text,assignee_profile_ids uuid[],starts_at timestamptz,due_at timestamptz,is_all_day boolean,created_by_profile_id uuid,completed_by_profile_id uuid,completed_at timestamptz,created_at timestamptz,updated_at timestamptz)
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid;
+begin
+  select profile_id into v_profile from public.current_area_activity_role(p_area_id);
+  if v_profile is null then raise exception 'permission denied'; end if;
+  return query select a.id,a.title,a.notes,a.activity_type,a.status,a.priority,a.visibility,array(select aa.profile_id from public.activity_assignees aa where aa.activity_id=a.id order by aa.assigned_at,aa.profile_id),a.starts_at,a.due_at,a.is_all_day,a.created_by_profile_id,a.completed_by_profile_id,a.completed_at,a.created_at,a.updated_at
+  from public.area_activities a where a.id=p_activity_id and a.area_id=p_area_id
+    and (a.visibility='area' or a.created_by_profile_id=v_profile or (a.visibility='creator_assignees' and exists(select 1 from public.activity_assignees aa where aa.activity_id=a.id and aa.profile_id=v_profile)));
+  if not found then raise exception 'Attivita non trovata o non accessibile'; end if;
+end; $$;
+
+create function public.create_area_activity(p_area_id uuid,p_title text,p_notes text,p_activity_type text,p_priority text,p_starts_at timestamptz,p_due_at timestamptz,p_is_all_day boolean,p_assignee_profile_ids uuid[],p_visibility text)
+returns uuid language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid; v_role text; v_id uuid; v_ids uuid[]:=coalesce(p_assignee_profile_ids,'{}');
+begin
+  select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id);
+  if v_profile is null then raise exception 'permission denied'; end if;
+  if btrim(coalesce(p_title,''))='' or p_activity_type not in ('task','reminder','deadline','appointment') or p_priority not in ('low','normal','high') or p_visibility not in ('private','creator_assignees','area') or (p_starts_at is not null and p_due_at is not null and p_due_at<p_starts_at) then raise exception 'Dati attivita non validi'; end if;
+  if (p_visibility='private' and cardinality(v_ids)>0) or (p_visibility='creator_assignees' and cardinality(v_ids)=0) then raise exception 'Visibilita e assegnatari non coerenti'; end if;
+  if v_role='member' and exists(select 1 from unnest(v_ids) x where x is distinct from v_profile) then raise exception 'permission denied'; end if;
+  if exists(select 1 from unnest(v_ids) x left join public.area_memberships am on am.area_id=p_area_id and am.profile_id=x where am.profile_id is null) then raise exception 'Assegnatario non appartenente all''Area'; end if;
+  insert into public.area_activities(area_id,title,notes,activity_type,priority,visibility,starts_at,due_at,is_all_day,created_by_profile_id) values(p_area_id,btrim(p_title),p_notes,p_activity_type,p_priority,p_visibility,p_starts_at,p_due_at,coalesce(p_is_all_day,false),v_profile) returning id into v_id;
+  insert into public.activity_assignees(activity_id,area_id,profile_id,assigned_by_profile_id) select v_id,p_area_id,x,v_profile from(select distinct unnest(v_ids) x)s;
+  return v_id;
+end; $$;
+
+create function public.update_area_activity(p_area_id uuid,p_activity_id uuid,p_title text,p_notes text,p_activity_type text,p_priority text,p_starts_at timestamptz,p_due_at timestamptz,p_is_all_day boolean,p_visibility text)
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid; v_role text; v_creator uuid; v_current_visibility text;
+begin
+  select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
+  select created_by_profile_id,visibility into v_creator,v_current_visibility from public.area_activities where id=p_activity_id and area_id=p_area_id; if not found then raise exception 'Attivita non trovata'; end if;
+  if v_creator is distinct from v_profile and not (v_current_visibility='area' and p_visibility='area' and v_role='admin') then raise exception 'permission denied'; end if;
+  if btrim(coalesce(p_title,''))='' or p_activity_type not in ('task','reminder','deadline','appointment') or p_priority not in ('low','normal','high') or p_visibility not in ('private','creator_assignees','area') or (p_starts_at is not null and p_due_at is not null and p_due_at<p_starts_at) then raise exception 'Dati attivita non validi'; end if;
+  if (p_visibility='private' and exists(select 1 from public.activity_assignees where activity_id=p_activity_id)) or (p_visibility='creator_assignees' and not exists(select 1 from public.activity_assignees where activity_id=p_activity_id)) then raise exception 'Visibilita e assegnatari non coerenti'; end if;
+  update public.area_activities set title=btrim(p_title),notes=p_notes,activity_type=p_activity_type,priority=p_priority,visibility=p_visibility,starts_at=p_starts_at,due_at=p_due_at,is_all_day=coalesce(p_is_all_day,false) where id=p_activity_id and area_id=p_area_id;
+end; $$;
+
+create function public.set_area_activity_assignees(p_area_id uuid,p_activity_id uuid,p_assignee_profile_ids uuid[],p_visibility text)
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid; v_role text; v_creator uuid; v_current_visibility text; v_ids uuid[]:=coalesce(p_assignee_profile_ids,'{}');
+begin
+  select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
+  select created_by_profile_id,visibility into v_creator,v_current_visibility from public.area_activities where id=p_activity_id and area_id=p_area_id for update; if not found then raise exception 'Attivita non trovata'; end if;
+  if v_creator is distinct from v_profile and not (v_current_visibility='area' and p_visibility='area' and v_role='admin') then raise exception 'permission denied'; end if;
+  if p_visibility not in ('private','creator_assignees','area') or (p_visibility='private' and cardinality(v_ids)>0) or (p_visibility='creator_assignees' and cardinality(v_ids)=0) then raise exception 'Visibilita e assegnatari non coerenti'; end if;
+  if v_role='member' and exists(select 1 from unnest(v_ids) x where x is distinct from v_profile) then raise exception 'permission denied'; end if;
+  if exists(select 1 from unnest(v_ids) x left join public.area_memberships am on am.area_id=p_area_id and am.profile_id=x where am.profile_id is null) then raise exception 'Assegnatario non appartenente all''Area'; end if;
+  delete from public.activity_assignees where activity_id=p_activity_id and area_id=p_area_id;
+  insert into public.activity_assignees(activity_id,area_id,profile_id,assigned_by_profile_id) select p_activity_id,p_area_id,x,v_profile from(select distinct unnest(v_ids)x)s;
+  update public.area_activities set visibility=p_visibility where id=p_activity_id and area_id=p_area_id;
+end; $$;
+
+create function public.set_area_activity_status(p_area_id uuid,p_activity_id uuid,p_status text)
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid; v_role text; v_creator uuid; v_visibility text;
+begin
+  select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null or p_status not in ('open','completed','cancelled') then raise exception 'permission denied'; end if;
+  select created_by_profile_id,visibility into v_creator,v_visibility from public.area_activities where id=p_activity_id and area_id=p_area_id; if not found then raise exception 'Attivita non trovata'; end if;
+  if v_visibility='private' and v_creator is distinct from v_profile then raise exception 'permission denied'; end if;
+  if v_visibility='creator_assignees' and (p_status<>'completed' or (v_creator is distinct from v_profile and not exists(select 1 from public.activity_assignees where activity_id=p_activity_id and profile_id=v_profile))) then raise exception 'permission denied'; end if;
+  if v_visibility='area' and v_role<>'admin' and (p_status<>'completed' or (exists(select 1 from public.activity_assignees where activity_id=p_activity_id) and not exists(select 1 from public.activity_assignees where activity_id=p_activity_id and profile_id=v_profile))) then raise exception 'permission denied'; end if;
+  update public.area_activities set status=p_status,completed_at=case when p_status='completed' then now() else null end,completed_by_profile_id=case when p_status='completed' then v_profile else null end where id=p_activity_id and area_id=p_area_id;
+end; $$;
+
+create function public.delete_area_activity(p_area_id uuid,p_activity_id uuid)
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_profile uuid; v_role text; v_creator uuid; v_status text; v_visibility text;
+begin
+  select profile_id,role into v_profile,v_role from public.current_area_activity_role(p_area_id); if v_profile is null then raise exception 'permission denied'; end if;
+  select created_by_profile_id,status,visibility into v_creator,v_status,v_visibility from public.area_activities where id=p_activity_id and area_id=p_area_id; if not found then raise exception 'Attivita non trovata'; end if;
+  if (v_visibility<>'area' and v_creator is distinct from v_profile) or (v_visibility='area' and v_role<>'admin' and (v_creator is distinct from v_profile or v_status<>'open')) then raise exception 'permission denied'; end if;
+  delete from public.area_activities where id=p_activity_id and area_id=p_area_id;
+end; $$;
+
+revoke all on function public.get_area_activities(uuid,text,text,boolean,timestamptz,timestamptz),public.get_area_activity(uuid,uuid),public.create_area_activity(uuid,text,text,text,text,timestamptz,timestamptz,boolean,uuid[],text),public.update_area_activity(uuid,uuid,text,text,text,text,timestamptz,timestamptz,boolean,text),public.set_area_activity_assignees(uuid,uuid,uuid[],text),public.set_area_activity_status(uuid,uuid,text),public.delete_area_activity(uuid,uuid) from public;
+grant execute on function public.get_area_activities(uuid,text,text,boolean,timestamptz,timestamptz),public.get_area_activity(uuid,uuid),public.create_area_activity(uuid,text,text,text,text,timestamptz,timestamptz,boolean,uuid[],text),public.update_area_activity(uuid,uuid,text,text,text,text,timestamptz,timestamptz,boolean,text),public.set_area_activity_assignees(uuid,uuid,uuid[],text),public.set_area_activity_status(uuid,uuid,text),public.delete_area_activity(uuid,uuid) to authenticated;
+
+revoke all on public.area_activities,public.activity_assignees from public,authenticated;
+
+
+
 -- 6. GRANT / REVOKE a livello di tabella
 -- =============================================================================
 -- Nessun INSERT/DELETE/UPDATE diretto per "authenticated": tutte le scritture
@@ -729,5 +791,5 @@ create policy area_memberships_select_own_area
 
 -- profile_contacts ------------------------------------------------------
 -- confermato sul remoto: RLS abilitata, nessuna policy presente -> nessun
--- accesso da "authenticated" finché non verrà introdotta una RPC dedicata a
+-- accesso da "authenticated" finchÃ© non verrÃ  introdotta una RPC dedicata a
 -- leggere/scrivere i contatti.

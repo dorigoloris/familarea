@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attività - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page-card">
+    <p><a id="back-link" href="#">Torna all'Area</a></p>
+    <h1 id="activity-title">Attività</h1>
+    <p id="message" aria-live="polite">Caricamento...</p>
+
+    <section id="activity-view" hidden>
+      <dl>
+        <dt>Tipo</dt><dd id="activity-type"></dd>
+        <dt>Priorità</dt><dd id="activity-priority"></dd>
+        <dt>Stato</dt><dd id="activity-status"></dd>
+        <dt>Visibilità</dt><dd id="activity-visibility"></dd>
+        <dt>Data / scadenza</dt><dd id="activity-due"></dd>
+        <dt>Assegnatari</dt><dd id="activity-assignees"></dd>
+        <dt>Note</dt><dd id="activity-notes"></dd>
+      </dl>
+      <p id="activity-actions" hidden>
+        <button type="button" id="edit-button">Modifica</button>
+        <button type="button" id="delete-button">Elimina attività</button>
+      </p>
+    </section>
+
+    <form id="edit-form" hidden>
+      <h2>Modifica attività</h2>
+      <div><label for="edit-title">Titolo</label><input id="edit-title" type="text" required></div>
+      <br>
+      <div><label for="edit-type">Tipo</label><select id="edit-type"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></div>
+      <br>
+      <div><label for="edit-priority">Priorità</label><select id="edit-priority"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></div>
+      <br>
+      <div><label for="edit-notes">Note</label><textarea id="edit-notes"></textarea></div>
+      <br>
+      <div><label for="edit-due-at">Scadenza / data e ora</label><input id="edit-due-at" type="datetime-local"></div>
+      <br>
+      <fieldset><legend>Assegnatari</legend><div id="edit-assignees"></div></fieldset>
+      <br>
+      <fieldset><legend>Visibilità</legend>
+        <p id="visibility-help"></p>
+        <label><input type="radio" name="visibility" value="creator_assignees"> Solo tu e gli assegnatari</label>
+        <label><input type="radio" name="visibility" value="private"> Solo tu</label>
+        <label><input type="radio" name="visibility" value="area"> Tutti i membri dell'Area</label>
+      </fieldset>
+      <br>
+      <button type="submit">Salva modifiche</button>
+      <button type="button" id="cancel-button">Annulla</button>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="attivita.js"></script>
+</body>
+</html>
