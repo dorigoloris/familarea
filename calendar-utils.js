@@ -5,8 +5,13 @@
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  function placementDate(activity) {
-    return toValidDate(activity.starts_at) || toValidDate(activity.due_at);
+  function itemType(item) {
+    return item.event_id ? 'event' : 'activity';
+  }
+
+  function placementDate(item) {
+    if (itemType(item) === 'event') return toValidDate(item.starts_at);
+    return toValidDate(item.starts_at) || toValidDate(item.due_at);
   }
 
   function sameLocalDay(left, right) {
@@ -15,35 +20,49 @@
       && left.getDate() === right.getDate();
   }
 
-  function activityLink(activity) {
-    return `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}`;
+  function itemLink(item) {
+    if (itemType(item) === 'event') {
+      return `evento.html?area_id=${encodeURIComponent(item.area_id)}&event_id=${encodeURIComponent(item.event_id)}`;
+    }
+    return `attivita.html?area_id=${encodeURIComponent(item.area_id)}&activity_id=${encodeURIComponent(item.activity_id)}`;
   }
 
-  function formatTime(activity) {
-    const date = placementDate(activity);
-    if (activity.is_all_day || !date) return '';
-    return new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(date);
+  function formatTime(item) {
+    const start = placementDate(item);
+    if (item.is_all_day || !start) return '';
+    const formatter = new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' });
+    if (itemType(item) !== 'event') return formatter.format(start);
+    const end = toValidDate(item.ends_at);
+    return end ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
   }
 
-  function createCalendarActivity(activity) {
+  function createCalendarItem(item) {
+    const type = itemType(item);
     const link = document.createElement('a');
-    link.className = `calendar-activity ${activity.status === 'completed' ? 'calendar-activity-completed' : ''}`;
-    link.href = activityLink(activity);
-    link.title = `${activity.title} — ${activity.area_name}`;
+    link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}`;
+    link.href = itemLink(item);
+    link.title = `${item.title} — ${item.area_name}`;
 
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
-    title.textContent = activity.title;
+    title.textContent = item.title;
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
-    area.textContent = activity.area_name;
+    area.textContent = item.area_name;
     link.append(title, area);
 
-    const time = formatTime(activity);
-    if (time || activity.status === 'completed') {
+    if (type === 'event') {
+      const badge = document.createElement('span');
+      badge.className = 'calendar-item-kind';
+      badge.textContent = 'Evento';
+      link.appendChild(badge);
+    }
+
+    const time = formatTime(item);
+    if (time || item.status === 'completed') {
       const details = document.createElement('span');
       details.className = 'calendar-activity-details';
-      details.textContent = [time, activity.status === 'completed' ? 'Completata' : ''].filter(Boolean).join(' · ');
+      details.textContent = [time, item.status === 'completed' ? 'Completata' : ''].filter(Boolean).join(' · ');
       link.appendChild(details);
     }
     return link;
@@ -57,7 +76,7 @@
     const leadingDays = (firstDay.getDay() + 6) % 7;
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const today = new Date();
-    const calendarActivities = Array.isArray(activities) ? activities : [];
+    const calendarItems = Array.isArray(activities) ? activities : [];
     const cells = document.createDocumentFragment();
 
     for (let index = 0; index < leadingDays; index += 1) {
@@ -68,44 +87,43 @@
     }
 
     for (let day = 1; day <= daysInMonth; day += 1) {
-      const cellDate = new Date(year, monthIndex, day);
       const cell = document.createElement('article');
       cell.className = 'calendar-day';
-      if (sameLocalDay(cellDate, today)) cell.classList.add('calendar-day-today');
+      if (sameLocalDay(new Date(year, monthIndex, day), today)) cell.classList.add('calendar-day-today');
 
       const number = document.createElement('h3');
       number.className = 'calendar-day-number';
       number.textContent = String(day);
       cell.appendChild(number);
 
-      const dayActivities = calendarActivities
-        .filter((activity) => {
-          const date = placementDate(activity);
+      const dayItems = calendarItems
+        .filter((item) => {
+          const date = placementDate(item);
           return date && date.getFullYear() === year && date.getMonth() === monthIndex && date.getDate() === day;
         })
         .sort((first, second) => placementDate(first) - placementDate(second));
-      const shownActivities = dayActivities.slice(0, 2);
-      shownActivities.forEach((activity) => cell.appendChild(createCalendarActivity(activity)));
+      const shownItems = dayItems.slice(0, 2);
+      shownItems.forEach((item) => cell.appendChild(createCalendarItem(item)));
 
-      if (dayActivities.length > shownActivities.length) {
+      if (dayItems.length > shownItems.length) {
         const extraId = `calendar-extra-${gridElement.id}-${year}-${monthIndex}-${day}`;
         const extra = document.createElement('div');
         extra.id = extraId;
         extra.className = 'calendar-day-extra';
         extra.hidden = true;
-        dayActivities.slice(2).forEach((activity) => extra.appendChild(createCalendarActivity(activity)));
+        dayItems.slice(2).forEach((item) => extra.appendChild(createCalendarItem(item)));
 
         const toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'calendar-more-button';
-        toggle.textContent = `+${dayActivities.length - shownActivities.length} altre`;
+        toggle.textContent = `+${dayItems.length - shownItems.length} altre`;
         toggle.setAttribute('aria-expanded', 'false');
         toggle.setAttribute('aria-controls', extraId);
         toggle.addEventListener('click', () => {
           const expanded = toggle.getAttribute('aria-expanded') === 'true';
           extra.hidden = expanded;
           toggle.setAttribute('aria-expanded', String(!expanded));
-          toggle.textContent = expanded ? `+${dayActivities.length - shownActivities.length} altre` : 'Mostra meno';
+          toggle.textContent = expanded ? `+${dayItems.length - shownItems.length} altre` : 'Mostra meno';
         });
         cell.append(toggle, extra);
       }
@@ -120,9 +138,8 @@
       blank.setAttribute('aria-hidden', 'true');
       cells.appendChild(blank);
     }
-
     gridElement.replaceChildren(cells);
   }
 
-  global.FamilAreaCalendarUtils = { activityLink, placementDate, renderMonthCalendar, toValidDate };
+  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, toValidDate };
 }(window));

@@ -12,7 +12,7 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <h1 id="area-name">Area FamilArea</h1>
+  <div class="area-heading"><h1 id="area-name">Area FamilArea</h1><a id="edit-area-link" class="btn" href="#" hidden>Modifica Area</a></div>
 
   <p id="message">Caricamento...</p>
 
@@ -29,10 +29,17 @@
     <p><a id="new-activity-link" href="#">+ Nuova attivit&agrave;</a></p>
   </section>
 
+  <section>
+    <h2>Eventi e appuntamenti</h2>
+    <p><a id="events-link" href="#">Vedi eventi e appuntamenti</a></p>
+  </section>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
+  <script src="navigation.js"></script>
   <script src="area.js"></script>
+  <script src="area-edit-link.js"></script>
 
 </body>
 </html>

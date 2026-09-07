@@ -156,9 +156,18 @@ editForm.addEventListener('submit', async (event) => {
 });
 
 deleteButton.addEventListener('click', async () => {
-  if (!window.confirm('Vuoi eliminare definitivamente questa attività?')) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Vuoi eliminare questa attività?',
+    message: 'L’attività verrà eliminata definitivamente dall’Area.',
+    warning: 'Questa azione non può essere annullata.',
+    confirmText: 'Elimina attività'
+  });
+  if (!confirmed) return;
+  deleteButton.disabled = true;
   message.textContent = 'Eliminazione in corso...';
   const { error } = await supabaseClient.rpc('delete_area_activity', { p_area_id: areaId, p_activity_id: activityId });
+  deleteButton.disabled = false;
   if (error) { message.textContent = friendlyError(error, 'Impossibile eliminare l’attività.'); return; }
   window.location.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
 });

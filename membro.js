@@ -7,6 +7,7 @@ const lastNameElement = document.getElementById('member-last-name');
 const birthDateElement = document.getElementById('member-birth-date');
 const roleElement = document.getElementById('member-role');
 const backToAreaLink = document.getElementById('back-to-area-link');
+const backToMembersLink = document.getElementById('back-to-members-link');
 
 const viewMode = document.getElementById('view-mode');
 const editButton = document.getElementById('edit-button');
@@ -15,6 +16,8 @@ const cancelButton = document.getElementById('cancel-button');
 const editFirstNameInput = document.getElementById('edit-first-name');
 const editLastNameInput = document.getElementById('edit-last-name');
 const editBirthDateInput = document.getElementById('edit-birth-date');
+const removeMemberActions = document.getElementById('remove-member-actions');
+const removeMemberButton = document.getElementById('remove-member-button');
 
 const contactsSection = document.getElementById('contacts-section');
 const contactsMessage = document.getElementById('contacts-message');
@@ -33,6 +36,7 @@ const contactCancelButton = document.getElementById('contact-cancel-button');
 let currentAreaId = null;
 let currentProfileId = null;
 let currentProfile = null;
+let currentAreaName = 'questa Area';
 let editingContact = null;
 
 function renderProfile(profile, roleLabel) {
@@ -50,6 +54,54 @@ function roleToLabel(role) {
   if (role === 'member') return 'Membro';
   if (role === 'managed') return 'Profilo gestito';
   return role;
+}
+
+function memberDisplayName() {
+  const name = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim();
+  return name || 'questa persona';
+}
+
+function removeMemberErrorMessage(error) {
+  const text = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+
+  if (text.includes('ultimo amministratore')) return "Non puoi rimuovere l'ultimo amministratore dell'Area.";
+  if (text.includes('creatore di attività') || text.includes('creatore di attivita')) return "Non puoi rimuovere questa persona perché ha creato attività nell'Area.";
+  if (text.includes('creatore di eventi')) return "Non puoi rimuovere questa persona perché ha creato eventi nell'Area.";
+  if (text.includes('ultimo assegnatario di attività selettiva') || text.includes('ultimo assegnatario di attivita selettiva')) return "Prima assegna l'attività a un'altra persona oppure modifica la sua visibilità.";
+  if (text.includes('ultimo partecipante di evento selettivo')) return "Prima aggiungi un altro partecipante oppure modifica la visibilità dell'evento.";
+  if (text.includes('non autorizzato') || text.includes('permission denied')) return 'Non sei autorizzato a rimuovere membri da questa Area.';
+  if (text.includes('membership del membro non trovata')) return 'Questa persona non fa più parte dell’Area.';
+  return 'Non è stato possibile rimuovere la persona dall’Area. Riprova.';
+}
+
+async function removeMemberFromArea() {
+  const name = memberDisplayName();
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: `Vuoi rimuovere ${name} da ${currentAreaName}?`,
+    message: 'La persona non farà più parte di questa Area. Il suo profilo globale non verrà eliminato.',
+    warning: 'Questa azione rimuoverà la membership e i dati associati a questa Area, come contatti, assegnazioni e partecipazioni, se presenti.',
+    confirmText: 'Rimuovi'
+  });
+  if (!confirmed) return;
+
+  removeMemberButton.disabled = true;
+  removeMemberButton.textContent = 'Rimozione in corso...';
+  message.textContent = '';
+
+  const { error } = await supabaseClient.rpc('remove_area_member', {
+    p_area_id: currentAreaId,
+    p_profile_id: currentProfileId
+  });
+
+  if (error) {
+    message.textContent = removeMemberErrorMessage(error);
+    removeMemberButton.disabled = false;
+    removeMemberButton.textContent = "Rimuovi dall'Area";
+    return;
+  }
+
+  window.location.href = `area.html?area_id=${encodeURIComponent(currentAreaId)}#members-list`;
 }
 
 function showEditForm() {
@@ -246,6 +298,7 @@ async function loadMember() {
   currentProfileId = profileId;
 
   backToAreaLink.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
+  backToMembersLink.href = `area.html?area_id=${encodeURIComponent(areaId)}#members-list`;
 
   // la RLS su area_memberships consente di leggere solo le membership della propria Area
   const { data: membership, error: membershipError } = await supabaseClient
@@ -272,6 +325,14 @@ async function loadMember() {
     return;
   }
 
+  const { data: area } = await supabaseClient
+    .from('areas')
+    .select('name')
+    .eq('id', areaId)
+    .single();
+
+  if (area?.name) currentAreaName = area.name;
+
   currentProfile = profile;
   renderProfile(profile, roleToLabel(membership.role));
 
@@ -293,6 +354,8 @@ async function loadMember() {
 
     if (ownMembership && ownMembership.role === 'admin') {
       editButton.hidden = false;
+      removeMemberActions.hidden = false;
+      removeMemberButton.hidden = false;
       contactsSection.hidden = false;
       await loadContacts();
     }
@@ -304,6 +367,8 @@ async function loadMember() {
 editButton.addEventListener('click', () => {
   showEditForm();
 });
+
+removeMemberButton.addEventListener('click', removeMemberFromArea);
 
 cancelButton.addEventListener('click', () => {
   showViewMode();

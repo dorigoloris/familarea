@@ -1,6 +1,5 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const calendarUtils = window.FamilAreaCalendarUtils;
-
 const message = document.getElementById('message');
 const areasList = document.getElementById('areas-list');
 const dashboardMessage = document.getElementById('dashboard-message');
@@ -11,17 +10,15 @@ const dashboardPreviousMonthButton = document.getElementById('dashboard-previous
 const dashboardNextMonthButton = document.getElementById('dashboard-next-month');
 const dashboardTodayButton = document.getElementById('dashboard-today');
 const headerUserName = document.getElementById('header-user-name');
-
-const activitySections = {
+const sections = {
   today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
   upcoming: { list: document.getElementById('upcoming-list'), empty: document.getElementById('upcoming-empty') },
   todo: { list: document.getElementById('todo-list'), empty: document.getElementById('todo-empty') }
 };
-
-const activityTypeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' };
+const typeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' };
 const priorityLabels = { low: 'Bassa', normal: 'Normale', high: 'Alta' };
 const statusLabels = { open: 'Aperta', completed: 'Completata', cancelled: 'Cancellata' };
-let dashboardCalendarActivities = [];
+let dashboardCalendarItems = [];
 let dashboardDisplayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function getTodayBounds() {
@@ -32,40 +29,42 @@ function getTodayBounds() {
   return { start, end };
 }
 
-function datesFor(activity) {
-  return [activity.due_at, activity.starts_at].map(calendarUtils.toValidDate).filter(Boolean);
-}
+function isEvent(item) { return calendarUtils.itemType(item) === 'event'; }
+function datesForActivity(activity) { return [activity.due_at, activity.starts_at].map(calendarUtils.toValidDate).filter(Boolean); }
+function datesForItem(item) { return isEvent(item) ? [calendarUtils.toValidDate(item.starts_at)].filter(Boolean) : datesForActivity(item); }
+function fallsOnToday(item, start, end) { return datesForItem(item).some((date) => date >= start && date < end); }
+function upcomingTime(item, end) { return datesForItem(item).filter((date) => date >= end).sort((a, b) => a - b)[0] || null; }
+function itemId(item) { return item.event_id || item.activity_id; }
 
-function fallsOnToday(activity, start, end) {
-  return datesFor(activity).some((date) => date >= start && date < end);
-}
-
-function upcomingTime(activity, end) {
-  return datesFor(activity).filter((date) => date >= end).sort((first, second) => first - second)[0] || null;
-}
-
-function compareActivities(first, second, dateForActivity) {
-  const firstDate = dateForActivity(first);
-  const secondDate = dateForActivity(second);
+function compareItems(first, second, dateForItem) {
+  const firstDate = dateForItem(first);
+  const secondDate = dateForItem(second);
   if (firstDate && secondDate && firstDate.getTime() !== secondDate.getTime()) return firstDate - secondDate;
   if (firstDate) return -1;
   if (secondDate) return 1;
   const createdDifference = new Date(first.created_at) - new Date(second.created_at);
   if (createdDifference !== 0) return createdDifference;
-  return String(first.activity_id).localeCompare(String(second.activity_id));
+  return String(itemId(first)).localeCompare(String(itemId(second)));
 }
 
 function formatActivityDate(activity) {
-  const formatter = new Intl.DateTimeFormat('it-IT', {
-    dateStyle: 'medium',
-    ...(activity.is_all_day ? {} : { timeStyle: 'short' })
-  });
+  const formatter = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', ...(activity.is_all_day ? {} : { timeStyle: 'short' }) });
   const dates = [];
   const startsAt = calendarUtils.toValidDate(activity.starts_at);
   const dueAt = calendarUtils.toValidDate(activity.due_at);
   if (startsAt) dates.push(`Inizio: ${formatter.format(startsAt)}`);
   if (dueAt) dates.push(`Scadenza: ${formatter.format(dueAt)}`);
   return dates.join(' · ');
+}
+
+function formatEventDate(event) {
+  const start = calendarUtils.toValidDate(event.starts_at);
+  if (!start) return '';
+  const dateFormatter = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' });
+  if (event.is_all_day) return dateFormatter.format(start);
+  const timeFormatter = new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' });
+  const end = calendarUtils.toValidDate(event.ends_at);
+  return `${dateFormatter.format(start)}, ${timeFormatter.format(start)}${end ? ` – ${timeFormatter.format(end)}` : ''}`;
 }
 
 function createBadge(text, className) {
@@ -78,53 +77,37 @@ function createBadge(text, className) {
 function createActivityCard(activity) {
   const card = document.createElement('article');
   card.className = 'activity-card';
-
-  const title = document.createElement('h3');
-  title.className = 'activity-card-title';
-  title.textContent = activity.title;
-
-  const area = document.createElement('p');
-  area.className = 'activity-card-area';
-  area.textContent = activity.area_name;
-
-  const meta = document.createElement('div');
-  meta.className = 'activity-card-meta';
-  meta.appendChild(createBadge(activityTypeLabels[activity.activity_type] || activity.activity_type, 'activity-type-badge'));
-  meta.appendChild(createBadge(`Priorità: ${priorityLabels[activity.priority] || activity.priority}`, `activity-priority-badge activity-priority-${activity.priority}`));
-  meta.appendChild(createBadge(`Stato: ${statusLabels[activity.status] || activity.status}`, `activity-status-badge activity-status-${activity.status}`));
-
-  const dateText = formatActivityDate(activity);
-  const date = document.createElement('p');
-  date.className = 'activity-card-due';
-  date.textContent = dateText;
-  date.hidden = !dateText;
-
-  const link = document.createElement('a');
-  link.className = 'btn activity-open-link';
-  link.textContent = 'Apri';
-  link.href = `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}`;
-
-  card.appendChild(title);
-  card.appendChild(area);
-  card.appendChild(meta);
-  card.appendChild(date);
-  card.appendChild(link);
+  const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = activity.title;
+  const area = document.createElement('p'); area.className = 'activity-card-area'; area.textContent = activity.area_name;
+  const meta = document.createElement('div'); meta.className = 'activity-card-meta';
+  meta.append(createBadge(typeLabels[activity.activity_type] || activity.activity_type, 'activity-type-badge'), createBadge(`Priorità: ${priorityLabels[activity.priority] || activity.priority}`, `activity-priority-badge activity-priority-${activity.priority}`), createBadge(`Stato: ${statusLabels[activity.status] || activity.status}`, `activity-status-badge activity-status-${activity.status}`));
+  const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = formatActivityDate(activity); date.hidden = !date.textContent;
+  const link = document.createElement('a'); link.className = 'btn activity-open-link'; link.textContent = 'Apri'; link.href = calendarUtils.itemLink(activity);
+  card.append(title, area, meta, date, link);
   return card;
 }
 
-function renderActivities(section, activities, displayLimit) {
+function createEventCard(event) {
+  const card = document.createElement('article');
+  card.className = 'activity-card dashboard-event-card';
+  const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = event.title;
+  const area = document.createElement('p'); area.className = 'activity-card-area'; area.textContent = event.area_name;
+  const meta = document.createElement('div'); meta.className = 'activity-card-meta'; meta.appendChild(createBadge('Evento', 'event-badge'));
+  const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = formatEventDate(event);
+  const location = document.createElement('p'); location.className = 'activity-card-location'; location.textContent = event.location ? `Luogo: ${event.location}` : ''; location.hidden = !event.location;
+  const link = document.createElement('a'); link.className = 'btn activity-open-link'; link.textContent = 'Apri'; link.href = calendarUtils.itemLink(event);
+  card.append(title, area, meta, date, location, link);
+  return card;
+}
+
+function renderItems(section, items, limit) {
   section.list.replaceChildren();
-  section.empty.hidden = activities.length > 0;
-  activities.slice(0, displayLimit).forEach((activity) => section.list.appendChild(createActivityCard(activity)));
+  section.empty.hidden = items.length > 0;
+  items.slice(0, limit).forEach((item) => section.list.appendChild(isEvent(item) ? createEventCard(item) : createActivityCard(item)));
 }
 
 function renderDashboardCalendar() {
-  calendarUtils.renderMonthCalendar({
-    month: dashboardDisplayedMonth,
-    titleElement: dashboardMonthTitle,
-    gridElement: dashboardCalendarGrid,
-    activities: dashboardCalendarActivities
-  });
+  calendarUtils.renderMonthCalendar({ month: dashboardDisplayedMonth, titleElement: dashboardMonthTitle, gridElement: dashboardCalendarGrid, activities: dashboardCalendarItems });
 }
 
 function changeDashboardMonth(offset) {
@@ -138,112 +121,64 @@ function showCurrentMonth() {
   renderDashboardCalendar();
 }
 
-async function loadDashboardActivities() {
-  try {
-    const { data: activities, error } = await supabaseClient.rpc('get_my_visible_activities');
-    if (error) throw error;
+function resultData(result) { return result.status === 'fulfilled' && !result.value.error ? result.value.data || [] : []; }
+function failed(result) { return result.status === 'rejected' || (result.status === 'fulfilled' && result.value.error); }
 
-    const visibleActivities = activities || [];
-    const { start, end } = getTodayBounds();
-    const activeActivities = visibleActivities.filter((activity) => activity.status !== 'cancelled');
-    dashboardCalendarActivities = activeActivities;
-    renderDashboardCalendar();
-    const today = activeActivities
-      .filter((activity) => fallsOnToday(activity, start, end))
-      .sort((first, second) => compareActivities(first, second, (activity) => {
-        return datesFor(activity).filter((date) => date >= start && date < end).sort((a, b) => a - b)[0] || null;
-      }));
-    const upcoming = activeActivities
-      .filter((activity) => upcomingTime(activity, end))
-      .sort((first, second) => compareActivities(first, second, (activity) => upcomingTime(activity, end)))
-      .slice(0, 10);
-    const todo = visibleActivities
-      .filter((activity) => activity.status === 'open')
-      .sort((first, second) => compareActivities(first, second, (activity) => calendarUtils.toValidDate(activity.due_at) || calendarUtils.toValidDate(activity.starts_at)));
+async function loadDashboardTimeline() {
+  const [activityResult, eventResult] = await Promise.allSettled([supabaseClient.rpc('get_my_visible_activities'), supabaseClient.rpc('get_my_visible_events')]);
+  const visibleActivities = resultData(activityResult);
+  const visibleEvents = resultData(eventResult);
+  const activities = visibleActivities.filter((activity) => activity.status !== 'cancelled');
+  const events = visibleEvents.filter((event) => event.status !== 'cancelled');
+  const { start, end } = getTodayBounds();
 
-    renderActivities(activitySections.today, today, 5);
-    renderActivities(activitySections.upcoming, upcoming, 5);
-    renderActivities(activitySections.todo, todo, 5);
-  } catch (error) {
-    console.error('Errore nel caricamento delle attività della Dashboard:', error);
-    dashboardMessage.textContent = 'Non è stato possibile caricare le attività. Riprova più tardi.';
+  dashboardCalendarItems = [...activities, ...events];
+  renderDashboardCalendar();
+  const today = [...activities.filter((activity) => fallsOnToday(activity, start, end)), ...events.filter((event) => fallsOnToday(event, start, end))]
+    .sort((a, b) => compareItems(a, b, (item) => datesForItem(item).filter((date) => date >= start && date < end).sort((x, y) => x - y)[0] || null));
+  const upcoming = [...activities.filter((activity) => upcomingTime(activity, end)), ...events.filter((event) => upcomingTime(event, end))]
+    .sort((a, b) => compareItems(a, b, (item) => upcomingTime(item, end)));
+  const todo = visibleActivities.filter((activity) => activity.status === 'open')
+    .sort((a, b) => compareItems(a, b, (activity) => calendarUtils.toValidDate(activity.due_at) || calendarUtils.toValidDate(activity.starts_at)));
+  renderItems(sections.today, today, 5);
+  renderItems(sections.upcoming, upcoming, 5);
+  renderItems(sections.todo, todo, 5);
+
+  if (failed(activityResult) && failed(eventResult)) {
+    dashboardMessage.textContent = 'Non è stato possibile caricare impegni ed eventi. Riprova più tardi.';
     dashboardCalendarSection.hidden = true;
-  }
+  } else if (failed(activityResult)) dashboardMessage.textContent = 'Le attività non sono disponibili al momento; gli eventi visibili sono mostrati.';
+  else if (failed(eventResult)) dashboardMessage.textContent = 'Gli eventi non sono disponibili al momento; le attività visibili sono mostrate.';
+  else dashboardMessage.textContent = '';
 }
 
 async function loadMyAreas(userId) {
-  const { data: profile, error: profileError } = await supabaseClient
-    .from('profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .single();
-
-  if (profileError) {
-    message.textContent = `Errore profilo: ${profileError.message}`;
-    return;
-  }
-
-  const { data: memberships, error: membershipsError } = await supabaseClient
-    .from('area_memberships')
-    .select(`
-      role,
-      area_id,
-      areas (id, name, area_type)
-    `)
-    .eq('profile_id', profile.id);
-
-  if (membershipsError) {
-    message.textContent = `Errore Aree: ${membershipsError.message}`;
-    return;
-  }
-
+  const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('id').eq('user_id', userId).single();
+  if (profileError) { message.textContent = `Errore profilo: ${profileError.message}`; return; }
+  const { data: memberships, error: membershipsError } = await supabaseClient.from('area_memberships').select('role,area_id,areas (id, name, area_type)').eq('profile_id', profile.id);
+  if (membershipsError) { message.textContent = `Errore Aree: ${membershipsError.message}`; return; }
   areasList.replaceChildren();
-  if (!memberships || memberships.length === 0) {
-    message.textContent = 'Non hai ancora nessuna Area.';
-    return;
-  }
-
+  if (!memberships?.length) { message.textContent = 'Non hai ancora nessuna Area.'; return; }
   memberships.forEach((membership) => {
     const area = membership.areas;
     if (!area) return;
-    const container = document.createElement('article');
-    container.className = 'area-card';
-    const icon = document.createElement('span');
-    icon.className = 'area-card-icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = '⌂';
-    const title = document.createElement('h3');
-    title.textContent = area.name;
-    const info = document.createElement('p');
-    const roleLabels = { admin: 'Amministratore', member: 'Membro', managed: 'Profilo gestito' };
-    info.textContent = `${area.area_type} — ${roleLabels[membership.role] || membership.role}`;
-    const link = document.createElement('a');
-    link.className = 'btn';
-    link.textContent = 'Apri Area';
-    link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
-    container.appendChild(icon);
-    container.appendChild(title);
-    container.appendChild(info);
-    container.appendChild(link);
-    areasList.appendChild(container);
+    const card = document.createElement('article'); card.className = 'area-card';
+    const icon = document.createElement('span'); icon.className = 'area-card-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '⌂';
+    const title = document.createElement('h3'); title.textContent = area.name;
+    const info = document.createElement('p'); info.textContent = `${area.area_type} — ${{ admin: 'Amministratore', member: 'Membro', managed: 'Profilo gestito' }[membership.role] || membership.role}`;
+    const link = document.createElement('a'); link.className = 'btn'; link.textContent = 'Apri Area'; link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
+    card.append(icon, title, info, link); areasList.appendChild(card);
   });
-
   message.textContent = '';
 }
 
 async function initialiseDashboard() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
-  if (!sessionData.session) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!sessionData.session) { window.location.href = 'login.html'; return; }
   const user = sessionData.session.user;
   const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
-  if (userName) {
-    headerUserName.textContent = userName;
-    headerUserName.hidden = false;
-  }
-  await Promise.all([loadDashboardActivities(), loadMyAreas(sessionData.session.user.id)]);
+  if (userName) { headerUserName.textContent = userName; headerUserName.hidden = false; }
+  await Promise.all([loadDashboardTimeline(), loadMyAreas(user.id)]);
 }
 
 dashboardPreviousMonthButton.addEventListener('click', () => changeDashboardMonth(-1));

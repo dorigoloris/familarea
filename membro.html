@@ -33,6 +33,11 @@
 
     <button type="button" id="edit-button" hidden>Modifica</button>
 
+    <div id="remove-member-actions" class="member-danger-zone" hidden>
+      <p>La persona verrà rimossa soltanto da questa Area. Il suo profilo globale non verrà eliminato.</p>
+      <button type="button" id="remove-member-button" class="danger-button" hidden>Rimuovi dall'Area</button>
+    </div>
+
     <section id="contacts-section" hidden>
       <h2>Contatti</h2>
       <p id="contacts-message" aria-live="polite"></p>
@@ -92,11 +97,13 @@
     <button type="button" id="cancel-button">Annulla</button>
   </form>
 
-  <p><a id="back-to-area-link" href="#">Torna all'Area</a></p>
+  <p><a id="back-to-area-link" href="#">Torna all'Area</a> · <a id="back-to-members-link" href="#">Torna ai membri</a></p>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
   <script src="membro.js"></script>
 
 </body>
