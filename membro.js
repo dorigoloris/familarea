@@ -357,7 +357,7 @@ async function loadMember() {
     if (ownMembership && ownMembership.role === 'admin') {
       removeMemberActions.hidden = false;
       removeMemberButton.hidden = false;
-      if (!isPersonalContactParticipant) {
+      if (participant.role === 'managed' && !isPersonalContactParticipant) {
         setEditButtonVisibility(true);
         contactsSection.hidden = false;
         await loadContacts();

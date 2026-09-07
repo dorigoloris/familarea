@@ -443,6 +443,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
 begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
@@ -451,6 +452,11 @@ begin
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then
+    raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente';
   end if;
 end;
 $$;
@@ -473,6 +479,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
 begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
@@ -481,6 +488,11 @@ begin
   end if;
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
+  end if;
+
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then
+    raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente';
   end if;
 
   return query
@@ -505,6 +517,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
   v_contact_type text := lower(btrim(p_contact_type));
   v_contact_value text;
   v_is_primary boolean;
@@ -519,6 +532,8 @@ begin
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
   end if;
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente'; end if;
   if v_contact_type is null or v_contact_type not in ('email', 'phone') then raise exception 'Tipo di contatto non valido'; end if;
 
   v_contact_value := case when v_contact_type = 'email' then lower(btrim(p_contact_value)) else btrim(p_contact_value) end;
@@ -556,6 +571,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
   v_contact_type text;
   v_contact_value text;
 begin
@@ -567,6 +583,8 @@ begin
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
   end if;
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente'; end if;
   perform 1 from public.profiles where id = p_profile_id for update;
   select contact_type into v_contact_type from public.profile_contacts
   where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
@@ -593,6 +611,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
   v_contact_type text;
 begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
@@ -603,6 +622,8 @@ begin
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
   end if;
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente'; end if;
   perform 1 from public.profiles where id = p_profile_id for update;
   select contact_type into v_contact_type from public.profile_contacts
   where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
@@ -625,6 +646,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_caller_profile_id uuid;
+  v_target_user_id uuid;
   v_contact_type text;
   v_was_primary boolean;
   v_replacement_id uuid;
@@ -637,6 +659,8 @@ begin
   if not exists (select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id) then
     raise exception 'permission denied: il profilo indicato non appartiene a questa Area';
   end if;
+  select user_id into v_target_user_id from public.profiles where id = p_profile_id;
+  if v_target_user_id is not null then raise exception 'Impossibile gestire recapiti di un profilo collegato a un account utente'; end if;
   perform 1 from public.profiles where id = p_profile_id for update;
   select contact_type, is_primary into v_contact_type, v_was_primary from public.profile_contacts
   where id = p_contact_id and area_id = p_area_id and profile_id = p_profile_id;
@@ -1584,20 +1608,36 @@ create or replace function public.update_area_member(
   p_area_id uuid, p_profile_id uuid, p_first_name text, p_last_name text, p_birth_date date
 )
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
-declare v_caller_profile_id uuid;
+declare
+  v_caller_profile_id uuid;
+  v_target_user_id uuid;
 begin
   select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
   if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+
+  perform 1 from public.areas where id = p_area_id for update;
+  if not found then raise exception 'Area non trovata'; end if;
+
   if not exists (
     select 1 from public.area_memberships
     where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin'
   ) then raise exception 'permission denied: solo un admin dell''Area puo'' modificare i partecipanti'; end if;
-  if not exists (
-    select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id
-  ) then raise exception 'permission denied: il profilo indicato non appartiene a questa Area'; end if;
+
+  select p.user_id into v_target_user_id
+  from public.area_memberships am
+  join public.profiles p on p.id = am.profile_id
+  where am.area_id = p_area_id and am.profile_id = p_profile_id
+  for update of am, p;
+  if not found then raise exception 'permission denied: il profilo indicato non appartiene a questa Area'; end if;
+
   if exists (
     select 1 from public.contact_participant_profiles where profile_id = p_profile_id
   ) then raise exception 'Impossibile modificare questo partecipante: i dati provengono da un Contatto personale'; end if;
+
+  if v_target_user_id is not null then
+    raise exception 'Impossibile modificare un profilo collegato a un account utente';
+  end if;
+
   if btrim(coalesce(p_first_name, '')) = '' then raise exception 'Il nome e'' obbligatorio'; end if;
   update public.profiles
   set first_name = btrim(p_first_name),
@@ -2629,8 +2669,7 @@ begin
   insert into public.area_memberships(area_id, profile_id, role)
   values (v_area_id, v_caller_profile_id, 'member');
 
-  update public.profile_contacts
-  set profile_id = v_caller_profile_id
+  delete from public.profile_contacts
   where area_id = v_area_id and profile_id = v_target_profile_id;
 
   update public.area_activities
