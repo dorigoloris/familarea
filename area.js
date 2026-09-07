@@ -10,6 +10,11 @@ const activitiesList = document.getElementById('activities-list');
 const newActivityLink = document.getElementById('new-activity-link');
 const eventsLink = document.getElementById('events-link');
 const newEventLink = document.getElementById('new-event-link');
+const listsSection = document.getElementById('lists-section');
+const listsMessage = document.getElementById('lists-message');
+const listsPreview = document.getElementById('lists-preview');
+const listsLink = document.getElementById('lists-link');
+const newListLink = document.getElementById('new-list-link');
 
 const typeLabel = (value) => ({ task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' })[value] || 'Attività';
 const priorityLabel = (value) => ({ low: 'Bassa', normal: 'Normale', high: 'Alta' })[value] || 'Normale';
@@ -68,6 +73,36 @@ async function loadActivities(areaId) {
   activitiesMessage.textContent = '';
 }
 
+async function loadLists(areaId) {
+  listsSection.hidden = false;
+  listsMessage.textContent = 'Caricamento liste...';
+  const { data, error } = await supabaseClient.rpc('get_area_lists', { p_area_id: areaId });
+  if (error) {
+    listsMessage.textContent = 'Impossibile caricare le liste visibili.';
+    return;
+  }
+  listsPreview.replaceChildren();
+  if (!data?.length) {
+    const item = document.createElement('li');
+    item.textContent = 'Nessuna lista visibile in questa Area.';
+    listsPreview.appendChild(item);
+  } else {
+    data.slice(0, 3).forEach((list) => {
+      const item = document.createElement('li');
+      const title = document.createElement('strong');
+      const open = document.createElement('a');
+      title.textContent = list.title;
+      open.className = 'btn member-open-link';
+      open.textContent = 'Apri';
+      open.href = `lista.html?area_id=${encodeURIComponent(areaId)}&list_id=${encodeURIComponent(list.id)}`;
+      item.className = 'member-list-item';
+      item.append(title, open);
+      listsPreview.appendChild(item);
+    });
+  }
+  listsMessage.textContent = '';
+}
+
 function renderMembers(participants, areaId) {
   membersList.replaceChildren();
   participants.forEach((participant) => {
@@ -104,6 +139,8 @@ async function loadArea() {
   if (newEventLink) {
     newEventLink.href = `nuovo-evento.html?area_id=${encodeURIComponent(areaId)}`;
   }
+  listsLink.href = `liste.html?area_id=${encodeURIComponent(areaId)}`;
+  newListLink.href = `nuova-lista.html?area_id=${encodeURIComponent(areaId)}`;
 
   const { data: area, error: areaError } = await supabaseClient
     .from('areas')
@@ -127,6 +164,7 @@ async function loadArea() {
   renderMembers(participants, areaId);
   message.textContent = 'Area caricata correttamente.';
   await loadActivities(areaId);
+  await loadLists(areaId);
 }
 
 loadArea();

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card lists-page">
+    <p id="back-link-container"><a id="back-link" href="#">Torna all'Area</a></p>
+    <div class="section-heading">
+      <div><p class="section-kicker" id="area-name">Area</p><h1>Liste</h1></div>
+      <a id="new-list-link" class="btn" href="#">Nuova lista</a>
+    </div>
+    <p id="message" aria-live="polite">Caricamento liste...</p>
+    <div id="lists-list" class="lists-list"></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="liste.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuova lista - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card list-editor-page">
+    <p><a id="back-link" href="#">Torna alle liste</a></p>
+    <h1>Nuova lista</h1>
+    <p id="message" aria-live="polite">Caricamento...</p>
+    <form id="list-form" hidden>
+      <div><label for="title">Titolo *</label><input id="title" required></div>
+      <div><label for="description">Descrizione</label><textarea id="description"></textarea></div>
+      <fieldset>
+        <legend>Visibilità</legend>
+        <label><input type="radio" name="visibility" value="area" checked> Tutti i partecipanti dell'Area</label>
+        <label><input type="radio" name="visibility" value="private"> Solo io</label>
+        <label><input type="radio" name="visibility" value="creator_participants"> Io + partecipanti selezionati</label>
+      </fieldset>
+      <fieldset id="participants-fieldset" hidden>
+        <legend>Partecipanti selezionati</legend>
+        <p id="participants-help">Seleziona almeno un partecipante.</p>
+        <div id="participants" class="participant-checklist"></div>
+      </fieldset>
+      <div class="form-actions">
+        <button id="save-button" type="submit">Crea lista</button>
+        <a id="cancel-link" class="btn secondary-button" href="#">Annulla</a>
+      </div>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="nuova-lista.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card list-detail-page">
+    <p><a id="back-link" href="#">Torna alle liste</a></p>
+    <p id="message" aria-live="polite">Caricamento lista...</p>
+    <section id="list-view" hidden>
+      <div class="section-heading">
+        <div><p class="section-kicker" id="area-name">Area</p><h1 id="list-title">Lista</h1></div>
+        <div id="list-actions" class="contact-actions" hidden>
+          <button id="edit-list-button" type="button">Modifica lista</button>
+          <button id="delete-list-button" type="button" class="member-remove-button">Elimina lista</button>
+        </div>
+      </div>
+      <p id="list-description" class="list-description" hidden></p>
+      <p id="list-visibility" class="list-visibility"></p>
+      <form id="add-item-form" class="list-add-item-form">
+        <label for="item-text">Aggiungi un elemento</label>
+        <div class="list-add-item-controls"><input id="item-text" required><button id="add-item-button" type="submit">Aggiungi</button></div>
+      </form>
+      <h2>Elementi</h2>
+      <ul id="items-list" class="list-items"></ul>
+    </section>
+    <form id="edit-list-form" hidden>
+      <h1>Modifica lista</h1>
+      <div><label for="edit-title">Titolo *</label><input id="edit-title" required></div>
+      <div><label for="edit-description">Descrizione</label><textarea id="edit-description"></textarea></div>
+      <fieldset>
+        <legend>Visibilità</legend>
+        <label><input type="radio" name="edit-visibility" value="area"> Tutti i partecipanti dell'Area</label>
+        <label><input type="radio" name="edit-visibility" value="private"> Solo io</label>
+        <label><input type="radio" name="edit-visibility" value="creator_participants"> Io + partecipanti selezionati</label>
+      </fieldset>
+      <fieldset id="edit-participants-fieldset">
+        <legend>Partecipanti selezionati</legend>
+        <p id="edit-participants-help"></p>
+        <div id="edit-participants" class="participant-checklist"></div>
+      </fieldset>
+      <div class="form-actions"><button id="save-list-button" type="submit">Salva modifiche</button><button id="cancel-edit-button" type="button" class="secondary-button">Annulla</button></div>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="lista.js"></script>
+</body>
+</html>
