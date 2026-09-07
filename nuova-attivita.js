@@ -39,7 +39,7 @@ async function load() {
   if (!ownProfile) { message.textContent = 'Impossibile preparare la nuova attivitÃ .'; return; }
   ownProfileId = ownProfile.id;
   const { data: memberships, error } = await supabaseClient.from('area_memberships').select('profile_id, role, profiles(first_name,last_name)').eq('area_id', areaId);
-  if (error || !memberships) { message.textContent = 'Impossibile caricare i membri.'; return; }
+  if (error || !memberships) { message.textContent = 'Impossibile caricare i partecipanti.'; return; }
   const ownMembership = memberships.find((membership) => membership.profile_id === ownProfileId);
   if (!ownMembership || ownMembership.role === 'managed') { message.textContent = 'Non sei autorizzato a creare attivitÃ  in questa Area.'; return; }
   isAdmin = ownMembership.role === 'admin';

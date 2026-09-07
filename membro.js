@@ -42,7 +42,7 @@ let editingContact = null;
 function renderProfile(profile, roleLabel) {
   const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
 
-  memberNameElement.textContent = fullName || 'Scheda membro';
+  memberNameElement.textContent = fullName || 'Scheda partecipante';
   firstNameElement.textContent = profile.first_name || '';
   lastNameElement.textContent = profile.last_name || '';
   birthDateElement.textContent = profile.birth_date || 'Non indicata';
@@ -51,7 +51,7 @@ function renderProfile(profile, roleLabel) {
 
 function roleToLabel(role) {
   if (role === 'admin') return 'Amministratore';
-  if (role === 'member') return 'Membro';
+  if (role === 'member') return 'Partecipante';
   if (role === 'managed') return 'Profilo gestito';
   return role;
 }
@@ -69,7 +69,7 @@ function removeMemberErrorMessage(error) {
   if (text.includes('creatore di eventi')) return "Non puoi rimuovere questa persona perché ha creato eventi nell'Area.";
   if (text.includes('ultimo assegnatario di attività selettiva') || text.includes('ultimo assegnatario di attivita selettiva')) return "Prima assegna l'attività a un'altra persona oppure modifica la sua visibilità.";
   if (text.includes('ultimo partecipante di evento selettivo')) return "Prima aggiungi un altro partecipante oppure modifica la visibilità dell'evento.";
-  if (text.includes('non autorizzato') || text.includes('permission denied')) return 'Non sei autorizzato a rimuovere membri da questa Area.';
+  if (text.includes('non autorizzato') || text.includes('permission denied')) return 'Non sei autorizzato a rimuovere partecipanti da questa Area.';
   if (text.includes('membership del membro non trovata')) return 'Questa persona non fa più parte dell’Area.';
   return 'Non è stato possibile rimuovere la persona dall’Area. Riprova.';
 }
@@ -78,9 +78,10 @@ async function removeMemberFromArea() {
   const name = memberDisplayName();
   const confirmed = await FamilAreaConfirm.confirm({
     variant: 'danger',
+    appearance: 'standard',
     title: `Vuoi rimuovere ${name} da ${currentAreaName}?`,
     message: 'La persona non farà più parte di questa Area. Il suo profilo globale non verrà eliminato.',
-    warning: 'Questa azione rimuoverà la membership e i dati associati a questa Area, come contatti, assegnazioni e partecipazioni, se presenti.',
+    warning: '',
     confirmText: 'Rimuovi'
   });
   if (!confirmed) return;
@@ -133,6 +134,7 @@ function clearContactForm() {
 function showContactForm(contactType, contact = null) {
   editingContact = contact;
   const isEmail = contactType === 'email';
+  const triggerButton = isEmail ? addEmailButton : addPhoneButton;
 
   contactFormTitle.textContent = contact ? `Modifica ${isEmail ? 'email' : 'cellulare'}` : `Aggiungi ${isEmail ? 'email' : 'cellulare'}`;
   contactEmailField.hidden = !isEmail;
@@ -141,6 +143,7 @@ function showContactForm(contactType, contact = null) {
   contactPhoneInput.required = !isEmail;
   contactEmailInput.value = isEmail && contact ? contact.contact_value : '';
   contactPhoneInput.value = !isEmail && contact ? contact.contact_value.replace(/^\+39/, '') : '';
+  triggerButton.insertAdjacentElement('afterend', contactForm);
   contactForm.hidden = false;
 }
 
@@ -224,14 +227,14 @@ function renderContacts(contacts) {
 }
 
 async function loadContacts() {
-  showContactsMessage('Caricamento contatti...');
+  showContactsMessage('Caricamento email e cellulari...');
   const { data, error } = await supabaseClient.rpc('get_area_member_contacts', {
     p_area_id: currentAreaId,
     p_profile_id: currentProfileId
   });
 
   if (error) {
-    showContactsMessage('Impossibile caricare i contatti.');
+    showContactsMessage('Impossibile caricare email e cellulari.');
     return;
   }
 
@@ -290,7 +293,7 @@ async function loadMember() {
   const profileId = params.get('profile_id');
 
   if (!areaId || !profileId) {
-    message.textContent = 'Scheda membro non disponibile.';
+    message.textContent = 'Scheda partecipante non disponibile.';
     return;
   }
 
@@ -309,7 +312,7 @@ async function loadMember() {
     .single();
 
   if (membershipError || !membership) {
-    message.textContent = 'Impossibile caricare la scheda membro.';
+    message.textContent = 'Impossibile caricare la scheda partecipante.';
     return;
   }
 
@@ -321,7 +324,7 @@ async function loadMember() {
     .single();
 
   if (profileError || !profile) {
-    message.textContent = 'Impossibile caricare la scheda membro.';
+    message.textContent = 'Impossibile caricare la scheda partecipante.';
     return;
   }
 

@@ -13,7 +13,7 @@
     <p id="logout-message" aria-live="polite"></p>
   </header>
   <div class="dashboard-shell">
-    <nav class="dashboard-sidebar" aria-label="Navigazione principale">
+    <nav class="dashboard-sidebar" aria-label="Navigazione principale" hidden>
       <a class="sidebar-link is-active" href="mie-aree.html" aria-current="page"><span aria-hidden="true">⌂</span> Dashboard</a>
       <a class="sidebar-link" href="#areas-title"><span aria-hidden="true">▦</span> Le mie Aree</a>
       <a class="sidebar-link" href="calendario.html"><span aria-hidden="true">□</span> Calendario</a>
@@ -37,6 +37,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
+  <script src="navigation.js"></script>
   <script src="calendar-utils.js"></script>
   <script src="mie-aree.js"></script>
 </body>

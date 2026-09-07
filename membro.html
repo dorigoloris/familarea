@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scheda membro - FamilArea</title>
+  <title>Scheda partecipante - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
 
@@ -12,7 +12,7 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <h1 id="member-name">Scheda membro</h1>
+  <h1 id="member-name">Scheda partecipante</h1>
 
   <p id="message">Caricamento...</p>
 
@@ -31,15 +31,16 @@
       <dd id="member-role"></dd>
     </dl>
 
-    <button type="button" id="edit-button" hidden>Modifica</button>
+    <div class="member-actions">
+      <button type="button" id="edit-button" hidden>Modifica</button>
+      <button type="button" id="remove-member-button" class="member-remove-button" hidden>Rimuovi dall'Area</button>
+    </div>
 
-    <div id="remove-member-actions" class="member-danger-zone" hidden>
+    <div id="remove-member-actions" class="member-remove-note" hidden>
       <p>La persona verrà rimossa soltanto da questa Area. Il suo profilo globale non verrà eliminato.</p>
-      <button type="button" id="remove-member-button" class="danger-button" hidden>Rimuovi dall'Area</button>
     </div>
 
     <section id="contacts-section" hidden>
-      <h2>Contatti</h2>
       <p id="contacts-message" aria-live="polite"></p>
 
       <h3>Email</h3>
@@ -97,7 +98,7 @@
     <button type="button" id="cancel-button">Annulla</button>
   </form>
 
-  <p><a id="back-to-area-link" href="#">Torna all'Area</a> · <a id="back-to-members-link" href="#">Torna ai membri</a></p>
+  <p><a id="back-to-area-link" href="#">Torna all'Area</a> · <a id="back-to-members-link" href="#">Torna ai partecipanti</a></p>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>

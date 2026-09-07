@@ -13,6 +13,7 @@
 
     const settings = {
       variant: 'standard',
+      appearance: null,
       title: 'Conferma azione',
       message: '',
       warning: '',
@@ -20,8 +21,9 @@
       confirmText: 'Conferma',
       ...options
     };
+    const appearance = settings.appearance || settings.variant;
     const previousFocus = document.activeElement;
-    const overlay = createElement('div', `confirm-modal-overlay confirm-modal-${settings.variant}`);
+    const overlay = createElement('div', `confirm-modal-overlay confirm-modal-${appearance}`);
     const dialog = createElement('section', 'confirm-modal');
     const title = createElement('h2', 'confirm-modal-title', settings.title);
     const message = createElement('p', 'confirm-modal-message', settings.message);
@@ -47,7 +49,7 @@
     cancelButton.type = 'button';
     confirmButton.type = 'button';
 
-    if (settings.variant === 'danger') {
+    if (appearance === 'danger') {
       const indicator = createElement('span', 'confirm-modal-danger-icon', '!');
       indicator.setAttribute('aria-hidden', 'true');
       dialog.appendChild(indicator);

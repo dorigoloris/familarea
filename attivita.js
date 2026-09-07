@@ -22,7 +22,7 @@ const labels = {
   type: { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' },
   priority: { low: 'Bassa', normal: 'Normale', high: 'Alta' },
   status: { open: 'Aperta', completed: 'Completata', cancelled: 'Annullata' },
-  visibility: { private: 'Solo tu', creator_assignees: 'Solo tu e gli assegnatari', area: 'Tutti i membri dell’Area' }
+  visibility: { private: 'Solo tu', creator_assignees: 'Solo tu e gli assegnatari', area: 'Tutti i partecipanti dell’Area' }
 };
 
 function label(group, value) { return labels[group][value] || value; }
@@ -45,7 +45,7 @@ function canDelete() {
 function memberName(profileId) {
   const membership = memberships.find((item) => item.profile_id === profileId);
   const profile = membership?.profiles;
-  return `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Membro dell’Area';
+  return `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Partecipante dell’Area';
 }
 
 function renderActivity() {

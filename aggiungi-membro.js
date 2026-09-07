@@ -26,7 +26,7 @@ form.addEventListener('submit', async (event) => {
   const birthDate = document.getElementById('birth-date').value || null;
   const role = document.getElementById('role').value;
 
-  message.textContent = 'Aggiunta membro in corso...';
+  message.textContent = 'Aggiunta partecipante in corso...';
 
   const { data, error } = await supabaseClient.rpc('add_area_member', {
     p_area_id: areaId,
@@ -41,7 +41,7 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
-  message.textContent = 'Membro aggiunto correttamente.';
+  message.textContent = 'Partecipante aggiunto correttamente.';
   form.reset();
 
   window.location.href = `area.html?area_id=${encodeURIComponent(areaId)}`;

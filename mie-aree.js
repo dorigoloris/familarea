@@ -165,7 +165,7 @@ async function loadMyAreas(userId) {
     const card = document.createElement('article'); card.className = 'area-card';
     const icon = document.createElement('span'); icon.className = 'area-card-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '⌂';
     const title = document.createElement('h3'); title.textContent = area.name;
-    const info = document.createElement('p'); info.textContent = `${area.area_type} — ${{ admin: 'Amministratore', member: 'Membro', managed: 'Profilo gestito' }[membership.role] || membership.role}`;
+    const info = document.createElement('p'); info.textContent = `${area.area_type} — ${{ admin: 'Amministratore', member: 'Partecipante', managed: 'Profilo gestito' }[membership.role] || membership.role}`;
     const link = document.createElement('a'); link.className = 'btn'; link.textContent = 'Apri Area'; link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
     card.append(icon, title, info, link); areasList.appendChild(card);
   });
