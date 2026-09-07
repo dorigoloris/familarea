@@ -9,6 +9,7 @@ const activitiesMessage = document.getElementById('activities-message');
 const activitiesList = document.getElementById('activities-list');
 const newActivityLink = document.getElementById('new-activity-link');
 const eventsLink = document.getElementById('events-link');
+const newEventLink = document.getElementById('new-event-link');
 
 const typeLabel = (value) => ({ task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' })[value] || 'Attività';
 const priorityLabel = (value) => ({ low: 'Bassa', normal: 'Normale', high: 'Alta' })[value] || 'Normale';
@@ -100,6 +101,9 @@ async function loadArea() {
   addMemberLink.href = `aggiungi-membro.html?area_id=${encodeURIComponent(areaId)}`;
   newActivityLink.href = `nuova-attivita.html?area_id=${encodeURIComponent(areaId)}`;
   eventsLink.href = `eventi.html?area_id=${encodeURIComponent(areaId)}`;
+  if (newEventLink) {
+    newEventLink.href = `nuovo-evento.html?area_id=${encodeURIComponent(areaId)}`;
+  }
 
   const { data: area, error: areaError } = await supabaseClient
     .from('areas')
