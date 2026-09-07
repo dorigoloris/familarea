@@ -24,9 +24,19 @@
         <input id="last-name" type="text" autocomplete="family-name">
       </div>
       <div>
+        <label for="email">Email</label><br>
+        <input id="email" type="email" autocomplete="email">
+      </div>
+      <div>
+        <label for="phone">Cellulare</label><br>
+        <input id="phone" type="tel" inputmode="tel" autocomplete="tel">
+      </div>
+      <div>
         <label for="birth-date">Data di nascita</label><br>
         <input id="birth-date" type="date">
       </div>
+      <p id="partial-save-message" hidden aria-live="polite"></p>
+      <p><a id="open-contact-link" hidden>Apri la scheda del contatto</a></p>
       <div class="form-actions">
         <button id="save-button" type="submit">Crea contatto</button>
         <a class="btn secondary-button" href="contatti.html">Annulla</a>

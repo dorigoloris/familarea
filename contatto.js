@@ -31,6 +31,10 @@ function methodsOf(type) {
   return (contact?.methods || []).filter((method) => method.type === type);
 }
 
+function primaryMethodOf(type) {
+  return methodsOf(type).find((method) => method.is_primary) || null;
+}
+
 function showMessage(text) {
   message.textContent = text;
 }
@@ -198,19 +202,49 @@ document.getElementById('method-cancel-button').addEventListener('click', hideMe
 addEmailButton.addEventListener('click', () => showMethodForm('email'));
 addPhoneButton.addEventListener('click', () => showMethodForm('phone'));
 
-document.getElementById('edit-button').addEventListener('click', () => {
+function showEditForm() {
+  const primaryEmail = primaryMethodOf('email');
+  const primaryPhone = primaryMethodOf('phone');
   document.getElementById('edit-first-name').value = contact.first_name || '';
   document.getElementById('edit-last-name').value = contact.last_name || '';
+  document.getElementById('edit-email').value = primaryEmail?.value || '';
+  document.getElementById('edit-phone').value = primaryPhone?.value || '';
   document.getElementById('edit-birth-date').value = contact.birth_date || '';
   hideMethodForm();
   view.hidden = true;
   editForm.hidden = false;
+}
+
+document.getElementById('edit-button').addEventListener('click', () => {
+  showEditForm();
 });
 
 document.getElementById('edit-cancel-button').addEventListener('click', () => {
   editForm.hidden = true;
   view.hidden = false;
 });
+
+async function savePrimaryMethod(type, value, currentPrimary) {
+  if (!value && currentPrimary) {
+    return supabaseClient.rpc('delete_my_contact_method', { p_method_id: currentPrimary.id });
+  }
+  if (value && currentPrimary) {
+    return supabaseClient.rpc('update_my_contact_method', {
+      p_method_id: currentPrimary.id,
+      p_type: type,
+      p_value: value
+    });
+  }
+  if (value) {
+    return supabaseClient.rpc('add_my_contact_method', {
+      p_contact_id: contactId,
+      p_type: type,
+      p_value: value,
+      p_is_primary: true
+    });
+  }
+  return { error: null };
+}
 
 editForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -221,6 +255,8 @@ editForm.addEventListener('submit', async (event) => {
   }
   editSaveButton.disabled = true;
   showMessage('Salvataggio in corso...');
+  const primaryEmail = primaryMethodOf('email');
+  const primaryPhone = primaryMethodOf('phone');
   const { error } = await supabaseClient.rpc('update_my_contact', {
     p_contact_id: contactId,
     p_first_name: firstName,
@@ -232,8 +268,19 @@ editForm.addEventListener('submit', async (event) => {
     showMessage('Impossibile salvare il contatto.');
     return;
   }
-  editForm.hidden = true;
+
+  const updates = [
+    { label: 'email', result: await savePrimaryMethod('email', document.getElementById('edit-email').value.trim(), primaryEmail) },
+    { label: 'cellulare', result: await savePrimaryMethod('phone', document.getElementById('edit-phone').value.trim(), primaryPhone) }
+  ];
+  const failedUpdates = updates.filter((update) => update.result.error).map((update) => update.label);
   await loadContact();
+  if (failedUpdates.length) {
+    showEditForm();
+    showMessage(`Dati anagrafici aggiornati, ma non è stato possibile salvare: ${failedUpdates.join(', ')}. Verifica i valori e riprova.`);
+    return;
+  }
+  editForm.hidden = true;
 });
 
 document.getElementById('delete-button').addEventListener('click', async () => {
