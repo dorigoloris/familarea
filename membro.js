@@ -49,11 +49,19 @@ function renderProfile(profile, roleLabel) {
   roleElement.textContent = roleLabel;
 }
 
-function roleToLabel(role) {
+function roleToLabel(role, isPersonalContactParticipant = false) {
+  if (isPersonalContactParticipant) return 'Partecipante';
   if (role === 'admin') return 'Amministratore';
   if (role === 'member') return 'Partecipante';
   if (role === 'managed') return 'Profilo gestito';
   return role;
+}
+
+function setEditButtonVisibility(canEdit) {
+  editButton.hidden = !canEdit;
+  editButton.disabled = !canEdit;
+  editButton.setAttribute('aria-hidden', String(!canEdit));
+  editButton.style.display = canEdit ? '' : 'none';
 }
 
 function memberDisplayName() {
@@ -303,27 +311,12 @@ async function loadMember() {
   backToAreaLink.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
   backToMembersLink.href = `area.html?area_id=${encodeURIComponent(areaId)}#members-list`;
 
-  // la RLS su area_memberships consente di leggere solo le membership della propria Area
-  const { data: membership, error: membershipError } = await supabaseClient
-    .from('area_memberships')
-    .select('role')
-    .eq('area_id', areaId)
-    .eq('profile_id', profileId)
-    .single();
+  const { data: participants, error: participantsError } = await supabaseClient.rpc('get_area_participants', {
+    p_area_id: areaId
+  });
+  const participant = participants?.find((item) => item.profile_id === profileId);
 
-  if (membershipError || !membership) {
-    message.textContent = 'Impossibile caricare la scheda partecipante.';
-    return;
-  }
-
-  // la RLS su profiles consente di leggere solo i profili delle proprie Aree
-  const { data: profile, error: profileError } = await supabaseClient
-    .from('profiles')
-    .select('first_name, last_name, birth_date')
-    .eq('id', profileId)
-    .single();
-
-  if (profileError || !profile) {
+  if (participantsError || !participant) {
     message.textContent = 'Impossibile caricare la scheda partecipante.';
     return;
   }
@@ -336,8 +329,14 @@ async function loadMember() {
 
   if (area?.name) currentAreaName = area.name;
 
-  currentProfile = profile;
-  renderProfile(profile, roleToLabel(membership.role));
+  const isPersonalContactParticipant = participant.is_personal_contact_participant === true;
+  setEditButtonVisibility(false);
+  contactsSection.hidden = true;
+  removeMemberActions.hidden = true;
+  removeMemberButton.hidden = true;
+
+  currentProfile = participant;
+  renderProfile(participant, roleToLabel(participant.role, isPersonalContactParticipant));
 
   // il pulsante "Modifica" è solo un aiuto di interfaccia: il permesso reale
   // viene verificato lato server dalla RPC update_area_member
@@ -356,11 +355,13 @@ async function loadMember() {
       .single();
 
     if (ownMembership && ownMembership.role === 'admin') {
-      editButton.hidden = false;
       removeMemberActions.hidden = false;
       removeMemberButton.hidden = false;
-      contactsSection.hidden = false;
-      await loadContacts();
+      if (!isPersonalContactParticipant) {
+        setEditButtonVisibility(true);
+        contactsSection.hidden = false;
+        await loadContacts();
+      }
     }
   }
 

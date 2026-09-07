@@ -1542,7 +1542,235 @@ grant execute on function public.get_my_contact(uuid) to authenticated;
 grant execute on function public.create_my_contact(text, text, date) to authenticated;
 grant execute on function public.update_my_contact(uuid, text, text, date) to authenticated;
 grant execute on function public.delete_my_contact(uuid) to authenticated;
+
 grant execute on function public.add_my_contact_method(uuid, text, text, boolean) to authenticated;
 grant execute on function public.update_my_contact_method(uuid, text, text) to authenticated;
 grant execute on function public.set_my_contact_method_primary(uuid) to authenticated;
 grant execute on function public.delete_my_contact_method(uuid) to authenticated;
+
+-- =============================================================================
+-- 10. Contatti personali come partecipanti delle Aree
+-- =============================================================================
+
+-- Relazione privata: non espone al resto dell'Area il proprietario del Contatto.
+create table public.contact_participant_profiles (
+  contact_id uuid primary key references public.contacts(id) on delete restrict,
+  profile_id uuid not null unique references public.profiles(id) on delete restrict,
+  created_at timestamptz not null default now()
+);
+
+alter table public.contact_participant_profiles enable row level security;
+alter table public.contact_participant_profiles no force row level security;
+
+create function public.sync_contact_participant_profile()
+returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update public.profiles p
+  set first_name = new.first_name,
+      last_name = new.last_name
+  from public.contact_participant_profiles cpp
+  where cpp.contact_id = new.id and cpp.profile_id = p.id;
+  return new;
+end;
+$$;
+
+create trigger contacts_sync_participant_profile
+  after update of first_name, last_name on public.contacts
+  for each row execute function public.sync_contact_participant_profile();
+
+create or replace function public.update_area_member(
+  p_area_id uuid, p_profile_id uuid, p_first_name text, p_last_name text, p_birth_date date
+)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_caller_profile_id uuid;
+begin
+  select id into v_caller_profile_id from public.profiles where user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (
+    select 1 from public.area_memberships
+    where area_id = p_area_id and profile_id = v_caller_profile_id and role = 'admin'
+  ) then raise exception 'permission denied: solo un admin dell''Area puo'' modificare i partecipanti'; end if;
+  if not exists (
+    select 1 from public.area_memberships where area_id = p_area_id and profile_id = p_profile_id
+  ) then raise exception 'permission denied: il profilo indicato non appartiene a questa Area'; end if;
+  if exists (
+    select 1 from public.contact_participant_profiles where profile_id = p_profile_id
+  ) then raise exception 'Impossibile modificare questo partecipante: i dati provengono da un Contatto personale'; end if;
+  if btrim(coalesce(p_first_name, '')) = '' then raise exception 'Il nome e'' obbligatorio'; end if;
+  update public.profiles
+  set first_name = btrim(p_first_name),
+      last_name = nullif(btrim(coalesce(p_last_name, '')), ''),
+      birth_date = p_birth_date
+  where id = p_profile_id;
+end;
+$$;
+
+create function public.get_my_contacts_for_area(p_area_id uuid)
+returns table(id uuid, first_name text, last_name text, birth_date date, is_already_participant boolean)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_owner_profile_id uuid;
+begin
+  select p.id into v_owner_profile_id from public.profiles p where p.user_id = auth.uid();
+  if v_owner_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (
+    select 1 from public.area_memberships am
+    where am.area_id = p_area_id and am.profile_id = v_owner_profile_id and am.role = 'admin'
+  ) then raise exception 'permission denied: solo un admin dell''Area puo'' aggiungere partecipanti'; end if;
+  return query
+  select c.id, c.first_name, c.last_name, c.birth_date,
+    exists (
+      select 1 from public.contact_participant_profiles cpp
+      join public.area_memberships am on am.profile_id = cpp.profile_id
+      where cpp.contact_id = c.id and am.area_id = p_area_id
+    )
+  from public.contacts c
+  where c.owner_profile_id = v_owner_profile_id
+  order by lower(c.first_name), lower(coalesce(c.last_name, '')), c.id;
+end;
+$$;
+
+create function public.add_my_contact_to_area(p_area_id uuid, p_contact_id uuid)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_owner_profile_id uuid;
+  v_contact_first_name text;
+  v_contact_last_name text;
+  v_participant_profile_id uuid;
+begin
+  select p.id into v_owner_profile_id from public.profiles p where p.user_id = auth.uid();
+  if v_owner_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  perform 1 from public.areas where id = p_area_id for update;
+  if not found then raise exception 'Area non trovata'; end if;
+  if not exists (
+    select 1 from public.area_memberships am
+    where am.area_id = p_area_id and am.profile_id = v_owner_profile_id and am.role = 'admin'
+  ) then raise exception 'permission denied: solo un admin dell''Area puo'' aggiungere partecipanti'; end if;
+  select c.first_name, c.last_name into v_contact_first_name, v_contact_last_name
+  from public.contacts c
+  where c.id = p_contact_id and c.owner_profile_id = v_owner_profile_id
+  for update;
+  if not found then raise exception 'Contatto non trovato o non accessibile'; end if;
+  select cpp.profile_id into v_participant_profile_id
+  from public.contact_participant_profiles cpp
+  where cpp.contact_id = p_contact_id
+  for update;
+  if v_participant_profile_id is null then
+    insert into public.profiles(first_name, last_name)
+    values (v_contact_first_name, v_contact_last_name)
+    returning id into v_participant_profile_id;
+    insert into public.contact_participant_profiles(contact_id, profile_id)
+    values (p_contact_id, v_participant_profile_id);
+  else
+    perform 1 from public.profiles p
+    where p.id = v_participant_profile_id and p.user_id is null
+    for update;
+    if not found then raise exception 'Associazione Contatto/Partecipante non valida'; end if;
+    update public.profiles
+    set first_name = v_contact_first_name, last_name = v_contact_last_name
+    where id = v_participant_profile_id;
+  end if;
+  if exists (
+    select 1 from public.area_memberships am
+    where am.area_id = p_area_id and am.profile_id = v_participant_profile_id
+  ) then raise exception 'Il Contatto partecipa gia'' a questa Area'; end if;
+  insert into public.area_memberships(area_id, profile_id, role)
+  values (p_area_id, v_participant_profile_id, 'managed');
+end;
+$$;
+
+create or replace function public.delete_my_contact(p_contact_id uuid)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_owner_profile_id uuid; v_participant_profile_id uuid;
+begin
+  select p.id into v_owner_profile_id from public.profiles p where p.user_id = auth.uid();
+  if v_owner_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  perform 1 from public.contacts c
+  where c.id = p_contact_id and c.owner_profile_id = v_owner_profile_id
+  for update;
+  if not found then raise exception 'Contatto non trovato o non accessibile'; end if;
+  select cpp.profile_id into v_participant_profile_id
+  from public.contact_participant_profiles cpp
+  where cpp.contact_id = p_contact_id
+  for update;
+  if v_participant_profile_id is not null then
+    perform 1 from public.profiles p
+    where p.id = v_participant_profile_id and p.user_id is null
+    for update;
+    if not found then raise exception 'Associazione Contatto/Partecipante non valida'; end if;
+    if exists (
+      select 1 from public.area_memberships am where am.profile_id = v_participant_profile_id
+    ) then raise exception 'Impossibile eliminare il contatto: rimuovilo prima dalle Aree in cui partecipa'; end if;
+    if exists (
+      select 1 from public.areas ar where ar.created_by = v_participant_profile_id
+    ) or exists (
+      select 1 from public.contacts c where c.owner_profile_id = v_participant_profile_id
+    ) or exists (
+      select 1 from public.area_activities a
+      where a.created_by_profile_id = v_participant_profile_id or a.completed_by_profile_id = v_participant_profile_id
+    ) or exists (
+      select 1 from public.area_events e where e.created_by_profile_id = v_participant_profile_id
+    ) or exists (
+      select 1 from public.activity_assignees aa where aa.assigned_by_profile_id = v_participant_profile_id
+    ) or exists (
+      select 1 from public.event_participants ep where ep.added_by_profile_id = v_participant_profile_id
+    ) then raise exception 'Impossibile eliminare il contatto: il partecipante tecnico ha dipendenze inattese'; end if;
+    delete from public.contact_participant_profiles
+    where contact_id = p_contact_id and profile_id = v_participant_profile_id;
+    delete from public.profiles
+    where id = v_participant_profile_id and user_id is null;
+    if not found then raise exception 'Associazione Contatto/Partecipante non valida'; end if;
+  end if;
+  delete from public.contacts
+  where id = p_contact_id and owner_profile_id = v_owner_profile_id;
+end;
+$$;
+
+revoke all on public.contact_participant_profiles from public, authenticated;
+revoke all on function public.sync_contact_participant_profile() from public;
+revoke all on function public.get_my_contacts_for_area(uuid) from public;
+revoke all on function public.add_my_contact_to_area(uuid, uuid) from public;
+revoke all on function public.update_area_member(uuid, uuid, text, text, date) from public;
+revoke all on function public.delete_my_contact(uuid) from public;
+grant execute on function public.get_my_contacts_for_area(uuid) to authenticated;
+grant execute on function public.add_my_contact_to_area(uuid, uuid) to authenticated;
+grant execute on function public.update_area_member(uuid, uuid, text, text, date) to authenticated;
+grant execute on function public.delete_my_contact(uuid) to authenticated;
+
+-- =============================================================================
+-- 11. Elenco partecipanti Area senza esporre la rubrica privata
+-- =============================================================================
+
+create function public.get_area_participants(p_area_id uuid)
+returns table(
+  profile_id uuid,
+  first_name text,
+  last_name text,
+  birth_date date,
+  role text,
+  is_personal_contact_participant boolean
+)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_caller_profile_id uuid;
+begin
+  select p.id into v_caller_profile_id from public.profiles p where p.user_id = auth.uid();
+  if v_caller_profile_id is null then raise exception 'Profilo non trovato per l''utente corrente'; end if;
+  if not exists (
+    select 1 from public.area_memberships am
+    where am.area_id = p_area_id
+      and am.profile_id = v_caller_profile_id
+      and am.role in ('admin', 'member')
+  ) then raise exception 'permission denied: partecipante non autorizzato per questa Area'; end if;
+  return query
+  select am.profile_id, p.first_name, p.last_name, p.birth_date, am.role,
+    exists (
+      select 1 from public.contact_participant_profiles cpp where cpp.profile_id = am.profile_id
+    )
+  from public.area_memberships am
+  join public.profiles p on p.id = am.profile_id
+  where am.area_id = p_area_id
+  order by lower(p.first_name), lower(coalesce(p.last_name, '')), am.profile_id;
+end;
+$$;
+
+revoke all on function public.get_area_participants(uuid) from public;
+grant execute on function public.get_area_participants(uuid) to authenticated;

@@ -6,59 +6,65 @@
   <title>Aggiungi partecipante - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-
 <body>
-
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <h1>Aggiungi un partecipante</h1>
+  <main class="page-card participant-add-page">
+    <div class="section-heading">
+      <h1>Aggiungi partecipante</h1>
+      <a id="back-to-area-link" class="btn secondary-button" href="#">Torna all’Area</a>
+    </div>
+    <p>Puoi aggiungere una persona già presente nella tua rubrica oppure creare un nuovo Contatto.</p>
 
-  <form id="member-form">
-
-    <div>
-      <label for="first-name">Nome</label><br>
-      <input type="text" id="first-name" required>
+    <div class="participant-add-choices" role="tablist" aria-label="Modalità di aggiunta partecipante">
+      <button id="show-contacts-button" type="button" role="tab" aria-selected="true" aria-controls="contacts-panel">
+        Scegli dai miei Contatti
+      </button>
+      <button id="show-create-button" class="secondary-button" type="button" role="tab" aria-selected="false" aria-controls="create-contact-panel">
+        Crea nuovo Contatto
+      </button>
     </div>
 
-    <br>
+    <section id="contacts-panel" class="participant-add-panel" role="tabpanel" aria-labelledby="show-contacts-button">
+      <h2>I miei Contatti</h2>
+      <p id="contacts-message" aria-live="polite">Caricamento Contatti...</p>
+      <div id="contacts-list" class="participant-contact-list"></div>
+      <div id="contacts-empty-state" class="contacts-empty-state" hidden>
+        <p>Non hai ancora Contatti da aggiungere.</p>
+        <button id="empty-create-contact-button" type="button">Crea nuovo Contatto</button>
+      </div>
+    </section>
 
-    <div>
-      <label for="last-name">Cognome</label><br>
-      <input type="text" id="last-name">
-    </div>
-
-    <br>
-
-    <div>
-      <label for="birth-date">Data di nascita</label><br>
-      <input type="date" id="birth-date">
-    </div>
-
-    <br>
-
-    <div>
-      <label for="role">Ruolo</label><br>
-      <select id="role">
-        <option value="managed">Profilo gestito</option>
-        <option value="member">Partecipante</option>
-        <option value="admin">Amministratore</option>
-      </select>
-    </div>
-
-    <br>
-
-    <button type="submit">Aggiungi partecipante</button>
-
-  </form>
-
-  <p id="message"></p>
+    <section id="create-contact-panel" class="participant-add-panel" role="tabpanel" aria-labelledby="show-create-button" hidden>
+      <h2>Crea nuovo Contatto</h2>
+      <p>Il nuovo Contatto verrà aggiunto automaticamente a questa Area come Profilo gestito.</p>
+      <form id="contact-form">
+        <div>
+          <label for="first-name">Nome</label>
+          <input type="text" id="first-name" autocomplete="given-name" required>
+        </div>
+        <div>
+          <label for="last-name">Cognome</label>
+          <input type="text" id="last-name" autocomplete="family-name">
+        </div>
+        <div>
+          <label for="birth-date">Data di nascita</label>
+          <input type="date" id="birth-date">
+        </div>
+        <div class="form-actions">
+          <button id="create-contact-button" type="submit">Crea e aggiungi all’Area</button>
+          <button id="cancel-create-button" class="secondary-button" type="button">Annulla</button>
+        </div>
+      </form>
+      <p id="create-message" aria-live="polite"></p>
+    </section>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
   <script src="aggiungi-membro.js"></script>
-
 </body>
 </html>
