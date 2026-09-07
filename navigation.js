@@ -45,6 +45,7 @@
     { label: 'Dashboard', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
     { label: 'Le mie Aree', href: 'mie-aree.html#areas-title', active: '' },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
+    { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
     { label: 'Attività', href: areaHref('#activities-section'), active: isActive(['attivita.html', 'nuova-attivita.html']) },
     { label: 'Eventi', href: eventsHref, active: isActive(['eventi.html', 'evento.html', 'nuovo-evento.html']) }
   ].forEach((item) => {

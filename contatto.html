@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheda contatto - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card contact-detail-page">
+    <p><a href="contatti.html">Torna ai contatti</a></p>
+    <p id="message" aria-live="polite">Caricamento contatto...</p>
+
+    <div id="contact-view" hidden>
+      <div class="section-heading">
+        <h1 id="contact-name">Contatto</h1>
+        <div class="contact-actions">
+          <button id="edit-button" type="button">Modifica</button>
+          <button id="delete-button" type="button" class="member-remove-button">Elimina contatto</button>
+        </div>
+      </div>
+      <p id="contact-birth-date" class="contact-birth-date" hidden></p>
+
+      <section class="contact-methods-section">
+        <h2>Email</h2>
+        <ul id="email-list" class="contact-method-list"></ul>
+        <button id="add-email-button" type="button">Aggiungi email</button>
+      </section>
+
+      <section class="contact-methods-section">
+        <h2>Cellulari</h2>
+        <ul id="phone-list" class="contact-method-list"></ul>
+        <button id="add-phone-button" type="button">Aggiungi cellulare</button>
+      </section>
+
+      <form id="method-form" class="contact-method-form" hidden>
+        <h3 id="method-form-title"></h3>
+        <div>
+          <label for="method-value" id="method-value-label">Valore</label><br>
+          <input id="method-value" required>
+        </div>
+        <div class="form-actions">
+          <button id="method-save-button" type="submit">Salva</button>
+          <button id="method-cancel-button" type="button" class="secondary-button">Annulla</button>
+        </div>
+      </form>
+    </div>
+
+    <form id="edit-form" hidden>
+      <h1>Modifica contatto</h1>
+      <div>
+        <label for="edit-first-name">Nome *</label><br>
+        <input id="edit-first-name" type="text" required autocomplete="given-name">
+      </div>
+      <div>
+        <label for="edit-last-name">Cognome</label><br>
+        <input id="edit-last-name" type="text" autocomplete="family-name">
+      </div>
+      <div>
+        <label for="edit-birth-date">Data di nascita</label><br>
+        <input id="edit-birth-date" type="date">
+      </div>
+      <div class="form-actions">
+        <button id="edit-save-button" type="submit">Salva modifiche</button>
+        <button id="edit-cancel-button" type="button" class="secondary-button">Annulla</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="contatto.js"></script>
+</body>
+</html>

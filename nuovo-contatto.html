@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuovo contatto - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card contact-editor-page">
+    <p><a href="contatti.html">Torna ai contatti</a></p>
+    <h1>Nuovo contatto</h1>
+    <p id="message" aria-live="polite"></p>
+    <form id="contact-form">
+      <div>
+        <label for="first-name">Nome *</label><br>
+        <input id="first-name" type="text" required autocomplete="given-name">
+      </div>
+      <div>
+        <label for="last-name">Cognome</label><br>
+        <input id="last-name" type="text" autocomplete="family-name">
+      </div>
+      <div>
+        <label for="birth-date">Data di nascita</label><br>
+        <input id="birth-date" type="date">
+      </div>
+      <div class="form-actions">
+        <button id="save-button" type="submit">Crea contatto</button>
+        <a class="btn secondary-button" href="contatti.html">Annulla</a>
+      </div>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="nuovo-contatto.js"></script>
+</body>
+</html>
