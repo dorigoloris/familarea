@@ -432,6 +432,58 @@ revoke all on function public.remove_area_member(uuid, uuid) from public;
 grant execute on function public.remove_area_member(uuid, uuid) to authenticated;
 
 -- =============================================================================
+-- 18. Eliminazione Area
+-- =============================================================================
+
+create or replace function public.delete_area(p_area_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_caller_profile_id uuid;
+begin
+  select p.id
+  into v_caller_profile_id
+  from public.profiles p
+  where p.user_id = auth.uid();
+
+  if v_caller_profile_id is null then
+    raise exception 'Profilo non trovato per l''utente corrente';
+  end if;
+
+  perform 1
+  from public.areas a
+  where a.id = p_area_id
+  for update;
+
+  if not found then
+    raise exception 'Area non trovata';
+  end if;
+
+  if not exists (
+    select 1
+    from public.area_memberships am
+    where am.area_id = p_area_id
+      and am.profile_id = v_caller_profile_id
+      and am.role = 'admin'
+  ) then
+    raise exception 'Non sei autorizzato a eliminare questa Area';
+  end if;
+
+  delete from public.area_invites
+  where area_id = p_area_id;
+
+  delete from public.areas
+  where id = p_area_id;
+end;
+$$;
+
+revoke all on function public.delete_area(uuid) from public;
+grant execute on function public.delete_area(uuid) to authenticated;
+
+-- =============================================================================
 -- 5c. RPC: contatti contestuali all'Area â€” solo admin dell'Area
 -- =============================================================================
 

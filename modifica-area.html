@@ -1,1 +1,63 @@
-<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Modifica Area - FamilArea</title><link rel="stylesheet" href="app.css"></head><body><button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p><main class="page-card"><p><a id="back-link" href="#">Torna all'Area</a></p><h1>Modifica Area</h1><p id="message" aria-live="polite">Caricamento...</p><form id="area-form" hidden><label for="area-name">Nome Area</label><input id="area-name" type="text" required><br><br><label for="area-type">Tipo di Area</label><select id="area-type"><option value="family">Famiglia</option><option value="school">Scuola</option><option value="sport">Sport</option><option value="friends">Amici</option><option value="course">Corso</option><option value="travel">Viaggio</option><option value="other">Altro</option></select><br><br><button id="save-button" type="submit">Salva modifiche</button><button id="cancel-button" type="button">Annulla</button></form></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="modifica-area.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modifica Area - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card">
+    <p><a id="back-link" href="#">Torna all'Area</a></p>
+    <h1>Modifica Area</h1>
+    <p id="message" aria-live="polite">Caricamento...</p>
+    <form id="area-form" hidden>
+      <label for="area-name">Nome Area</label>
+      <input id="area-name" type="text" required>
+      <br><br>
+      <label for="area-type">Tipo di Area</label>
+      <select id="area-type">
+        <option value="family">Famiglia</option>
+        <option value="school">Scuola</option>
+        <option value="sport">Sport</option>
+        <option value="friends">Amici</option>
+        <option value="course">Corso</option>
+        <option value="travel">Viaggio</option>
+        <option value="other">Altro</option>
+      </select>
+      <br><br>
+      <button id="save-button" type="submit">Salva modifiche</button>
+      <button id="cancel-button" type="button">Annulla</button>
+    </form>
+
+    <section id="delete-area-section" class="area-delete-section" hidden>
+      <h2>Elimina Area</h2>
+      <p>Verranno eliminate definitivamente le partecipazioni dell'Area, le Attività, gli Eventi, le Liste e gli Inviti collegati. Account e profili Auth, Contatti personali e relativi recapiti non vengono eliminati. L'operazione è irreversibile.</p>
+      <button id="open-delete-area-dialog" class="area-delete-button" type="button">Elimina Area</button>
+    </section>
+  </main>
+
+  <dialog id="delete-area-dialog" class="area-delete-dialog" aria-labelledby="delete-area-dialog-title">
+    <form id="delete-area-form" method="dialog">
+      <button id="close-delete-area-dialog" class="area-delete-close" type="button" aria-label="Chiudi">&times;</button>
+      <h2 id="delete-area-dialog-title">Eliminare definitivamente questa Area?</h2>
+      <p>Stai per eliminare <strong id="delete-area-name"></strong> insieme alle partecipazioni dell'Area, alle Attività, agli Eventi, alle Liste e agli Inviti collegati. Account e profili Auth e Contatti personali non vengono eliminati.</p>
+      <label for="delete-area-confirmation">Per confermare, digita esattamente il nome dell'Area: <strong id="delete-area-confirmation-name"></strong></label>
+      <input id="delete-area-confirmation" type="text" autocomplete="off">
+      <p id="delete-area-message" class="delete-area-message" aria-live="polite"></p>
+      <div class="form-actions">
+        <button id="confirm-delete-area" class="area-delete-confirm-button" type="submit" disabled>Elimina definitivamente</button>
+        <button id="cancel-delete-area" class="secondary-button" type="button">Annulla</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="modifica-area.js"></script>
+</body>
+</html>
