@@ -4,6 +4,7 @@ const areaNameElement = document.getElementById('area-name');
 const message = document.getElementById('message');
 const membersList = document.getElementById('members-list');
 const addMemberLink = document.getElementById('add-member-link');
+const areaInvitesLink = document.getElementById('area-invites-link');
 const activitiesSection = document.getElementById('activities-section');
 const activitiesMessage = document.getElementById('activities-message');
 const activitiesList = document.getElementById('activities-list');
@@ -133,7 +134,8 @@ async function loadArea() {
     return;
   }
 
-  addMemberLink.href = `aggiungi-membro.html?area_id=${encodeURIComponent(areaId)}`;
+  addMemberLink.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
+  areaInvitesLink.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
   newActivityLink.href = `nuova-attivita.html?area_id=${encodeURIComponent(areaId)}`;
   eventsLink.href = `eventi.html?area_id=${encodeURIComponent(areaId)}`;
   if (newEventLink) {
@@ -162,6 +164,13 @@ async function loadArea() {
   }
 
   renderMembers(participants, areaId);
+  const { data: ownProfile } = await supabaseClient
+    .from('profiles')
+    .select('id')
+    .eq('user_id', sessionData.session.user.id)
+    .single();
+  const ownParticipant = participants.find((participant) => participant.profile_id === ownProfile?.id);
+  if (ownParticipant?.role === 'admin') areaInvitesLink.hidden = false;
   message.textContent = 'Area caricata correttamente.';
   await loadActivities(areaId);
   await loadLists(areaId);
