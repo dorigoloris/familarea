@@ -10,6 +10,9 @@ const dashboardPreviousMonthButton = document.getElementById('dashboard-previous
 const dashboardNextMonthButton = document.getElementById('dashboard-next-month');
 const dashboardTodayButton = document.getElementById('dashboard-today');
 const headerUserName = document.getElementById('header-user-name');
+const dashboardInvitesSection = document.getElementById('dashboard-invites-section');
+const dashboardInvitesTitle = document.getElementById('dashboard-invites-title');
+const dashboardInvitesDescription = document.getElementById('dashboard-invites-description');
 const sections = {
   today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
   upcoming: { list: document.getElementById('upcoming-list'), empty: document.getElementById('upcoming-empty') },
@@ -152,6 +155,26 @@ async function loadDashboardTimeline() {
   else dashboardMessage.textContent = '';
 }
 
+async function loadPendingInvites() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_area_invites');
+    if (error) return;
+    const pendingInvites = (data || []).filter((invite) => invite.status === 'pending');
+    if (!pendingInvites.length) {
+      dashboardInvitesSection.hidden = true;
+      return;
+    }
+    const count = pendingInvites.length;
+    dashboardInvitesTitle.textContent = `Hai ${count} invit${count === 1 ? 'o' : 'i'} in attesa`;
+    dashboardInvitesDescription.textContent = count === 1
+      ? 'Sei stato invitato a partecipare a un’Area.'
+      : 'Hai nuovi inviti a partecipare ad alcune Aree.';
+    dashboardInvitesSection.hidden = false;
+  } catch {
+    dashboardInvitesSection.hidden = true;
+  }
+}
+
 async function loadMyAreas(userId) {
   const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('id').eq('user_id', userId).single();
   if (profileError) { message.textContent = `Errore profilo: ${profileError.message}`; return; }
@@ -178,7 +201,7 @@ async function initialiseDashboard() {
   const user = sessionData.session.user;
   const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
   if (userName) { headerUserName.textContent = userName; headerUserName.hidden = false; }
-  await Promise.all([loadDashboardTimeline(), loadMyAreas(user.id)]);
+  await Promise.all([loadDashboardTimeline(), loadMyAreas(user.id), loadPendingInvites()]);
 }
 
 dashboardPreviousMonthButton.addEventListener('click', () => changeDashboardMonth(-1));

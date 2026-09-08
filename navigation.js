@@ -42,11 +42,13 @@
   const topNav = document.createElement('nav');
   topNav.className = 'shared-top-nav';
   topNav.setAttribute('aria-label', 'Navigazione principale');
+  let personalInvitesLink;
   [
     { label: 'Dashboard', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
     { label: 'Le mie Aree', href: 'mie-aree.html#areas-title', active: '' },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
+    { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) },
     { label: 'Attività', href: areaHref('#activities-section'), active: isActive(['attivita.html', 'nuova-attivita.html']) },
     { label: 'Eventi', href: eventsHref, active: isActive(['eventi.html', 'evento.html', 'nuovo-evento.html']) },
     { label: 'Liste', href: 'liste.html', active: !areaId && isActive(['liste.html']) }
@@ -56,18 +58,38 @@
     link.href = item.href;
     link.textContent = item.label;
     if (item.active) link.setAttribute('aria-current', 'page');
+    if (item.label === 'Inviti') {
+      link.classList.add('top-nav-invites-link');
+      personalInvitesLink = link;
+    }
     topNav.appendChild(link);
   });
   header.insertBefore(topNav, actions);
 
   const account = actions.querySelector('.header-user-name');
+  let client;
   if (account && window.supabase && typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined') {
-    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     client.auth.getUser().then(({ data }) => {
       const user = data?.user;
       const name = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email;
       if (name) { account.textContent = name; account.hidden = false; }
     });
+  }
+
+  if (client && personalInvitesLink) {
+    client.rpc('get_my_area_invites').then(({ data, error }) => {
+      if (error) return;
+      const pendingCount = (data || []).filter((invite) => invite.status === 'pending').length;
+      if (pendingCount > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'top-nav-invites-badge';
+        badge.textContent = pendingCount >= 10 ? '9+' : String(pendingCount);
+        badge.setAttribute('aria-hidden', 'true');
+        personalInvitesLink.appendChild(badge);
+        personalInvitesLink.setAttribute('aria-label', `Inviti, ${pendingCount} in attesa`);
+      }
+    }).catch(() => {});
   }
 
   if (!areaId) return;
@@ -88,6 +110,18 @@
     client.from('areas').select('name').eq('id', areaId).single().then(({ data }) => {
       const target = document.getElementById('nav-area-name');
       if (target) target.textContent = data?.name || 'Area';
+    });
+    client.auth.getUser().then(async ({ data }) => {
+      const userId = data?.user?.id;
+      if (!userId) return;
+      const { data: profile } = await client.from('profiles').select('id').eq('user_id', userId).single();
+      const { data: membership } = await client.from('area_memberships').select('role').eq('area_id', areaId).eq('profile_id', profile?.id).single();
+      if (membership?.role !== 'admin') return;
+      const link = document.createElement('a');
+      link.className = `sidebar-link${isActive(['inviti-area.html'])}`;
+      link.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
+      link.textContent = 'Inviti';
+      areaNav.appendChild(link);
     });
   }
 }());

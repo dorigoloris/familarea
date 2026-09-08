@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inviti Area - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card invites-area-page">
+    <div class="section-heading">
+      <div>
+        <h1>Inviti dell’Area</h1>
+        <p id="area-description">Gestisci gli inviti per questa Area.</p>
+      </div>
+      <a id="back-to-area-link" class="btn secondary-button" href="#">Torna all’Area</a>
+    </div>
+
+    <p id="page-message" aria-live="polite">Caricamento inviti…</p>
+
+    <section id="invite-form-section" hidden>
+      <h2>Nuovo invito</h2>
+      <form id="invite-form">
+        <div>
+          <label for="invite-email">Email destinatario</label>
+          <input id="invite-email" type="email" autocomplete="email" required>
+        </div>
+        <div>
+          <label for="invite-first-name">Nome</label>
+          <input id="invite-first-name" type="text" autocomplete="given-name">
+        </div>
+        <div>
+          <label for="invite-last-name">Cognome</label>
+          <input id="invite-last-name" type="text" autocomplete="family-name">
+        </div>
+        <div class="form-actions">
+          <button id="send-invite-button" type="submit">Crea invito</button>
+          <button id="reset-invite-button" class="secondary-button" type="button">Annulla</button>
+        </div>
+      </form>
+      <p id="invite-form-message" aria-live="polite"></p>
+    </section>
+
+    <section id="invites-section" hidden>
+      <h2>Inviti inviati</h2>
+      <div id="invites-list" class="invites-list"></div>
+      <p id="invites-empty" class="empty-state" hidden>Non ci sono ancora inviti per questa Area.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="inviti-area.js"></script>
+</body>
+</html>

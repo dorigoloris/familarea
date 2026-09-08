@@ -170,7 +170,9 @@ async function loadArea() {
     .eq('user_id', sessionData.session.user.id)
     .single();
   const ownParticipant = participants.find((participant) => participant.profile_id === ownProfile?.id);
-  if (ownParticipant?.role === 'admin') areaInvitesLink.hidden = false;
+  const isAreaAdmin = ownParticipant?.role === 'admin';
+  addMemberLink.hidden = !isAreaAdmin;
+  areaInvitesLink.hidden = !isAreaAdmin;
   message.textContent = 'Area caricata correttamente.';
   await loadActivities(areaId);
   await loadLists(areaId);

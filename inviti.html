@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I miei inviti - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card personal-invites-page">
+    <div class="section-heading"><div><h1>I miei inviti</h1><p>Qui trovi gli inviti ricevuti per partecipare alle Aree FamilArea.</p></div></div>
+    <p id="page-message" aria-live="polite">Caricamento inviti…</p>
+    <section id="invites-section" hidden>
+      <div id="invites-list" class="invites-list"></div>
+      <p id="invites-empty" class="empty-state" hidden>Non hai inviti ricevuti.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="inviti.js"></script>
+</body>
+</html>

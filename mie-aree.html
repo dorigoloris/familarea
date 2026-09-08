@@ -21,6 +21,16 @@
     </nav>
     <main class="dashboard-content">
       <div class="dashboard-intro"><p class="eyebrow">FamilArea</p><h1>La tua Dashboard</h1><p>Qui trovi una panoramica dei tuoi impegni e delle tue Aree.</p><p id="dashboard-message" aria-live="polite"></p></div>
+      <section id="dashboard-invites-section" class="dashboard-section dashboard-invites-card" aria-labelledby="dashboard-invites-title" hidden>
+        <div class="dashboard-invites-content">
+          <div>
+            <p class="section-kicker">Inviti</p>
+            <h2 id="dashboard-invites-title"></h2>
+            <p id="dashboard-invites-description"></p>
+          </div>
+          <a class="btn dashboard-invites-link" href="inviti.html">Vedi inviti</a>
+        </div>
+      </section>
       <section id="dashboard-calendar-section" class="dashboard-section dashboard-calendar-card" aria-labelledby="dashboard-month-title">
         <div class="dashboard-calendar-heading"><div><p class="section-kicker">I tuoi impegni</p><h2 id="dashboard-month-title" aria-live="polite"></h2></div></div>
         <div class="calendar-controls" aria-label="Navigazione del mese"><button id="dashboard-previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente">← <span>Precedente</span></button><button id="dashboard-today" class="calendar-today-button" type="button">Oggi</button><button id="dashboard-next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span> →</button><a class="calendar-full-link" href="calendario.html">Apri calendario completo <span aria-hidden="true">→</span></a></div>
