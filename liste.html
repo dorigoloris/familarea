@@ -13,9 +13,21 @@
     <p id="back-link-container"><a id="back-link" href="#">Torna all'Area</a></p>
     <div class="section-heading">
       <div><p class="section-kicker" id="area-name">Area</p><h1>Liste</h1></div>
-      <a id="new-list-link" class="btn" href="#">Nuova lista</a>
+      <button id="new-list-button" class="btn" type="button">Nuova lista</button>
     </div>
     <p id="message" aria-live="polite">Caricamento liste...</p>
+    <section id="area-picker" hidden aria-labelledby="area-picker-title">
+      <h2 id="area-picker-title">Scegli l'Area</h2>
+      <p id="area-picker-message">Scegli l'Area in cui creare la nuova lista.</p>
+      <form id="area-picker-form">
+        <label for="area-picker-select">Area</label>
+        <select id="area-picker-select" required></select>
+        <div class="form-actions">
+          <button type="submit">Continua</button>
+          <button id="cancel-area-picker" class="secondary-button" type="button">Annulla</button>
+        </div>
+      </form>
+    </section>
     <div id="lists-list" class="lists-list"></div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

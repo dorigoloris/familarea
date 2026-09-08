@@ -4,7 +4,13 @@ const listsContainer = document.getElementById('lists-list');
 const backLinkContainer = document.getElementById('back-link-container');
 const backLink = document.getElementById('back-link');
 const areaName = document.getElementById('area-name');
-const newListLink = document.getElementById('new-list-link');
+const newListButton = document.getElementById('new-list-button');
+const requestedAreaId = new URLSearchParams(window.location.search).get('area_id');
+const areaPicker = document.getElementById('area-picker');
+const areaPickerForm = document.getElementById('area-picker-form');
+const areaPickerSelect = document.getElementById('area-picker-select');
+const cancelAreaPickerButton = document.getElementById('cancel-area-picker');
+let creatableAreas;
 
 const visibilityLabels = {
   area: "Tutti i partecipanti dell'Area",
@@ -69,6 +75,78 @@ function renderLists(data, options, emptyText) {
   data.forEach((list) => listsContainer.appendChild(createListCard(list, options(list))));
 }
 
+function newListUrl(areaId) {
+  return `nuova-lista.html?area_id=${encodeURIComponent(areaId)}`;
+}
+
+async function getCreatableAreas() {
+  if (creatableAreas) return creatableAreas;
+
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  if (!sessionData.session) {
+    window.location.href = 'login.html';
+    return [];
+  }
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from('profiles')
+    .select('id')
+    .eq('user_id', sessionData.session.user.id)
+    .single();
+  if (profileError || !profile) throw new Error('Profilo non disponibile');
+
+  const { data: memberships, error: membershipsError } = await supabaseClient
+    .from('area_memberships')
+    .select('role,area_id,areas(id,name)')
+    .eq('profile_id', profile.id);
+  if (membershipsError) throw new Error('Aree non disponibili');
+
+  creatableAreas = (memberships || [])
+    .filter((membership) => ['admin', 'member'].includes(membership.role) && membership.areas)
+    .map((membership) => ({ id: membership.area_id, name: membership.areas.name || 'Area' }))
+    .sort((first, second) => first.name.localeCompare(second.name, 'it'));
+  return creatableAreas;
+}
+
+function showAreaPicker(areas) {
+  areaPickerSelect.replaceChildren();
+  areas.forEach((area) => {
+    const option = document.createElement('option');
+    option.value = area.id;
+    option.textContent = area.name;
+    areaPickerSelect.appendChild(option);
+  });
+  areaPicker.hidden = false;
+  areaPickerSelect.focus();
+}
+
+async function startNewList() {
+  if (requestedAreaId) {
+    window.location.href = newListUrl(requestedAreaId);
+    return;
+  }
+
+  newListButton.disabled = true;
+  message.textContent = 'Caricamento Aree...';
+  try {
+    const areas = await getCreatableAreas();
+    if (!areas.length) {
+      message.textContent = 'Non hai Aree in cui puoi creare una lista.';
+      return;
+    }
+    if (areas.length === 1) {
+      window.location.href = newListUrl(areas[0].id);
+      return;
+    }
+    message.textContent = '';
+    showAreaPicker(areas);
+  } catch {
+    message.textContent = 'Impossibile caricare le Aree disponibili. Riprova.';
+  } finally {
+    newListButton.disabled = false;
+  }
+}
+
 async function load() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) {
@@ -76,11 +154,10 @@ async function load() {
     return;
   }
 
-  const areaId = new URLSearchParams(window.location.search).get('area_id');
+  const areaId = requestedAreaId;
   if (!areaId) {
     backLinkContainer.hidden = true;
     areaName.hidden = true;
-    newListLink.hidden = true;
 
     const { data, error } = await supabaseClient.rpc('get_my_visible_lists');
     if (error) {
@@ -98,7 +175,6 @@ async function load() {
   }
 
   backLink.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
-  newListLink.href = `nuova-lista.html?area_id=${encodeURIComponent(areaId)}`;
 
   const [{ data: area }, { data, error }] = await Promise.all([
     supabaseClient.from('areas').select('name').eq('id', areaId).single(),
@@ -113,5 +189,14 @@ async function load() {
   renderLists(data, () => ({ areaId }), 'Nessuna lista visibile in questa Area.');
   message.textContent = '';
 }
+
+newListButton.addEventListener('click', startNewList);
+areaPickerForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (areaPickerSelect.value) window.location.href = newListUrl(areaPickerSelect.value);
+});
+cancelAreaPickerButton.addEventListener('click', () => {
+  areaPicker.hidden = true;
+});
 
 load();
