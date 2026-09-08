@@ -1,15 +1,22 @@
 (function attachCalendarUtils(global) {
   function toValidDate(value) {
     if (!value) return null;
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
   function itemType(item) {
+    if (item.birthday_contact_id) return 'birthday';
     return item.event_id ? 'event' : 'activity';
   }
 
   function placementDate(item) {
+    if (itemType(item) === 'birthday') return toValidDate(item.occurs_on);
     if (itemType(item) === 'event') return toValidDate(item.starts_at);
     return toValidDate(item.starts_at) || toValidDate(item.due_at);
   }
@@ -21,6 +28,9 @@
   }
 
   function itemLink(item) {
+    if (itemType(item) === 'birthday') {
+      return `contatto.html?contact_id=${encodeURIComponent(item.birthday_contact_id)}`;
+    }
     if (itemType(item) === 'event') {
       return `evento.html?area_id=${encodeURIComponent(item.area_id)}&event_id=${encodeURIComponent(item.event_id)}`;
     }
@@ -39,22 +49,22 @@
   function createCalendarItem(item) {
     const type = itemType(item);
     const link = document.createElement('a');
-    link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}`;
+    link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${type === 'birthday' ? ' calendar-birthday' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}`;
     link.href = itemLink(item);
-    link.title = `${item.title} — ${item.area_name}`;
+    link.title = type === 'birthday' ? item.title : `${item.title} — ${item.area_name}`;
 
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
     title.textContent = item.title;
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
-    area.textContent = item.area_name;
+    area.textContent = type === 'birthday' ? 'Contatto personale' : item.area_name;
     link.append(title, area);
 
-    if (type === 'event') {
+    if (type === 'event' || type === 'birthday') {
       const badge = document.createElement('span');
       badge.className = 'calendar-item-kind';
-      badge.textContent = 'Evento';
+      badge.textContent = type === 'birthday' ? 'Compleanno' : 'Evento';
       link.appendChild(badge);
     }
 

@@ -13,35 +13,88 @@ function formatBirthDate(value) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('it-IT');
 }
 
+function createDirectoryField(label, value, className = '') {
+  const field = document.createElement('div');
+  field.className = `contact-directory-field ${className}`.trim();
+  field.dataset.label = label;
+  const text = document.createElement('span');
+  text.textContent = value || '—';
+  field.appendChild(text);
+  return field;
+}
+
+function friendlyBirthdayError(error) {
+  const details = String(error?.message || error || '');
+  if (details.includes('data di nascita')) {
+    return 'Aggiungi una data di nascita prima di mostrare il compleanno nel Calendario.';
+  }
+  return 'Non è stato possibile aggiornare il compleanno nel Calendario. Riprova.';
+}
+
+async function updateBirthdayCalendar(contact, checkbox) {
+  const enabled = checkbox.checked;
+  checkbox.disabled = true;
+  const { error } = await supabaseClient.rpc('set_my_contact_birthday_calendar', {
+    p_contact_id: contact.id,
+    p_enabled: enabled
+  });
+
+  if (error) {
+    checkbox.checked = !enabled;
+    message.textContent = friendlyBirthdayError(error);
+  } else {
+    contact.show_birthday_in_calendar = enabled;
+    message.textContent = enabled
+      ? 'Compleanno aggiunto al Calendario.'
+      : 'Compleanno rimosso dal Calendario.';
+  }
+
+  checkbox.disabled = !contact.birth_date;
+}
+
 function createContactCard(contact) {
   const article = document.createElement('article');
-  article.className = 'contact-card';
+  article.className = 'contact-card contact-directory-row';
 
+  const nameField = document.createElement('div');
+  nameField.className = 'contact-directory-field contact-directory-name';
+  nameField.dataset.label = 'Nome e cognome';
   const name = document.createElement('h2');
   name.textContent = fullName(contact);
-  article.appendChild(name);
-
-  if (contact.birth_date) {
-    const details = document.createElement('p');
-    details.textContent = `Data di nascita: ${formatBirthDate(contact.birth_date)}`;
-    article.appendChild(details);
-  }
+  nameField.appendChild(name);
 
   const pendingInvitesCount = Number(contact.pending_invites_count || 0);
   if (pendingInvitesCount > 0) {
-    const pendingInvites = document.createElement('p');
+    const pendingInvites = document.createElement('span');
     pendingInvites.className = 'contact-pending-invites';
     pendingInvites.textContent = pendingInvitesCount === 1
       ? 'Invito in attesa'
       : `${pendingInvitesCount} inviti in attesa`;
-    article.appendChild(pendingInvites);
+    nameField.appendChild(pendingInvites);
   }
 
+  const email = createDirectoryField('Email', contact.primary_email);
+  const phone = createDirectoryField('Cellulare', contact.primary_phone);
+  const birthDate = createDirectoryField('Data di nascita', formatBirthDate(contact.birth_date));
+
+  const calendar = document.createElement('label');
+  calendar.className = 'contact-directory-field contact-directory-calendar';
+  calendar.dataset.label = 'Calendario';
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = contact.show_birthday_in_calendar === true;
+  checkbox.disabled = !contact.birth_date;
+  checkbox.setAttribute('aria-label', `Mostra il compleanno di ${fullName(contact)} nel Calendario`);
+  const calendarText = document.createElement('span');
+  calendarText.textContent = contact.birth_date ? 'Compleanno' : 'Senza data di nascita';
+  calendar.append(checkbox, calendarText);
+  checkbox.addEventListener('change', () => updateBirthdayCalendar(contact, checkbox));
+
   const open = document.createElement('a');
-  open.className = 'btn';
+  open.className = 'btn contact-directory-open';
   open.textContent = 'Apri';
   open.href = `contatto.html?contact_id=${encodeURIComponent(contact.id)}`;
-  article.appendChild(open);
+  article.append(nameField, email, phone, birthDate, calendar, open);
   return article;
 }
 

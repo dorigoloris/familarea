@@ -13,8 +13,28 @@ const undatedEmpty = document.getElementById('undated-empty');
 const typeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' };
 const priorityLabels = { low: 'Bassa', normal: 'Normale', high: 'Alta' };
 let visibleActivities = [];
+let visibleEvents = [];
+let visibleBirthdays = [];
 let visibleCalendarItems = [];
 let displayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+function fullName(contact) {
+  return `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Contatto';
+}
+
+function birthdayCalendarItems(birthdays) {
+  return birthdays.map((birthday) => ({
+    birthday_contact_id: birthday.contact_id,
+    title: `Compleanno di ${fullName(birthday)}`,
+    occurs_on: birthday.occurs_on,
+    is_all_day: true,
+    status: 'open'
+  }));
+}
+
+function updateVisibleCalendarItems() {
+  visibleCalendarItems = [...visibleActivities, ...visibleEvents, ...visibleBirthdays];
+}
 
 function createUndatedActivity(activity) {
   const card = document.createElement('article');
@@ -57,17 +77,32 @@ function renderMonth() {
   });
 }
 
-function changeMonth(offset) {
-  displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + offset, 1);
+async function loadBirthdaysForDisplayedYear() {
+  const { data, error } = await supabaseClient.rpc('get_my_contact_birthdays', {
+    p_year: displayedMonth.getFullYear()
+  });
+  visibleBirthdays = error ? [] : birthdayCalendarItems(data || []);
+  updateVisibleCalendarItems();
   renderMonth();
+  if (error) {
+    calendarMessage.textContent = 'I compleanni non sono disponibili al momento; attività ed eventi visibili sono mostrati.';
+  } else {
+    calendarMessage.textContent = '';
+  }
 }
 
-function loadErrorMessage(activityFailed, eventFailed) {
+async function changeMonth(offset) {
+  displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + offset, 1);
+  await loadBirthdaysForDisplayedYear();
+}
+
+function loadErrorMessage(activityFailed, eventFailed, birthdayFailed) {
   if (activityFailed && eventFailed) {
     return 'Non è stato possibile caricare il calendario. Riprova più tardi.';
   }
   if (activityFailed) return 'Le attività non sono disponibili al momento; gli eventi visibili sono mostrati.';
   if (eventFailed) return 'Gli eventi non sono disponibili al momento; le attività visibili sono mostrate.';
+  if (birthdayFailed) return 'I compleanni non sono disponibili al momento; attività ed eventi visibili sono mostrati.';
   return '';
 }
 
@@ -78,9 +113,10 @@ async function loadCalendar() {
     return;
   }
 
-  const [activityResult, eventResult] = await Promise.allSettled([
+  const [activityResult, eventResult, birthdayResult] = await Promise.allSettled([
     supabaseClient.rpc('get_my_visible_activities'),
-    supabaseClient.rpc('get_my_visible_events')
+    supabaseClient.rpc('get_my_visible_events'),
+    supabaseClient.rpc('get_my_contact_birthdays', { p_year: displayedMonth.getFullYear() })
   ]);
   const activities = activityResult.status === 'fulfilled' && !activityResult.value.error
     ? activityResult.value.data || []
@@ -88,13 +124,18 @@ async function loadCalendar() {
   const events = eventResult.status === 'fulfilled' && !eventResult.value.error
     ? eventResult.value.data || []
     : [];
+  const birthdays = birthdayResult.status === 'fulfilled' && !birthdayResult.value.error
+    ? birthdayResult.value.data || []
+    : [];
   const activityFailed = activityResult.status === 'rejected' || (activityResult.status === 'fulfilled' && activityResult.value.error);
   const eventFailed = eventResult.status === 'rejected' || (eventResult.status === 'fulfilled' && eventResult.value.error);
+  const birthdayFailed = birthdayResult.status === 'rejected' || (birthdayResult.status === 'fulfilled' && birthdayResult.value.error);
 
   visibleActivities = activities.filter((activity) => activity.status !== 'cancelled');
-  const visibleEvents = events.filter((event) => event.status !== 'cancelled');
-  visibleCalendarItems = [...visibleActivities, ...visibleEvents];
-  const errorText = loadErrorMessage(activityFailed, eventFailed);
+  visibleEvents = events.filter((event) => event.status !== 'cancelled');
+  visibleBirthdays = birthdayCalendarItems(birthdays);
+  updateVisibleCalendarItems();
+  const errorText = loadErrorMessage(activityFailed, eventFailed, birthdayFailed);
 
   if (activityFailed && eventFailed) {
     calendarContent.hidden = true;
@@ -108,6 +149,6 @@ async function loadCalendar() {
   calendarMessage.textContent = errorText;
 }
 
-previousMonthButton.addEventListener('click', () => changeMonth(-1));
-nextMonthButton.addEventListener('click', () => changeMonth(1));
+previousMonthButton.addEventListener('click', () => { changeMonth(-1); });
+nextMonthButton.addEventListener('click', () => { changeMonth(1); });
 loadCalendar();
