@@ -1,7 +1,6 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const message = document.getElementById('message');
 const areasList = document.getElementById('areas-list');
-const headerUserName = document.getElementById('header-user-name');
 
 function roleLabel(role) {
   return ({ admin: 'Amministratore', member: 'Partecipante', managed: 'Profilo gestito' })[role] || role;
@@ -42,16 +41,10 @@ async function loadAreas() {
     window.location.href = 'login.html';
     return;
   }
-  const user = sessionData.session.user;
-  const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
-  if (name) {
-    headerUserName.textContent = name;
-    headerUserName.hidden = false;
-  }
   const { data: profile, error: profileError } = await supabaseClient
     .from('profiles')
     .select('id')
-    .eq('user_id', user.id)
+    .eq('user_id', sessionData.session.user.id)
     .single();
   if (profileError || !profile) {
     message.textContent = 'Impossibile caricare le Aree.';
