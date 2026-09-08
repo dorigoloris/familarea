@@ -43,7 +43,7 @@ function updateVisibilityChoices() {
   } else {
     visibilityHelp.textContent = 'Scegli chi puo vedere l\'attivita.';
     if (creatorAssignees.checked) creatorAssignees.checked = false;
-    if (!privateInput.checked && !areaInput.checked) visibilityInputs.forEach((input) => { input.checked = false; });
+    if (!privateInput.checked && !areaInput.checked) privateInput.checked = true;
   }
 }
 

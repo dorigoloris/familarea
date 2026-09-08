@@ -23,5 +23,5 @@ form.addEventListener('submit', async (event) => {
 
   message.textContent = 'Accesso effettuato correttamente.';
 
-  window.location.href = 'mie-aree.html';
+  window.location.href = 'dashboard.html';
 });

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La mia Dashboard - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="dashboard-page">
+  <header class="app-header">
+    <a class="app-brand" href="dashboard.html" aria-label="FamilArea, Dashboard">Famil<span>Area</span></a>
+    <div class="header-actions"><span id="header-user-name" class="header-user-name" hidden></span><button class="logout-button" type="button" data-logout>Esci</button></div>
+    <p id="logout-message" aria-live="polite"></p>
+  </header>
+  <div class="dashboard-shell">
+    <main class="dashboard-content">
+      <div class="dashboard-intro"><p class="eyebrow">FamilArea</p><h1>La mia Dashboard</h1><p>Qui trovi una panoramica dei tuoi impegni.</p><p id="dashboard-message" aria-live="polite"></p></div>
+      <section id="dashboard-invites-section" class="dashboard-section dashboard-invites-card" aria-labelledby="dashboard-invites-title" hidden>
+        <div class="dashboard-invites-content"><div><p class="section-kicker">Inviti</p><h2 id="dashboard-invites-title"></h2><p id="dashboard-invites-description"></p></div><a class="btn dashboard-invites-link" href="inviti.html">Vedi inviti</a></div>
+      </section>
+      <section id="dashboard-calendar-section" class="dashboard-section dashboard-calendar-card" aria-labelledby="dashboard-week-title">
+        <div class="dashboard-calendar-heading"><div><p class="section-kicker">I tuoi impegni</p><h2 id="dashboard-week-title" aria-live="polite"></h2></div></div>
+        <div class="calendar-controls" aria-label="Navigazione della settimana"><button id="dashboard-previous-week" class="calendar-nav-button" type="button" aria-label="Settimana precedente">← <span>Precedente</span></button><button id="dashboard-current-week" class="calendar-today-button" type="button">Questa settimana</button><button id="dashboard-next-week" class="calendar-nav-button" type="button" aria-label="Settimana successiva"><span>Successivo</span> →</button><a class="calendar-full-link" href="calendario.html">Apri calendario completo <span aria-hidden="true">→</span></a></div>
+        <div id="dashboard-week-grid" class="dashboard-week-grid" aria-label="Calendario della settimana"></div>
+      </section>
+      <div class="dashboard-summary-grid">
+        <section class="dashboard-section summary-card summary-card-today" aria-labelledby="today-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">☀</span><h2 id="today-title">Oggi</h2></div><p id="today-empty" class="empty-state" hidden>Nessun impegno per oggi.</p><div id="today-list" class="dashboard-list"></div></section>
+        <section class="dashboard-section summary-card" aria-labelledby="upcoming-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">◷</span><h2 id="upcoming-title">Prossimamente</h2></div><p id="upcoming-empty" class="empty-state" hidden>Nessun impegno in programma.</p><div id="upcoming-list" class="dashboard-list"></div></section>
+        <section class="dashboard-section summary-card summary-card-todo" aria-labelledby="todo-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">✓</span><h2 id="todo-title">Da fare</h2></div><p id="todo-empty" class="empty-state" hidden>Nessuna attività da fare.</p><div id="todo-list" class="dashboard-list"></div></section>
+      </div>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="calendar-utils.js"></script>
+  <script src="mie-aree.js"></script>
+</body>
+</html>

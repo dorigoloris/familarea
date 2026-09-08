@@ -20,28 +20,32 @@
 
   <ul id="members-list"></ul>
 
-  <p><a id="add-member-link" href="#" hidden>Invita partecipante</a></p>
-  <p><a id="area-invites-link" href="#" hidden>Gestisci inviti</a></p>
+  <div class="area-invite-actions">
+    <a id="add-member-link" href="#" hidden>Invita partecipante</a>
+    <a id="area-invites-link" href="#" hidden>Gestisci inviti</a>
+  </div>
 
-  <section id="activities-section" class="area-summary-section" hidden>
-    <h2>Attivit&agrave;</h2>
-    <p class="area-summary-description">Organizza ci&ograve; che c'&egrave; da fare.</p>
-    <p id="activities-message"></p>
-    <p><a id="activities-link" href="#">Vedi attivit&agrave;</a></p>
-  </section>
+  <div class="area-summary-grid">
+    <section id="activities-section" class="area-summary-section" hidden>
+      <h2>Attivit&agrave;</h2>
+      <p class="area-summary-description">Organizza ci&ograve; che c'&egrave; da fare.</p>
+      <p id="activities-message"></p>
+      <p><a id="activities-link" href="#">Vedi attivit&agrave;</a></p>
+    </section>
 
-  <section id="events-section" class="area-summary-section">
-    <h2>Eventi</h2>
-    <p class="area-summary-description">Gestisci ci&ograve; a cui partecipare.</p>
-    <p><a id="events-link" href="#">Vedi eventi</a></p>
-  </section>
+    <section id="events-section" class="area-summary-section">
+      <h2>Eventi</h2>
+      <p class="area-summary-description">Gestisci ci&ograve; a cui partecipare.</p>
+      <p><a id="events-link" href="#">Vedi eventi</a></p>
+    </section>
 
-  <section id="lists-section" class="area-summary-section" hidden>
-    <h2>Liste</h2>
-    <p class="area-summary-description">Condividi e gestisci elementi insieme.</p>
-    <p id="lists-message"></p>
-    <p><a id="lists-link" href="#">Vedi liste</a></p>
-  </section>
+    <section id="lists-section" class="area-summary-section" hidden>
+      <h2>Liste</h2>
+      <p class="area-summary-description">Condividi e gestisci elementi insieme.</p>
+      <p id="lists-message"></p>
+      <p><a id="lists-link" href="#">Vedi liste</a></p>
+    </section>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>

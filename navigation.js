@@ -3,7 +3,7 @@
   const isDashboard = body.classList.contains('dashboard-page');
   const params = new URLSearchParams(window.location.search);
   const areaId = params.get('area_id');
-  const path = window.location.pathname.split('/').pop() || 'mie-aree.html';
+  const path = window.location.pathname.split('/').pop() || 'dashboard.html';
   const isActive = (names) => names.includes(path) ? ' is-active' : '';
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
   const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
@@ -22,7 +22,7 @@
     header.className = 'shared-header';
     const brand = document.createElement('a');
     brand.className = 'app-brand';
-    brand.href = 'mie-aree.html';
+    brand.href = 'dashboard.html';
     brand.setAttribute('aria-label', 'FamilArea, Dashboard');
     brand.append(document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
     actions = document.createElement('div');
@@ -45,8 +45,8 @@
   topNav.setAttribute('aria-label', 'Navigazione principale');
   let personalInvitesLink;
   [
-    { label: 'Dashboard', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
-    { label: 'Le mie Aree', href: 'mie-aree.html#areas-title', active: '' },
+    { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
+    { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
     { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) }
@@ -89,6 +89,37 @@
       }
     }).catch(() => {});
   }
+
+  const footer = document.createElement('footer');
+  footer.className = 'shared-site-footer';
+  const identity = document.createElement('div');
+  identity.className = 'shared-site-footer-identity';
+  const name = document.createElement('strong');
+  name.textContent = 'FamilArea';
+  const tagline = document.createElement('p');
+  tagline.textContent = 'Organizza. Partecipa. Collabora.';
+  identity.append(name, tagline);
+  const links = document.createElement('nav');
+  links.className = 'shared-site-footer-links';
+  links.setAttribute('aria-label', 'Link informativi');
+  [
+    { label: 'Privacy', href: 'privacy.html' },
+    { label: 'Termini', href: 'termini.html' },
+    { label: 'Assistenza', href: 'assistenza.html' }
+  ].forEach(({ label, href }, index) => {
+    if (index > 0) links.appendChild(document.createTextNode(' · '));
+    const link = document.createElement('a');
+    link.href = href;
+    link.textContent = label;
+    links.appendChild(link);
+  });
+  const copyright = document.createElement('p');
+  copyright.className = 'shared-site-footer-copyright';
+  copyright.textContent = `© ${new Date().getFullYear()} FamilArea`;
+  links.append(document.createTextNode(' · '), copyright);
+  footer.append(identity, links);
+  body.classList.add('has-shared-footer');
+  document.body.appendChild(footer);
 
   if (!areaId) return;
   body.classList.add('has-area-context');
