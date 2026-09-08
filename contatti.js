@@ -27,6 +27,16 @@ function createContactCard(contact) {
     article.appendChild(details);
   }
 
+  const pendingInvitesCount = Number(contact.pending_invites_count || 0);
+  if (pendingInvitesCount > 0) {
+    const pendingInvites = document.createElement('p');
+    pendingInvites.className = 'contact-pending-invites';
+    pendingInvites.textContent = pendingInvitesCount === 1
+      ? 'Invito in attesa'
+      : `${pendingInvitesCount} inviti in attesa`;
+    article.appendChild(pendingInvites);
+  }
+
   const open = document.createElement('a');
   open.className = 'btn';
   open.textContent = 'Apri';

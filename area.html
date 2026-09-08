@@ -23,25 +23,24 @@
   <p><a id="add-member-link" href="#" hidden>Invita partecipante</a></p>
   <p><a id="area-invites-link" href="#" hidden>Gestisci inviti</a></p>
 
-  <section id="activities-section" hidden>
+  <section id="activities-section" class="area-summary-section" hidden>
     <h2>Attivit&agrave;</h2>
+    <p class="area-summary-description">Organizza ci&ograve; che c'&egrave; da fare.</p>
     <p id="activities-message"></p>
-    <ul id="activities-list"></ul>
-    <p><a id="new-activity-link" href="#">+ Nuova attivit&agrave;</a></p>
+    <p><a id="activities-link" href="#">Vedi attivit&agrave;</a></p>
   </section>
 
-  <section>
+  <section id="events-section" class="area-summary-section">
     <h2>Eventi</h2>
-    <p><a id="events-link" href="#">Vedi tutti gli eventi</a></p>
-    <p><a id="new-event-link" href="#">+ Nuovo evento</a></p>
+    <p class="area-summary-description">Gestisci ci&ograve; a cui partecipare.</p>
+    <p><a id="events-link" href="#">Vedi eventi</a></p>
   </section>
 
-  <section id="lists-section" hidden>
+  <section id="lists-section" class="area-summary-section" hidden>
     <h2>Liste</h2>
+    <p class="area-summary-description">Condividi e gestisci elementi insieme.</p>
     <p id="lists-message"></p>
-    <ul id="lists-preview"></ul>
-    <p><a id="lists-link" href="#">Vedi tutte le liste</a></p>
-    <p><a id="new-list-link" href="#">+ Nuova lista</a></p>
+    <p><a id="lists-link" href="#">Vedi liste</a></p>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

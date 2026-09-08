@@ -40,7 +40,12 @@
       <br>
       <div><label for="edit-notes">Note</label><textarea id="edit-notes"></textarea></div>
       <br>
-      <div><label for="edit-due-at">Scadenza / data e ora</label><input id="edit-due-at" type="datetime-local"></div>
+      <fieldset class="activity-due-fields"><legend>Scadenza</legend>
+        <div class="activity-dates">
+          <div><label for="edit-due-date">Data</label><input id="edit-due-date" type="date"></div>
+          <div><label for="edit-due-time">Ora (facoltativa)</label><input id="edit-due-time" type="time"></div>
+        </div>
+      </fieldset>
       <br>
       <fieldset><legend>Assegnatari</legend><div id="edit-assignees"></div></fieldset>
       <br>

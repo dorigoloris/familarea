@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attività - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card">
+    <p><a id="back-link" href="#">Torna all'Area</a></p>
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">Area</p>
+        <h1>Attività</h1>
+      </div>
+      <a id="new-activity-link" class="btn" href="#">Nuova attività</a>
+    </div>
+    <p id="message" aria-live="polite">Caricamento attività...</p>
+
+    <section id="open-activities-section" hidden aria-labelledby="open-activities-title">
+      <h2 id="open-activities-title">Aperte</h2>
+      <div id="open-activities-list" class="dashboard-list"></div>
+    </section>
+
+    <section id="completed-activities-section" hidden aria-labelledby="completed-activities-title">
+      <h2 id="completed-activities-title">Completate</h2>
+      <div id="completed-activities-list" class="dashboard-list"></div>
+    </section>
+
+    <section id="cancelled-activities-section" hidden aria-labelledby="cancelled-activities-title">
+      <h2 id="cancelled-activities-title">Annullate</h2>
+      <div id="cancelled-activities-list" class="dashboard-list"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="attivita-area.js"></script>
+</body>
+</html>

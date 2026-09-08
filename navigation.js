@@ -6,6 +6,7 @@
   const path = window.location.pathname.split('/').pop() || 'mie-aree.html';
   const isActive = (names) => names.includes(path) ? ' is-active' : '';
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
+  const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
 
@@ -48,10 +49,7 @@
     { label: 'Le mie Aree', href: 'mie-aree.html#areas-title', active: '' },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
-    { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) },
-    { label: 'Attività', href: areaHref('#activities-section'), active: isActive(['attivita.html', 'nuova-attivita.html']) },
-    { label: 'Eventi', href: eventsHref, active: isActive(['eventi.html', 'evento.html', 'nuovo-evento.html']) },
-    { label: 'Liste', href: 'liste.html', active: !areaId && isActive(['liste.html']) }
+    { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) }
   ].forEach((item) => {
     const link = document.createElement('a');
     link.className = `top-nav-link${item.active}`;
@@ -100,7 +98,7 @@
   areaNav.innerHTML = `<p class="shared-nav-label">AREA <span id="nav-area-name">in caricamento…</span></p>
     <a class="sidebar-link${isActive(['area.html', 'modifica-area.html'])}" href="${areaHref()}">Panoramica Area</a>
     <a class="sidebar-link${isActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
-    <a class="sidebar-link${isActive(['attivita.html', 'nuova-attivita.html'])}" href="${areaHref('#activities-section')}">Attività</a>
+    <a class="sidebar-link${isActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
     <a class="sidebar-link${isActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Eventi</a>
     <a class="sidebar-link${isActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
   body.prepend(areaNav);

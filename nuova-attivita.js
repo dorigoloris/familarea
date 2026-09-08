@@ -9,6 +9,25 @@ let areaId;
 let ownProfileId;
 let isAdmin = false;
 
+function duePayload() {
+  const dateValue = document.getElementById('due-date').value;
+  const timeValue = document.getElementById('due-time').value;
+  if (!dateValue) {
+    if (timeValue) {
+      message.textContent = 'Inserisci una data prima di indicare l’ora.';
+      return null;
+    }
+    return { dueAt: null, isAllDay: false };
+  }
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue ? timeValue.split(':').map(Number) : [0, 0];
+  return {
+    dueAt: new Date(year, month - 1, day, hours, minutes).toISOString(),
+    isAllDay: !timeValue
+  };
+}
+
 function updateVisibilityChoices() {
   const hasAssignees = assignees.querySelectorAll('input:checked').length > 0;
   const creatorAssignees = visibilityInputs.find((input) => input.value === 'creator_assignees');
@@ -62,12 +81,13 @@ form.addEventListener('submit', async (event) => {
   const visibility = visibilityInputs.find((input) => input.checked)?.value;
   if (!isAdmin && selected.some((id) => id !== ownProfileId)) { message.textContent = 'Puoi assegnare attivitÃ  solo a te stesso.'; return; }
   if (!visibility) { message.textContent = 'Scegli la visibilita dell\'attivita.'; return; }
-  const dueValue = document.getElementById('due-at').value;
+  const due = duePayload();
+  if (!due) return;
   message.textContent = 'Creazione in corso...';
   const { error } = await supabaseClient.rpc('create_area_activity', {
     p_area_id: areaId, p_title: document.getElementById('title').value.trim(), p_notes: document.getElementById('notes').value.trim() || null,
     p_activity_type: document.getElementById('activity-type').value, p_priority: document.getElementById('priority').value,
-    p_starts_at: null, p_due_at: dueValue ? new Date(dueValue).toISOString() : null, p_is_all_day: false, p_assignee_profile_ids: selected, p_visibility: visibility
+    p_starts_at: null, p_due_at: due.dueAt, p_is_all_day: due.isAllDay, p_assignee_profile_ids: selected, p_visibility: visibility
   });
   if (error) { message.textContent = 'Impossibile creare l\'attivitÃ .'; return; }
   window.location.href = `area.html?area_id=${encodeURIComponent(areaId)}`;

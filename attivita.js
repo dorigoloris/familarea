@@ -26,8 +26,40 @@ const labels = {
 };
 
 function label(group, value) { return labels[group][value] || value; }
-function formatDate(value) { return value ? new Date(value).toLocaleString('it-IT') : 'Non indicata'; }
-function toDateTimeInput(value) { return value ? new Date(value).toISOString().slice(0, 16) : ''; }
+function formatDate(value, isAllDay) {
+  if (!value) return 'Non indicata';
+  const date = new Date(value);
+  return new Intl.DateTimeFormat('it-IT', isAllDay
+    ? { dateStyle: 'long' }
+    : { dateStyle: 'long', timeStyle: 'short' }).format(date);
+}
+function localDateInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function localTimeInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+function duePayload() {
+  const dateValue = document.getElementById('edit-due-date').value;
+  const timeValue = document.getElementById('edit-due-time').value;
+  if (!dateValue) {
+    if (timeValue) {
+      message.textContent = 'Inserisci una data prima di indicare l’ora.';
+      return null;
+    }
+    return { dueAt: null, isAllDay: false };
+  }
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue ? timeValue.split(':').map(Number) : [0, 0];
+  return {
+    dueAt: new Date(year, month - 1, day, hours, minutes).toISOString(),
+    isAllDay: !timeValue
+  };
+}
 function currentAssigneeIds() { return [...editAssignees.querySelectorAll('input:checked')].map((input) => input.value); }
 function friendlyError(error, fallback) { return /permission denied|non accessibile|not authorized/i.test(error?.message || '') ? 'Non sei autorizzato a eseguire questa operazione.' : fallback; }
 function sameIds(left, right) { return [...left].sort().join(',') === [...right].sort().join(','); }
@@ -54,7 +86,7 @@ function renderActivity() {
   document.getElementById('activity-priority').textContent = label('priority', activity.priority);
   document.getElementById('activity-status').textContent = label('status', activity.status);
   document.getElementById('activity-visibility').textContent = label('visibility', activity.visibility);
-  document.getElementById('activity-due').textContent = formatDate(activity.due_at);
+  document.getElementById('activity-due').textContent = formatDate(activity.due_at, activity.is_all_day);
   document.getElementById('activity-notes').textContent = activity.notes || 'Nessuna nota.';
   const assigneeNames = (activity.assignee_profile_ids || []).map(memberName);
   document.getElementById('activity-assignees').textContent = assigneeNames.length ? assigneeNames.join(', ') : 'Nessun assegnatario.';
@@ -87,7 +119,8 @@ function prepareEditForm() {
   document.getElementById('edit-type').value = activity.activity_type;
   document.getElementById('edit-priority').value = activity.priority;
   document.getElementById('edit-notes').value = activity.notes || '';
-  document.getElementById('edit-due-at').value = toDateTimeInput(activity.due_at);
+  document.getElementById('edit-due-date').value = localDateInput(activity.due_at);
+  document.getElementById('edit-due-time').value = activity.is_all_day ? '' : localTimeInput(activity.due_at);
   editAssignees.replaceChildren();
   const selected = new Set(activity.assignee_profile_ids || []);
   memberships.forEach((membership) => {
@@ -138,16 +171,17 @@ editForm.addEventListener('submit', async (event) => {
   const assigneeIds = currentAssigneeIds();
   const visibility = visibilityInputs.find((input) => input.checked)?.value;
   if (!visibility) { message.textContent = 'Scegli la visibilità dell’attività.'; return; }
+  const due = duePayload();
+  if (!due) return;
   message.textContent = 'Salvataggio in corso...';
   if (!sameIds(assigneeIds, activity.assignee_profile_ids || []) || visibility !== activity.visibility) {
     const { error: assigneesError } = await supabaseClient.rpc('set_area_activity_assignees', { p_area_id: areaId, p_activity_id: activityId, p_assignee_profile_ids: assigneeIds, p_visibility: visibility });
     if (assigneesError) { message.textContent = friendlyError(assigneesError, 'Impossibile aggiornare assegnatari e visibilità.'); return; }
   }
-  const dueValue = document.getElementById('edit-due-at').value;
   const { error: updateError } = await supabaseClient.rpc('update_area_activity', {
     p_area_id: areaId, p_activity_id: activityId, p_title: document.getElementById('edit-title').value.trim(), p_notes: document.getElementById('edit-notes').value.trim() || null,
     p_activity_type: document.getElementById('edit-type').value, p_priority: document.getElementById('edit-priority').value,
-    p_starts_at: activity.starts_at, p_due_at: dueValue ? new Date(dueValue).toISOString() : null, p_is_all_day: activity.is_all_day, p_visibility: visibility
+    p_starts_at: activity.starts_at, p_due_at: due.dueAt, p_is_all_day: due.isAllDay, p_visibility: visibility
   });
   if (updateError) { message.textContent = friendlyError(updateError, 'Assegnatari aggiornati, ma non è stato possibile salvare gli altri dati.'); return; }
   editForm.hidden = true;

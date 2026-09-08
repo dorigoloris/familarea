@@ -23,24 +23,44 @@
 
     <section id="invite-form-section" hidden>
       <h2>Nuovo invito</h2>
-      <form id="invite-form">
+      <div class="invite-mode-switch" role="group" aria-label="Modalità di invito">
+        <button id="contacts-mode-button" class="invite-mode-button" type="button" aria-pressed="false">Scegli dai Contatti</button>
+        <button id="manual-mode-button" class="invite-mode-button" type="button" aria-pressed="true">Inserisci manualmente</button>
+      </div>
+
+      <div id="contact-invite-panel" hidden>
         <div>
-          <label for="invite-email">Email destinatario</label>
-          <input id="invite-email" type="email" autocomplete="email" required>
+          <label for="contact-search">Cerca un Contatto</label>
+          <input id="contact-search" type="search" placeholder="Cerca per nome o email" autocomplete="off">
         </div>
-        <div>
-          <label for="invite-first-name">Nome</label>
-          <input id="invite-first-name" type="text" autocomplete="given-name">
+        <p id="contact-invite-message" class="field-help" aria-live="polite"></p>
+        <div id="contact-invite-list" class="invite-contact-list"></div>
+        <div id="selected-contact-invite" class="selected-contact-invite" hidden>
+          <p id="selected-contact-name"></p>
+          <button id="send-contact-invite-button" type="button" disabled>Crea invito</button>
         </div>
-        <div>
-          <label for="invite-last-name">Cognome</label>
-          <input id="invite-last-name" type="text" autocomplete="family-name">
-        </div>
-        <div class="form-actions">
-          <button id="send-invite-button" type="submit">Crea invito</button>
-          <button id="reset-invite-button" class="secondary-button" type="button">Annulla</button>
-        </div>
-      </form>
+      </div>
+
+      <div id="manual-invite-panel">
+        <form id="invite-form">
+          <div>
+            <label for="invite-email">Email destinatario</label>
+            <input id="invite-email" type="email" autocomplete="email" required>
+          </div>
+          <div>
+            <label for="invite-first-name">Nome *</label>
+            <input id="invite-first-name" type="text" autocomplete="given-name" required>
+          </div>
+          <div>
+            <label for="invite-last-name">Cognome</label>
+            <input id="invite-last-name" type="text" autocomplete="family-name">
+          </div>
+          <div class="form-actions">
+            <button id="send-invite-button" type="submit">Crea invito</button>
+            <button id="reset-invite-button" class="secondary-button" type="button">Annulla</button>
+          </div>
+        </form>
+      </div>
       <p id="invite-form-message" aria-live="polite"></p>
     </section>
 
