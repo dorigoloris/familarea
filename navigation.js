@@ -27,10 +27,6 @@
     brand.append(document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
     actions = document.createElement('div');
     actions.className = 'header-actions';
-    const account = document.createElement('span');
-    account.className = 'header-user-name';
-    account.hidden = true;
-    actions.appendChild(account);
     const existingLogout = document.querySelector('[data-logout]');
     const logoutMessage = document.getElementById('logout-message');
     if (existingLogout) actions.appendChild(existingLogout);
@@ -38,7 +34,7 @@
     if (logoutMessage) header.appendChild(logoutMessage);
     body.prepend(header);
   }
-  if (!header || !actions) return;
+  if (!header || !actions || !window.supabase || typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') return;
 
   const topNav = document.createElement('nav');
   topNav.className = 'shared-top-nav';
@@ -64,18 +60,130 @@
   });
   header.insertBefore(topNav, actions);
 
-  const account = actions.querySelector('.header-user-name');
-  let client;
-  if (account && window.supabase && typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined') {
-    client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    client.auth.getUser().then(({ data }) => {
-      const user = data?.user;
-      const name = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email;
-      if (name) { account.textContent = name; account.hidden = false; }
-    });
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  actions.querySelector('.header-user-name')?.remove();
+  const logoutButton = actions.querySelector('[data-logout]');
+
+  const accountMenu = document.createElement('div');
+  accountMenu.className = 'account-menu';
+  const accountTrigger = document.createElement('button');
+  accountTrigger.type = 'button';
+  accountTrigger.className = 'account-menu-trigger';
+  accountTrigger.setAttribute('aria-haspopup', 'menu');
+  accountTrigger.setAttribute('aria-expanded', 'false');
+  accountTrigger.setAttribute('aria-label', 'Apri menu account');
+  const avatarFallback = document.createElement('span');
+  avatarFallback.className = 'account-menu-avatar account-menu-avatar-fallback';
+  avatarFallback.setAttribute('aria-hidden', 'true');
+  const avatarImage = document.createElement('img');
+  avatarImage.className = 'account-menu-avatar account-menu-avatar-image';
+  avatarImage.alt = '';
+  avatarImage.hidden = true;
+  const accountName = document.createElement('span');
+  accountName.className = 'account-menu-name';
+  accountName.textContent = 'Account';
+  const caret = document.createElement('span');
+  caret.className = 'account-menu-caret';
+  caret.setAttribute('aria-hidden', 'true');
+  caret.textContent = '▾';
+  accountTrigger.append(avatarFallback, avatarImage, accountName, caret);
+
+  const accountPanel = document.createElement('div');
+  accountPanel.className = 'account-menu-panel';
+  accountPanel.setAttribute('role', 'menu');
+  accountPanel.hidden = true;
+  const profileLink = document.createElement('a');
+  profileLink.href = 'profilo.html';
+  profileLink.textContent = 'Il mio profilo';
+  profileLink.setAttribute('role', 'menuitem');
+  const preferencesLink = document.createElement('a');
+  preferencesLink.href = 'impostazioni.html';
+  preferencesLink.textContent = 'Impostazioni';
+  preferencesLink.setAttribute('role', 'menuitem');
+  accountPanel.append(profileLink, preferencesLink);
+  if (logoutButton) {
+    logoutButton.classList.add('account-menu-logout');
+    logoutButton.setAttribute('role', 'menuitem');
+    accountPanel.appendChild(logoutButton);
+  }
+  accountMenu.append(accountTrigger, accountPanel);
+  actions.appendChild(accountMenu);
+
+  function closeAccountMenu(returnFocus = false) {
+    accountPanel.hidden = true;
+    accountTrigger.setAttribute('aria-expanded', 'false');
+    if (returnFocus) accountTrigger.focus();
   }
 
-  if (client && personalInvitesLink) {
+  function toggleAccountMenu() {
+    const willOpen = accountPanel.hidden;
+    accountPanel.hidden = !willOpen;
+    accountTrigger.setAttribute('aria-expanded', String(willOpen));
+    if (willOpen) profileLink.focus();
+  }
+
+  accountTrigger.addEventListener('click', toggleAccountMenu);
+  document.addEventListener('pointerdown', (event) => {
+    if (!accountMenu.contains(event.target)) closeAccountMenu();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !accountPanel.hidden) {
+      event.preventDefault();
+      closeAccountMenu(true);
+    }
+  });
+
+  function fullName(profile) {
+    return `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Account';
+  }
+
+  function initials(profile) {
+    const parts = [profile?.first_name, profile?.last_name]
+      .map((value) => (value || '').trim())
+      .filter(Boolean);
+    return parts.map((part) => part.charAt(0).toLocaleUpperCase('it-IT')).join('').slice(0, 2) || 'U';
+  }
+
+  async function renderAccountIdentity(profile) {
+    accountName.textContent = fullName(profile);
+    accountTrigger.setAttribute('aria-label', `Apri menu account di ${fullName(profile)}`);
+    avatarFallback.textContent = initials(profile);
+    avatarFallback.hidden = false;
+    avatarImage.hidden = true;
+    avatarImage.removeAttribute('src');
+    if (!profile.avatar_path) return;
+
+    const { data, error } = await client.storage.from('profile-avatars').createSignedUrl(profile.avatar_path, 60 * 60);
+    if (error || !data?.signedUrl) return;
+    const imageLoaded = await new Promise((resolve) => {
+      avatarImage.onload = () => resolve(true);
+      avatarImage.onerror = () => resolve(false);
+      avatarImage.src = `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}v=${Date.now()}`;
+    });
+    if (!imageLoaded) {
+      avatarImage.removeAttribute('src');
+      return;
+    }
+    avatarImage.alt = `Foto profilo di ${fullName(profile)}`;
+    avatarImage.hidden = false;
+    avatarFallback.hidden = true;
+  }
+
+  async function loadAccountIdentity() {
+    const { data } = await client.auth.getUser();
+    const user = data?.user;
+    if (!user) return;
+    const { data: profile, error } = await client
+      .from('profiles')
+      .select('first_name, last_name, avatar_path')
+      .eq('user_id', user.id)
+      .single();
+    if (!error && profile) await renderAccountIdentity(profile);
+  }
+
+  loadAccountIdentity().catch(() => {});
+
+  if (personalInvitesLink) {
     client.rpc('get_my_area_invites').then(({ data, error }) => {
       if (error) return;
       const pendingCount = (data || []).filter((invite) => invite.status === 'pending').length;
@@ -134,23 +242,20 @@
     <a class="sidebar-link${isActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
   body.prepend(areaNav);
 
-  if (window.supabase && typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined') {
-    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    client.from('areas').select('name').eq('id', areaId).single().then(({ data }) => {
-      const target = document.getElementById('nav-area-name');
-      if (target) target.textContent = data?.name || 'Area';
-    });
-    client.auth.getUser().then(async ({ data }) => {
-      const userId = data?.user?.id;
-      if (!userId) return;
-      const { data: profile } = await client.from('profiles').select('id').eq('user_id', userId).single();
-      const { data: membership } = await client.from('area_memberships').select('role').eq('area_id', areaId).eq('profile_id', profile?.id).single();
-      if (membership?.role !== 'admin') return;
-      const link = document.createElement('a');
-      link.className = `sidebar-link${isActive(['inviti-area.html'])}`;
-      link.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
-      link.textContent = 'Inviti';
-      areaNav.appendChild(link);
-    });
-  }
+  client.from('areas').select('name').eq('id', areaId).single().then(({ data }) => {
+    const target = document.getElementById('nav-area-name');
+    if (target) target.textContent = data?.name || 'Area';
+  });
+  client.auth.getUser().then(async ({ data }) => {
+    const userId = data?.user?.id;
+    if (!userId) return;
+    const { data: profile } = await client.from('profiles').select('id').eq('user_id', userId).single();
+    const { data: membership } = await client.from('area_memberships').select('role').eq('area_id', areaId).eq('profile_id', profile?.id).single();
+    if (membership?.role !== 'admin') return;
+    const link = document.createElement('a');
+    link.className = `sidebar-link${isActive(['inviti-area.html'])}`;
+    link.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
+    link.textContent = 'Inviti';
+    areaNav.appendChild(link);
+  });
 }());

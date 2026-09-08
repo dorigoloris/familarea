@@ -4,7 +4,6 @@ const memberNameElement = document.getElementById('member-name');
 const message = document.getElementById('message');
 const firstNameElement = document.getElementById('member-first-name');
 const lastNameElement = document.getElementById('member-last-name');
-const birthDateElement = document.getElementById('member-birth-date');
 const roleElement = document.getElementById('member-role');
 const backToAreaLink = document.getElementById('back-to-area-link');
 const backToMembersLink = document.getElementById('back-to-members-link');
@@ -15,7 +14,6 @@ const editForm = document.getElementById('edit-form');
 const cancelButton = document.getElementById('cancel-button');
 const editFirstNameInput = document.getElementById('edit-first-name');
 const editLastNameInput = document.getElementById('edit-last-name');
-const editBirthDateInput = document.getElementById('edit-birth-date');
 const removeMemberActions = document.getElementById('remove-member-actions');
 const removeMemberButton = document.getElementById('remove-member-button');
 
@@ -45,7 +43,6 @@ function renderProfile(profile, roleLabel) {
   memberNameElement.textContent = fullName || 'Scheda partecipante';
   firstNameElement.textContent = profile.first_name || '';
   lastNameElement.textContent = profile.last_name || '';
-  birthDateElement.textContent = profile.birth_date || 'Non indicata';
   roleElement.textContent = roleLabel;
 }
 
@@ -116,8 +113,6 @@ async function removeMemberFromArea() {
 function showEditForm() {
   editFirstNameInput.value = currentProfile.first_name || '';
   editLastNameInput.value = currentProfile.last_name || '';
-  editBirthDateInput.value = currentProfile.birth_date || '';
-
   viewMode.hidden = true;
   editForm.hidden = false;
 }
@@ -383,8 +378,6 @@ editForm.addEventListener('submit', async (event) => {
 
   const firstName = editFirstNameInput.value.trim();
   const lastName = editLastNameInput.value.trim();
-  const birthDate = editBirthDateInput.value || null;
-
   message.textContent = 'Salvataggio in corso...';
 
   const { error } = await supabaseClient.rpc('update_area_member', {
@@ -392,7 +385,7 @@ editForm.addEventListener('submit', async (event) => {
     p_profile_id: currentProfileId,
     p_first_name: firstName,
     p_last_name: lastName,
-    p_birth_date: birthDate
+    p_birth_date: null
   });
 
   if (error) {
@@ -402,8 +395,7 @@ editForm.addEventListener('submit', async (event) => {
 
   currentProfile = {
     first_name: firstName,
-    last_name: lastName,
-    birth_date: birthDate
+    last_name: lastName
   };
 
   renderProfile(currentProfile, roleElement.textContent);

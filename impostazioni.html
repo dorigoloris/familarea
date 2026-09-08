@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le mie impostazioni - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card preferences-page">
+    <h1>Le mie impostazioni</h1>
+    <p>Personalizza il funzionamento di FamilArea.</p>
+    <section class="settings-card" aria-labelledby="preferences-title">
+    <h2 id="preferences-title">Preferenze</h2>
+    <p id="preferences-message" class="preferences-message" aria-live="polite">Caricamento impostazioni...</p>
+    <form id="preferences-form" hidden>
+      <div><label for="preference-language">Lingua</label><br><select id="preference-language"><option value="it">Italiano</option></select></div>
+      <div><label for="preference-date-format">Formato data</label><br><select id="preference-date-format"><option value="DD/MM/YYYY">31/12/2026</option><option value="YYYY-MM-DD">2026-12-31</option><option value="MM/DD/YYYY">12/31/2026</option></select></div>
+      <div><label for="preference-week-start">Primo giorno della settimana</label><br><select id="preference-week-start"><option value="1">Lunedì</option><option value="0">Domenica</option><option value="2">Martedì</option><option value="3">Mercoledì</option><option value="4">Giovedì</option><option value="5">Venerdì</option><option value="6">Sabato</option></select></div>
+      <div class="form-actions"><button id="preferences-save-button" type="submit">Salva impostazioni</button></div>
+    </form>
+    </section>
+    <section class="settings-card security-settings-card" aria-labelledby="security-title">
+      <h2 id="security-title">Sicurezza</h2>
+      <p>Gestisci la sicurezza del tuo account.</p>
+      <a class="secondary-button" href="cambia-password.html">Cambia password</a>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="impostazioni.js"></script>
+</body>
+</html>

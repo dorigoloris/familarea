@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Il mio profilo - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card profile-page">
+    <div class="profile-page-heading">
+      <div>
+        <h1>Il mio profilo</h1>
+        <p>Gestisci le informazioni del tuo account.</p>
+      </div>
+    </div>
+
+    <p id="profile-message" class="profile-message" aria-live="polite">Caricamento profilo...</p>
+
+    <div id="profile-content" hidden>
+      <section class="profile-avatar-section" aria-labelledby="avatar-title">
+        <div id="avatar-fallback" class="profile-avatar profile-avatar-fallback" aria-hidden="true"></div>
+        <img id="avatar-image" class="profile-avatar profile-avatar-image" alt="" hidden>
+        <div class="profile-avatar-actions">
+          <h2 id="avatar-title">Foto profilo</h2>
+          <p>JPG, PNG o WebP, massimo 2 MB.</p>
+          <input id="avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <label id="avatar-upload-label" class="btn profile-avatar-upload" for="avatar-file-input">Aggiungi foto</label>
+          <button id="avatar-remove-button" type="button" class="secondary-button" hidden>Rimuovi foto</button>
+        </div>
+      </section>
+
+      <form id="profile-form" class="profile-form">
+        <div>
+          <label for="profile-first-name">Nome *</label><br>
+          <input id="profile-first-name" type="text" required autocomplete="given-name">
+        </div>
+        <div>
+          <label for="profile-last-name">Cognome</label><br>
+          <input id="profile-last-name" type="text" autocomplete="family-name">
+        </div>
+        <div>
+          <label for="profile-email">Email</label><br>
+          <input id="profile-email" type="email" readonly aria-readonly="true" autocomplete="email">
+          <p class="field-help">L’email è gestita dal tuo account di accesso.</p>
+        </div>
+        <div>
+          <label for="profile-phone">Cellulare</label><br>
+          <input id="profile-phone" type="tel" inputmode="tel" autocomplete="tel">
+        </div>
+        <div>
+          <label for="profile-birth-date">Data di nascita</label><br>
+          <input id="profile-birth-date" type="date" autocomplete="bday">
+        </div>
+        <div class="form-actions">
+          <button id="profile-save-button" type="submit">Salva modifiche</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="profilo.js"></script>
+</body>
+</html>

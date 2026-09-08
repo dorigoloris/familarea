@@ -7,7 +7,6 @@ const dashboardWeekGrid = document.getElementById('dashboard-week-grid');
 const dashboardPreviousWeekButton = document.getElementById('dashboard-previous-week');
 const dashboardNextWeekButton = document.getElementById('dashboard-next-week');
 const dashboardCurrentWeekButton = document.getElementById('dashboard-current-week');
-const headerUserName = document.getElementById('header-user-name');
 const dashboardInvitesSection = document.getElementById('dashboard-invites-section');
 const dashboardInvitesTitle = document.getElementById('dashboard-invites-title');
 const dashboardInvitesDescription = document.getElementById('dashboard-invites-description');
@@ -176,9 +175,6 @@ async function loadPendingInvites() {
 async function initialiseDashboard() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
-  const user = sessionData.session.user;
-  const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
-  if (userName) { headerUserName.textContent = userName; headerUserName.hidden = false; }
   await Promise.all([loadDashboardTimeline(), loadPendingInvites()]);
 }
 
