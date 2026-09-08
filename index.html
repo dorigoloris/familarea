@@ -276,6 +276,30 @@
     }
 
     @media (max-width: 600px) {
+      header {
+        gap: clamp(8px, 3vw, 14px);
+        padding: 16px clamp(12px, 4vw, 18px);
+      }
+
+      header .logo {
+        flex: 0 1 auto;
+        font-size: clamp(24px, 7vw, 27px);
+        white-space: nowrap;
+      }
+
+      header > .hero-actions {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        gap: clamp(6px, 2vw, 10px);
+        margin: 0 0 0 auto;
+      }
+
+      header > .hero-actions .btn {
+        padding: 9px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
       .hero {
         padding-top: 40px;
       }
