@@ -141,5 +141,63 @@
     gridElement.replaceChildren(cells);
   }
 
-  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, toValidDate };
+  function startOfWeek(value) {
+    const date = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    return date;
+  }
+
+  function renderWeekCalendar({ weekStart, titleElement, gridElement, activities }) {
+    const start = startOfWeek(weekStart);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const monthFormatter = new Intl.DateTimeFormat('it-IT', { month: 'long' });
+    const dayFormatter = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric' });
+    const today = new Date();
+    const calendarItems = Array.isArray(activities) ? activities : [];
+    const days = document.createDocumentFragment();
+
+    const startMonth = monthFormatter.format(start).toLocaleLowerCase('it-IT');
+    const endMonth = monthFormatter.format(end).toLocaleLowerCase('it-IT');
+    if (start.getFullYear() !== end.getFullYear()) {
+      titleElement.textContent = `${start.getDate()} ${startMonth} ${start.getFullYear()} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+    } else if (start.getMonth() !== end.getMonth()) {
+      titleElement.textContent = `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+    } else {
+      titleElement.textContent = `${start.getDate()}–${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+    }
+
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + offset);
+      const day = document.createElement('article');
+      day.className = 'dashboard-week-day';
+      if (sameLocalDay(date, today)) day.classList.add('is-today');
+
+      const heading = document.createElement('h3');
+      heading.className = 'dashboard-week-day-heading';
+      heading.textContent = dayFormatter.format(date);
+      day.appendChild(heading);
+
+      const dayItems = calendarItems
+        .filter((item) => {
+          const placement = placementDate(item);
+          return placement && sameLocalDay(placement, date);
+        })
+        .sort((first, second) => placementDate(first) - placementDate(second));
+
+      if (!dayItems.length) {
+        const empty = document.createElement('p');
+        empty.className = 'dashboard-week-empty';
+        empty.textContent = 'Nessun impegno';
+        day.appendChild(empty);
+      } else {
+        dayItems.forEach((item) => day.appendChild(createCalendarItem(item)));
+      }
+      days.appendChild(day);
+    }
+    gridElement.replaceChildren(days);
+  }
+
+  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, renderWeekCalendar, startOfWeek, toValidDate };
 }(window));

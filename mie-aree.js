@@ -4,11 +4,11 @@ const message = document.getElementById('message');
 const areasList = document.getElementById('areas-list');
 const dashboardMessage = document.getElementById('dashboard-message');
 const dashboardCalendarSection = document.getElementById('dashboard-calendar-section');
-const dashboardMonthTitle = document.getElementById('dashboard-month-title');
-const dashboardCalendarGrid = document.getElementById('dashboard-calendar-grid');
-const dashboardPreviousMonthButton = document.getElementById('dashboard-previous-month');
-const dashboardNextMonthButton = document.getElementById('dashboard-next-month');
-const dashboardTodayButton = document.getElementById('dashboard-today');
+const dashboardWeekTitle = document.getElementById('dashboard-week-title');
+const dashboardWeekGrid = document.getElementById('dashboard-week-grid');
+const dashboardPreviousWeekButton = document.getElementById('dashboard-previous-week');
+const dashboardNextWeekButton = document.getElementById('dashboard-next-week');
+const dashboardCurrentWeekButton = document.getElementById('dashboard-current-week');
 const headerUserName = document.getElementById('header-user-name');
 const dashboardInvitesSection = document.getElementById('dashboard-invites-section');
 const dashboardInvitesTitle = document.getElementById('dashboard-invites-title');
@@ -22,7 +22,7 @@ const typeLabels = { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenz
 const priorityLabels = { low: 'Bassa', normal: 'Normale', high: 'Alta' };
 const statusLabels = { open: 'Aperta', completed: 'Completata', cancelled: 'Cancellata' };
 let dashboardCalendarItems = [];
-let dashboardDisplayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let dashboardDisplayedWeek = calendarUtils.startOfWeek(new Date());
 
 function getTodayBounds() {
   const now = new Date();
@@ -110,17 +110,17 @@ function renderItems(section, items, limit) {
 }
 
 function renderDashboardCalendar() {
-  calendarUtils.renderMonthCalendar({ month: dashboardDisplayedMonth, titleElement: dashboardMonthTitle, gridElement: dashboardCalendarGrid, activities: dashboardCalendarItems });
+  calendarUtils.renderWeekCalendar({ weekStart: dashboardDisplayedWeek, titleElement: dashboardWeekTitle, gridElement: dashboardWeekGrid, activities: dashboardCalendarItems });
 }
 
-function changeDashboardMonth(offset) {
-  dashboardDisplayedMonth = new Date(dashboardDisplayedMonth.getFullYear(), dashboardDisplayedMonth.getMonth() + offset, 1);
+function changeDashboardWeek(offset) {
+  dashboardDisplayedWeek = new Date(dashboardDisplayedWeek);
+  dashboardDisplayedWeek.setDate(dashboardDisplayedWeek.getDate() + (offset * 7));
   renderDashboardCalendar();
 }
 
-function showCurrentMonth() {
-  const now = new Date();
-  dashboardDisplayedMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+function showCurrentWeek() {
+  dashboardDisplayedWeek = calendarUtils.startOfWeek(new Date());
   renderDashboardCalendar();
 }
 
@@ -204,8 +204,8 @@ async function initialiseDashboard() {
   await Promise.all([loadDashboardTimeline(), loadMyAreas(user.id), loadPendingInvites()]);
 }
 
-dashboardPreviousMonthButton.addEventListener('click', () => changeDashboardMonth(-1));
-dashboardNextMonthButton.addEventListener('click', () => changeDashboardMonth(1));
-dashboardTodayButton.addEventListener('click', showCurrentMonth);
+dashboardPreviousWeekButton.addEventListener('click', () => changeDashboardWeek(-1));
+dashboardNextWeekButton.addEventListener('click', () => changeDashboardWeek(1));
+dashboardCurrentWeekButton.addEventListener('click', showCurrentWeek);
 renderDashboardCalendar();
 initialiseDashboard();
