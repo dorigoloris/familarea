@@ -42,6 +42,7 @@
   let personalInvitesLink;
   [
     { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
+    { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
     { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },

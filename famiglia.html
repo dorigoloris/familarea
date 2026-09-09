@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La mia Famiglia - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="family-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card family-page fa-page">
+    <header class="family-page-header fa-surface" aria-labelledby="family-title">
+      <div class="family-page-heading">
+        <p class="eyebrow">Spazio personale</p>
+        <h1 id="family-title">La mia Famiglia</h1>
+        <p>Organizza le persone e gli animali che fanno parte della tua vita quotidiana.</p>
+      </div>
+      <div class="family-header-illustration" aria-hidden="true"><svg viewBox="0 0 220 132"><path class="family-hill family-hill-one" d="M0 119c31-53 67-56 96-19 28-46 72-53 124 19H0Z"/><path class="family-hill family-hill-two" d="M36 128c24-33 52-36 77-11 31-39 68-31 107 11H36Z"/><path class="family-house" d="m79 72 31-25 31 25v37H79V72Z"/><path class="family-roof" d="m72 74 38-32 38 32"/><path class="family-door" d="M103 109V87h14v22"/><circle class="family-window" cx="128" cy="85" r="5"/><path class="family-tree-trunk" d="M59 108V84"/><circle class="family-tree" cx="59" cy="72" r="17"/><path class="family-tree-trunk" d="M162 108V88"/><circle class="family-tree family-tree-small" cx="162" cy="78" r="13"/></svg></div>
+    </header>
+    <p id="family-message" class="family-message" aria-live="polite">Caricamento Famiglia...</p>
+    <section id="family-empty-state" class="family-empty-state fa-surface" hidden aria-labelledby="family-empty-title">
+      <span class="fa-icon-badge family-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M17 10a3 3 0 1 0 0-6"/></svg></span>
+      <div><h2 id="family-empty-title">Crea la tua Famiglia</h2><p>Crea il tuo nucleo familiare per organizzare le persone e gli animali che fanno parte della tua vita quotidiana.</p><button id="create-family-button" type="button">Crea la mia Famiglia</button></div>
+    </section>
+    <section id="family-content" hidden aria-labelledby="members-title">
+      <div class="family-members-toolbar fa-surface"><div><p class="section-kicker">I componenti</p><h2 id="members-title">La tua Famiglia</h2><p>Le persone e gli animali che desideri tenere vicini nella vita quotidiana.</p></div><button id="add-member-button" type="button"><span aria-hidden="true">+</span> Aggiungi membro</button></div>
+      <div id="family-members-list" class="family-members-grid" aria-live="polite"></div>
+    </section>
+  </main>
+  <div id="family-member-modal" class="family-member-modal" hidden>
+    <section id="family-member-dialog" class="family-member-dialog" role="dialog" aria-modal="true" aria-labelledby="family-member-modal-title" tabindex="-1">
+      <button id="family-member-modal-close" class="family-member-modal-close" type="button" aria-label="Chiudi editor membro">×</button>
+      <p class="eyebrow">La mia Famiglia</p><h2 id="family-member-modal-title">Aggiungi membro</h2><p>Inserisci le informazioni essenziali.</p><p id="family-member-form-message" class="family-member-form-message" aria-live="polite"></p>
+      <form id="family-member-form" class="family-member-form">
+        <div><label for="family-member-type">Tipo di membro *</label><select id="family-member-type" required><option value="person">Persona</option><option value="pet">Animale domestico</option></select></div>
+        <div><label for="family-member-first-name">Nome *</label><input id="family-member-first-name" type="text" required autocomplete="off"></div>
+        <div id="family-member-last-name-field"><label for="family-member-last-name">Cognome</label><input id="family-member-last-name" type="text" autocomplete="off"></div>
+        <div id="family-member-relationship-field"><label for="family-member-relationship">Relazione *</label><select id="family-member-relationship" required><option value="partner">Partner</option><option value="child">Figlio/a</option><option value="parent">Genitore</option><option value="grandparent">Nonno/a</option><option value="sibling">Fratello/Sorella</option><option value="other">Altro</option></select></div>
+        <div id="family-member-species-field" hidden><label for="family-member-species">Specie *</label><select id="family-member-species"><option value="dog">Cane</option><option value="cat">Gatto</option><option value="other">Altro</option></select></div>
+        <div id="family-member-species-label-field" hidden><label for="family-member-species-label">Specie</label><input id="family-member-species-label" type="text" autocomplete="off"></div>
+        <div><label for="family-member-birth-date">Data di nascita</label><input id="family-member-birth-date" type="date"></div>
+        <div class="family-member-form-actions"><button id="family-member-save-button" type="submit">Salva membro</button><button id="family-member-cancel-button" class="secondary-button" type="button">Annulla</button></div>
+      </form>
+    </section>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="famiglia.js"></script>
+</body>
+</html>
