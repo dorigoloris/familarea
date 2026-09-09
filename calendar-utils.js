@@ -18,7 +18,7 @@
   function placementDate(item) {
     if (itemType(item) === 'birthday') return toValidDate(item.occurs_on);
     if (itemType(item) === 'event') return toValidDate(item.starts_at);
-    return toValidDate(item.starts_at) || toValidDate(item.due_at);
+    return toValidDate(item.occurrence_starts_at) || toValidDate(item.starts_at) || toValidDate(item.due_at);
   }
 
   function sameLocalDay(left, right) {
@@ -41,8 +41,8 @@
     const start = placementDate(item);
     if (item.is_all_day || !start) return '';
     const formatter = new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' });
-    if (itemType(item) !== 'event') return formatter.format(start);
-    const end = toValidDate(item.ends_at);
+    const end = itemType(item) === 'event' ? toValidDate(item.ends_at) : toValidDate(item.occurrence_ends_at);
+    if (itemType(item) !== 'event') return end && end.getTime() !== start.getTime() ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
     return end ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
   }
 

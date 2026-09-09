@@ -39,11 +39,13 @@
 
     <div id="calendar-content" hidden>
       <section class="calendar-section calendar-month-surface fa-surface" aria-labelledby="month-title">
+        <div class="calendar-print-heading" aria-hidden="true"><strong>FamilArea</strong><span>Calendario</span><b id="print-month-title"></b></div>
         <div class="calendar-controls">
           <button id="previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
           <h2 id="month-title" aria-live="polite"></h2>
           <button id="next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
         </div>
+        <div class="calendar-print-toolbar"><button id="print-calendar" class="calendar-print-button" type="button" aria-label="Stampa il mese visualizzato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 17H4V9h16v8h-2M7 14h10v7H7z"/></svg><span>Stampa calendario</span></button></div>
         <div class="calendar-legend" aria-label="Legenda del calendario">
           <span class="calendar-legend-item calendar-legend-activity"><i aria-hidden="true"></i>Attività</span>
           <span class="calendar-legend-item calendar-legend-event"><i aria-hidden="true"></i>Eventi</span>

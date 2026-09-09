@@ -20,7 +20,8 @@
         <dt>Priorità</dt><dd id="activity-priority"></dd>
         <dt>Stato</dt><dd id="activity-status"></dd>
         <dt>Visibilità</dt><dd id="activity-visibility"></dd>
-        <dt>Data / scadenza</dt><dd id="activity-due"></dd>
+        <dt>Quando</dt><dd id="activity-due"></dd>
+        <dt id="activity-recurrence-label" hidden>Ripetizione</dt><dd id="activity-recurrence" hidden></dd>
         <dt>Assegnatari</dt><dd id="activity-assignees"></dd>
         <dt>Note</dt><dd id="activity-notes"></dd>
       </dl>
@@ -40,10 +41,16 @@
       <br>
       <div><label for="edit-notes">Note</label><textarea id="edit-notes"></textarea></div>
       <br>
-      <fieldset class="activity-due-fields"><legend>Scadenza</legend>
+      <fieldset class="activity-due-fields"><legend>Quando</legend>
         <div class="activity-dates">
-          <div><label for="edit-due-date">Data</label><input id="edit-due-date" type="date"></div>
-          <div><label for="edit-due-time">Ora (facoltativa)</label><input id="edit-due-time" type="time"></div>
+          <div><label for="edit-activity-date">Data</label><input id="edit-activity-date" type="date"></div>
+          <div><label for="edit-start-time">Ora inizio</label><input id="edit-start-time" type="time"></div>
+          <div><label for="edit-end-time">Ora fine</label><input id="edit-end-time" type="time"></div>
+        </div>
+        <label class="activity-recurrence-toggle"><input id="edit-recurrence-enabled" type="checkbox"> Ripeti questa attivit&agrave;</label>
+        <div id="edit-recurrence-fields" class="activity-recurrence-fields" hidden>
+          <div><label for="edit-recurrence-weekday">Ripeti ogni</label><select id="edit-recurrence-weekday"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></div>
+          <div><label for="edit-recurrence-until">Fine ripetizione</label><input id="edit-recurrence-until" type="date"></div>
         </div>
       </fieldset>
       <br>

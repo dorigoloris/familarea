@@ -23,10 +23,16 @@
       <br>
       <div><label for="notes">Note</label><textarea id="notes"></textarea></div>
       <br>
-      <fieldset class="activity-due-fields"><legend>Scadenza</legend>
+      <fieldset class="activity-due-fields"><legend>Quando</legend>
         <div class="activity-dates">
-          <div><label for="due-date">Data</label><input id="due-date" type="date"></div>
-          <div><label for="due-time">Ora (facoltativa)</label><input id="due-time" type="time"></div>
+          <div><label for="activity-date">Data</label><input id="activity-date" type="date"></div>
+          <div><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
+          <div><label for="end-time">Ora fine</label><input id="end-time" type="time"></div>
+        </div>
+        <label class="activity-recurrence-toggle"><input id="recurrence-enabled" type="checkbox"> Ripeti questa attivit&agrave;</label>
+        <div id="recurrence-fields" class="activity-recurrence-fields" hidden>
+          <div><label for="recurrence-weekday">Ripeti ogni</label><select id="recurrence-weekday"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></div>
+          <div><label for="recurrence-until">Fine ripetizione</label><input id="recurrence-until" type="date"></div>
         </div>
       </fieldset>
       <br>
