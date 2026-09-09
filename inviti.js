@@ -32,7 +32,7 @@ async function respondToInvite(invite, rpcName, card) {
 
 function createInviteCard(invite) {
   const article = document.createElement('article');
-  article.className = 'invite-card';
+  article.className = 'invite-card fa-list-row';
   const details = document.createElement('div');
   const title = document.createElement('h3');
   const inviter = document.createElement('p');
@@ -41,7 +41,7 @@ function createInviteCard(invite) {
   title.textContent = invite.area_name || 'Area FamilArea';
   const inviterName = fullName(invite.inviter_first_name, invite.inviter_last_name);
   inviter.textContent = inviterName ? `Invitato da ${inviterName}` : 'Mittente non indicato';
-  status.className = `invite-status invite-status-${invite.status}`;
+  status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
   status.textContent = statusLabel(invite.status);
   metadata.textContent = 'Invito a partecipare all’Area';
   details.append(title, inviter, status, metadata);

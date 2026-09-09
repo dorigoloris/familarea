@@ -8,44 +8,88 @@
 </head>
 
 <body>
-
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <div class="area-heading"><h1 id="area-name">Area FamilArea</h1><a id="edit-area-link" class="btn" href="#" hidden>Modifica Area</a></div>
+  <main class="area-page">
+    <div class="area-page-decoration area-page-decoration-one" aria-hidden="true"></div>
+    <div class="area-page-decoration area-page-decoration-two" aria-hidden="true"></div>
+    <header class="area-page-header" aria-labelledby="area-name">
+      <div class="area-page-heading">
+        <div class="area-page-heading-meta">
+          <p id="area-type-label" class="area-type-label">Area</p>
+          <span id="area-role-badge" class="area-role-badge" hidden></span>
+        </div>
+        <h1 id="area-name">Area FamilArea</h1>
+      </div>
 
-  <p id="message">Caricamento...</p>
+      <div id="area-illustration" class="area-header-illustration" aria-hidden="true"></div>
 
-  <h2>Partecipanti</h2>
+      <div id="area-manage-menu" class="area-manage-menu" hidden>
+        <button id="area-manage-trigger" class="area-manage-trigger" type="button" aria-haspopup="dialog" aria-controls="area-manage-modal" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05-2.1 2.1-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.65v.08h-3v-.08a1.8 1.8 0 0 0-1.1-1.65 1.8 1.8 0 0 0-1.98.36l-.05.05-2.1-2.1.05-.05A1.8 1.8 0 0 0 6.74 15a1.8 1.8 0 0 0-1.65-1.1H5v-3h.09a1.8 1.8 0 0 0 1.65-1.1 1.8 1.8 0 0 0-.36-1.98l-.05-.05 2.1-2.1.05.05a1.8 1.8 0 0 0 1.98.36 1.8 1.8 0 0 0 1.1-1.65V4.35h3v.08a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 1.98-.36l.05-.05 2.1 2.1-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.65 1.1H20v3h-.08A1.8 1.8 0 0 0 18.27 15Z"/></svg>
+          Gestisci
+          <svg class="area-manage-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+      </div>
+    </header>
 
-  <ul id="members-list"></ul>
+    <div id="area-manage-modal" class="area-manage-modal" hidden>
+      <section id="area-manage-dialog" class="area-manage-dialog" role="dialog" aria-modal="true" aria-labelledby="area-manage-title" tabindex="-1">
+        <button id="area-manage-close" class="area-manage-close" type="button" aria-label="Chiudi gestione Area">×</button>
+        <h2 id="area-manage-title">Gestisci Area</h2>
+        <p>Scegli un'azione</p>
+        <div id="area-manage-actions" class="area-manage-actions">
+          <a id="add-member-link" class="area-manage-action area-manage-action-primary" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"/></svg><span>Invita partecipante</span></a>
+          <a id="area-invites-link" class="area-manage-action" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 12 12l9-5.5M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg><span>Gestisci inviti</span></a>
+          <a id="edit-area-link" class="area-manage-action" href="#" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20ZM13.5 7.5l3 3"/></svg><span>Modifica Area</span></a>
+        </div>
+      </section>
+    </div>
 
-  <div class="area-invite-actions">
-    <a id="add-member-link" href="#" hidden>Invita partecipante</a>
-    <a id="area-invites-link" href="#" hidden>Gestisci inviti</a>
-  </div>
+    <p id="message" class="area-page-message" aria-live="polite">Caricamento...</p>
 
-  <div class="area-summary-grid">
-    <section id="activities-section" class="area-summary-section" hidden>
-      <h2>Attivit&agrave;</h2>
-      <p class="area-summary-description">Organizza ci&ograve; che c'&egrave; da fare.</p>
-      <p id="activities-message"></p>
-      <p><a id="activities-link" href="#">Vedi attivit&agrave;</a></p>
-    </section>
+    <div class="area-overview-grid">
+      <section class="area-overview-card area-participants-card" aria-labelledby="participants-title">
+        <div class="area-card-heading">
+          <div class="area-card-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8a3 3 0 1 1 0 6M22 20v-1.5a4 4 0 0 0-3-3.8"/></svg><h2 id="participants-title">Partecipanti</h2></div>
+          <span id="participants-count" class="area-count-badge">0</span>
+        </div>
+        <ul id="members-list" class="area-compact-list"></ul>
+        <button id="members-toggle" class="area-card-link-button" type="button" hidden aria-expanded="false">Mostra tutti i partecipanti</button>
+      </section>
 
-    <section id="events-section" class="area-summary-section">
-      <h2>Eventi</h2>
-      <p class="area-summary-description">Gestisci ci&ograve; a cui partecipare.</p>
-      <p><a id="events-link" href="#">Vedi eventi</a></p>
-    </section>
+      <section id="activities-section" class="area-overview-card area-activities-card" aria-labelledby="activities-title" hidden>
+        <div class="area-card-heading">
+          <div class="area-card-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6M3 4h18v16H3z"/></svg><h2 id="activities-title">Attivit&agrave;</h2></div>
+          <span id="activities-count" class="area-count-badge">0</span>
+        </div>
+        <div id="activities-preview" class="area-compact-list" aria-live="polite"></div>
+        <p id="activities-message" class="area-card-message"></p>
+        <a id="activities-link" class="area-card-link" href="#">Vedi attivit&agrave;</a>
+      </section>
 
-    <section id="lists-section" class="area-summary-section" hidden>
-      <h2>Liste</h2>
-      <p class="area-summary-description">Condividi e gestisci elementi insieme.</p>
-      <p id="lists-message"></p>
-      <p><a id="lists-link" href="#">Vedi liste</a></p>
-    </section>
-  </div>
+      <section id="events-section" class="area-overview-card area-events-card" aria-labelledby="events-title" hidden>
+        <div class="area-card-heading">
+          <div class="area-card-title"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6"/></svg><h2 id="events-title">Eventi</h2></div>
+          <span id="events-count" class="area-count-badge">0</span>
+        </div>
+        <div id="events-preview" class="area-compact-list" aria-live="polite"></div>
+        <p id="events-message" class="area-card-message"></p>
+        <a id="events-link" class="area-card-link" href="#">Vedi eventi</a>
+      </section>
+
+      <section id="lists-section" class="area-overview-card area-lists-card" aria-labelledby="lists-title" hidden>
+        <div class="area-card-heading">
+          <div class="area-card-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><h2 id="lists-title">Liste</h2></div>
+          <span id="lists-count" class="area-count-badge">0</span>
+        </div>
+        <div id="lists-preview" class="area-compact-list" aria-live="polite"></div>
+        <p id="lists-message" class="area-card-message"></p>
+        <a id="lists-link" class="area-card-link" href="#">Vedi liste</a>
+      </section>
+    </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
@@ -53,6 +97,5 @@
   <script src="navigation.js"></script>
   <script src="area.js"></script>
   <script src="area-edit-link.js"></script>
-
 </body>
 </html>

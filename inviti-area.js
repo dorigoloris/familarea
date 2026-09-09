@@ -102,7 +102,7 @@ function renderContacts() {
 
   visibleContacts.forEach((contact) => {
     const card = document.createElement('article');
-    card.className = 'invite-contact-card';
+    card.className = 'invite-contact-card fa-list-row';
     const details = document.createElement('div');
     const name = document.createElement('h3');
     const email = document.createElement('p');
@@ -217,7 +217,7 @@ async function sendSelectedContactInvites() {
 
 function createInviteCard(invite) {
   const article = document.createElement('article');
-  article.className = 'invite-card';
+  article.className = 'invite-card fa-list-row';
   const details = document.createElement('div');
   const email = document.createElement('h3');
   const name = document.createElement('p');
@@ -227,7 +227,7 @@ function createInviteCard(invite) {
   email.textContent = invite.recipient_email;
   const recipientName = fullName(invite.first_name, invite.last_name);
   name.textContent = recipientName || 'Nome non indicato';
-  status.className = `invite-status invite-status-${invite.status}`;
+  status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
   status.textContent = inviteStatusLabel(invite.status);
   metadata.textContent = 'Invito partecipante';
   details.append(email, name, status, metadata);

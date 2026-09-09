@@ -6,12 +6,14 @@
   <title>Le mie impostazioni - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="account-page preferences-page-body">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card preferences-page">
-    <h1>Le mie impostazioni</h1>
-    <p>Personalizza il funzionamento di FamilArea.</p>
+  <main class="page-card account-page-shell preferences-page">
+    <header class="account-page-heading">
+      <span class="account-heading-icon account-heading-icon-settings" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5.3v-3h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3h-.2a1.7 1.7 0 0 0-1.5 1Z"></path></svg></span>
+      <div><h1>Le mie impostazioni</h1><p>Personalizza il funzionamento di FamilArea.</p></div>
+    </header>
     <section class="settings-card" aria-labelledby="preferences-title">
     <h2 id="preferences-title">Preferenze</h2>
     <p id="preferences-message" class="preferences-message" aria-live="polite">Caricamento impostazioni...</p>

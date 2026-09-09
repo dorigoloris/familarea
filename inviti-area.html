@@ -6,68 +6,37 @@
   <title>Inviti Area - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="invites-area-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card invites-area-page">
-    <div class="section-heading">
-      <div>
-        <h1>Inviti dell’Area</h1>
-        <p id="area-description">Gestisci gli inviti per questa Area.</p>
-      </div>
+  <main class="page-card invites-area-page fa-page">
+    <header class="area-invites-page-header fa-surface" aria-labelledby="area-invites-title">
+      <div><p class="eyebrow">Gestione Area</p><h1 id="area-invites-title">Inviti dell’Area</h1><p id="area-description">Gestisci gli inviti per questa Area.</p></div>
       <a id="back-to-area-link" class="btn secondary-button" href="#">Torna all’Area</a>
-    </div>
+    </header>
 
-    <p id="page-message" aria-live="polite">Caricamento inviti…</p>
+    <p id="page-message" aria-live="polite">Caricamento inviti...</p>
 
-    <section id="invite-form-section" hidden>
-      <h2>Nuovo invito</h2>
-      <div class="invite-mode-switch" role="group" aria-label="Modalità di invito">
-        <button id="contacts-mode-button" class="invite-mode-button" type="button" aria-pressed="false">Scegli dai Contatti</button>
-        <button id="manual-mode-button" class="invite-mode-button" type="button" aria-pressed="true">Inserisci manualmente</button>
-      </div>
+    <section id="invite-form-section" class="area-invite-create-surface fa-surface" hidden>
+      <div class="area-invite-section-heading"><span class="fa-icon-badge area-invite-create-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6.5 12 12l9-5.5M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><path d="M18 3v5M15.5 5.5h5"/></svg></span><div><h2>Nuovo invito</h2><p>Invita una persona a partecipare a questa Area.</p></div></div>
+      <div class="invite-mode-switch" role="group" aria-label="Modalità di invito"><button id="contacts-mode-button" class="invite-mode-button" type="button" aria-pressed="false">Scegli dai Contatti</button><button id="manual-mode-button" class="invite-mode-button" type="button" aria-pressed="true">Inserisci manualmente</button></div>
 
       <div id="contact-invite-panel" hidden>
-        <div>
-          <label for="contact-search">Cerca un Contatto</label>
-          <input id="contact-search" type="search" placeholder="Cerca per nome o email" autocomplete="off">
-        </div>
+        <div class="contact-invite-search"><label for="contact-search">Cerca un Contatto</label><input id="contact-search" type="search" placeholder="Cerca per nome o email" autocomplete="off"></div>
         <p id="contact-invite-message" class="field-help" aria-live="polite"></p>
         <div id="contact-invite-list" class="invite-contact-list"></div>
-        <div class="selected-contact-invite">
-          <p id="selected-contact-summary">0 selezionati</p>
-          <button id="send-contact-invite-button" type="button" disabled>Invita selezionati</button>
-        </div>
+        <div class="selected-contact-invite"><p id="selected-contact-summary">0 selezionati</p><button id="send-contact-invite-button" type="button" disabled>Invita selezionati</button></div>
       </div>
 
-      <div id="manual-invite-panel">
-        <form id="invite-form">
-          <div>
-            <label for="invite-email">Email destinatario</label>
-            <input id="invite-email" type="email" autocomplete="email" required>
-          </div>
-          <div>
-            <label for="invite-first-name">Nome *</label>
-            <input id="invite-first-name" type="text" autocomplete="given-name" required>
-          </div>
-          <div>
-            <label for="invite-last-name">Cognome</label>
-            <input id="invite-last-name" type="text" autocomplete="family-name">
-          </div>
-          <div class="form-actions">
-            <button id="send-invite-button" type="submit">Crea invito</button>
-            <button id="reset-invite-button" class="secondary-button" type="button">Annulla</button>
-          </div>
-        </form>
-      </div>
-      <p id="invite-form-message" aria-live="polite"></p>
+      <div id="manual-invite-panel"><form id="invite-form" class="area-invite-form"><div><label for="invite-email">Email destinatario</label><input id="invite-email" type="email" autocomplete="email" required></div><div><label for="invite-first-name">Nome *</label><input id="invite-first-name" type="text" autocomplete="given-name" required></div><div><label for="invite-last-name">Cognome</label><input id="invite-last-name" type="text" autocomplete="family-name"></div><div class="form-actions"><button id="send-invite-button" type="submit">Crea invito</button><button id="reset-invite-button" class="secondary-button" type="button">Annulla</button></div></form></div>
+      <p id="invite-form-message" class="form-feedback" aria-live="polite"></p>
     </section>
 
-    <section id="invites-section" hidden>
-      <h2>Inviti inviati</h2>
+    <section id="invites-section" class="area-invites-list-surface fa-surface" hidden>
+      <div class="area-invite-section-heading"><span class="fa-icon-badge area-invites-list-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 9h8M8 13h6M8 17h4"/></svg></span><div><h2>Inviti inviati</h2><p>Lo stato degli inviti per questa Area.</p></div></div>
       <div id="invites-list" class="invites-list"></div>
-      <p id="invites-empty" class="empty-state" hidden>Non ci sono ancora inviti per questa Area.</p>
+      <p id="invites-empty" class="invites-empty-state fa-empty-state" hidden><span class="fa-icon-badge invites-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 9h8M8 13h6"/></svg></span><span><strong>Non ci sono ancora inviti per questa Area.</strong><span>Usa il modulo qui sopra per inviare il primo.</span></span></p>
     </section>
   </main>
 

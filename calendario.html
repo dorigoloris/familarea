@@ -6,20 +6,48 @@
   <title>Il mio Calendario - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="calendar-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card calendar-page">
-    <h1>Il mio Calendario</h1>
+  <main class="page-card calendar-page fa-page fa-page--wide">
+    <div class="calendar-page-decoration calendar-page-decoration-one" aria-hidden="true"></div>
+    <div class="calendar-page-decoration calendar-page-decoration-two" aria-hidden="true"></div>
+
+    <header class="calendar-page-header" aria-labelledby="calendar-page-title">
+      <div class="calendar-page-heading">
+        <p class="eyebrow">Organizzazione personale</p>
+        <h1 id="calendar-page-title">Il mio Calendario</h1>
+        <p>Attività, eventi e compleanni in un unico sguardo.</p>
+      </div>
+      <div class="calendar-header-illustration" aria-hidden="true">
+        <svg viewBox="0 0 270 176" focusable="false">
+          <rect x="9" y="10" width="252" height="156" rx="31" fill="#e8f3f5"/>
+          <circle cx="213" cy="48" r="29" fill="#cde7d2"/>
+          <path d="M16 132c33-25 73-15 104-32 37-20 75-5 134 22v44H16Z" fill="#d9ecde"/>
+          <rect x="66" y="43" width="124" height="89" rx="15" fill="#fff" stroke="#0d2b4f" stroke-width="4"/>
+          <path d="M66 69h124M94 33v24M162 33v24" fill="none" stroke="#0d2b4f" stroke-width="4" stroke-linecap="round"/>
+          <rect x="91" y="86" width="22" height="17" rx="4" fill="#e5f2e2"/>
+          <rect x="123" y="86" width="22" height="17" rx="4" fill="#e8f0f7"/>
+          <rect x="155" y="86" width="18" height="17" rx="4" fill="#fff1dc"/>
+          <path d="m96 95 5 4 8-9M128 95h12M160 95h8" fill="none" stroke="#4d8b4f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </header>
+
     <p id="calendar-message" aria-live="polite">Caricamento calendario...</p>
 
     <div id="calendar-content" hidden>
-      <section class="calendar-section" aria-labelledby="month-title">
+      <section class="calendar-section calendar-month-surface fa-surface" aria-labelledby="month-title">
         <div class="calendar-controls">
-          <button id="previous-month" type="button" aria-label="Mese precedente">Precedente</button>
+          <button id="previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
           <h2 id="month-title" aria-live="polite"></h2>
-          <button id="next-month" type="button" aria-label="Mese successivo">Successivo</button>
+          <button id="next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+        </div>
+        <div class="calendar-legend" aria-label="Legenda del calendario">
+          <span class="calendar-legend-item calendar-legend-activity"><i aria-hidden="true"></i>Attività</span>
+          <span class="calendar-legend-item calendar-legend-event"><i aria-hidden="true"></i>Eventi</span>
+          <span class="calendar-legend-item calendar-legend-birthday"><i aria-hidden="true"></i>Compleanni</span>
         </div>
         <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
           <div class="calendar-weekdays" aria-hidden="true">
@@ -29,9 +57,12 @@
         </div>
       </section>
 
-      <section id="undated-section" class="calendar-section" aria-labelledby="undated-title">
-        <h2 id="undated-title">Senza data</h2>
-        <p id="undated-empty" class="empty-state" hidden>Nessuna attività aperta senza data.</p>
+      <section id="undated-section" class="calendar-section calendar-undated-surface fa-surface" aria-labelledby="undated-title">
+        <div class="calendar-undated-heading">
+          <span class="fa-icon-badge calendar-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg></span>
+          <div><h2 id="undated-title">Senza data</h2><p>Attività aperte da pianificare.</p></div>
+        </div>
+        <p id="undated-empty" class="fa-empty-state" hidden><strong>Nessuna attività aperta senza data.</strong><span>Tutto è già pianificato.</span></p>
         <div id="undated-list" class="dashboard-list"></div>
       </section>
     </div>

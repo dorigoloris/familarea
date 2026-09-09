@@ -73,9 +73,9 @@ function createContactCard(contact) {
     nameField.appendChild(pendingInvites);
   }
 
-  const email = createDirectoryField('Email', contact.primary_email);
-  const phone = createDirectoryField('Cellulare', contact.primary_phone);
-  const birthDate = createDirectoryField('Data di nascita', formatBirthDate(contact.birth_date));
+  const email = createDirectoryField('Email', contact.primary_email, 'contact-directory-email');
+  const phone = createDirectoryField('Cellulare', contact.primary_phone, 'contact-directory-phone');
+  const birthDate = createDirectoryField('Data di nascita', formatBirthDate(contact.birth_date), 'contact-directory-birth-date');
 
   const calendar = document.createElement('label');
   calendar.className = 'contact-directory-field contact-directory-calendar';

@@ -12,24 +12,78 @@
     <div class="header-actions"><button class="logout-button" type="button" data-logout>Esci</button></div>
     <p id="logout-message" aria-live="polite"></p>
   </header>
+
   <div class="dashboard-shell">
-    <main class="dashboard-content">
-      <div class="dashboard-intro"><p class="eyebrow">FamilArea</p><h1>La mia Dashboard</h1><p>Qui trovi una panoramica dei tuoi impegni.</p><p id="dashboard-message" aria-live="polite"></p></div>
+    <main class="dashboard-content fa-page fa-page--wide">
+      <div class="dashboard-page-decoration dashboard-page-decoration-one" aria-hidden="true"></div>
+      <div class="dashboard-page-decoration dashboard-page-decoration-two" aria-hidden="true"></div>
+
+      <header class="dashboard-intro dashboard-page-header" aria-labelledby="dashboard-title">
+        <div class="dashboard-header-copy">
+          <p class="eyebrow">FamilArea</p>
+          <h1 id="dashboard-title">La mia Dashboard</h1>
+          <p>Qui trovi una panoramica dei tuoi impegni.</p>
+          <p id="dashboard-message" aria-live="polite"></p>
+        </div>
+        <div class="dashboard-header-illustration" aria-hidden="true">
+          <svg viewBox="0 0 260 170" focusable="false">
+            <rect x="8" y="9" width="244" height="152" rx="31" fill="#e8f3f5"/>
+            <circle cx="204" cy="47" r="27" fill="#cce6d0"/>
+            <path d="M18 131c32-21 63-14 91-29 38-20 72-9 133 21v29H18Z" fill="#d8ebdc"/>
+            <rect x="72" y="46" width="107" height="80" rx="14" fill="#fff" stroke="#0d2b4f" stroke-width="4"/>
+            <path d="M72 70h107M98 35v23M153 35v23M95 89h17M95 108h31M143 90h16" fill="none" stroke="#4d8b4f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="194" cy="111" r="21" fill="#eef7ec" stroke="#4d8b4f" stroke-width="4"/>
+            <path d="m184 111 7 7 13-15" fill="none" stroke="#4d8b4f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </header>
+
       <section id="dashboard-invites-section" class="dashboard-section dashboard-invites-card" aria-labelledby="dashboard-invites-title" hidden>
-        <div class="dashboard-invites-content"><div><p class="section-kicker">Inviti</p><h2 id="dashboard-invites-title"></h2><p id="dashboard-invites-description"></p></div><a class="btn dashboard-invites-link" href="inviti.html">Vedi inviti</a></div>
+        <div class="dashboard-invites-content">
+          <div class="dashboard-section-title">
+            <span class="fa-icon-badge fa-icon-badge-invites" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6.5 12 12l9-5.5M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg></span>
+            <div><h2 id="dashboard-invites-title"></h2><p id="dashboard-invites-description"></p></div>
+          </div>
+          <a class="btn dashboard-invites-link" href="inviti.html">Vedi inviti <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
       </section>
+
       <section id="dashboard-calendar-section" class="dashboard-section dashboard-calendar-card" aria-labelledby="dashboard-week-title">
-        <div class="dashboard-calendar-heading"><div><p class="section-kicker">I tuoi impegni</p><h2 id="dashboard-week-title" aria-live="polite"></h2></div></div>
-        <div class="calendar-controls" aria-label="Navigazione della settimana"><button id="dashboard-previous-week" class="calendar-nav-button" type="button" aria-label="Settimana precedente">← <span>Precedente</span></button><button id="dashboard-current-week" class="calendar-today-button" type="button">Questa settimana</button><button id="dashboard-next-week" class="calendar-nav-button" type="button" aria-label="Settimana successiva"><span>Successivo</span> →</button><a class="calendar-full-link" href="calendario.html">Apri calendario completo <span aria-hidden="true">→</span></a></div>
+        <div class="dashboard-calendar-heading fa-section-header">
+          <div class="dashboard-section-title">
+            <span class="fa-icon-badge fa-icon-badge-calendar" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6"/></svg></span>
+            <h2 id="dashboard-week-title" aria-live="polite"></h2>
+          </div>
+        </div>
+        <div class="calendar-controls" aria-label="Navigazione della settimana">
+          <button id="dashboard-previous-week" class="calendar-nav-button" type="button" aria-label="Settimana precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
+          <button id="dashboard-current-week" class="calendar-today-button" type="button">Questa settimana</button>
+          <button id="dashboard-next-week" class="calendar-nav-button" type="button" aria-label="Settimana successiva"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+          <a class="calendar-full-link" href="calendario.html">Apri calendario completo <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
         <div id="dashboard-week-grid" class="dashboard-week-grid" aria-label="Calendario della settimana"></div>
       </section>
+
       <div class="dashboard-summary-grid">
-        <section class="dashboard-section summary-card summary-card-today" aria-labelledby="today-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">☀</span><h2 id="today-title">Oggi</h2></div><p id="today-empty" class="empty-state" hidden>Nessun impegno per oggi.</p><div id="today-list" class="dashboard-list"></div></section>
-        <section class="dashboard-section summary-card" aria-labelledby="upcoming-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">◷</span><h2 id="upcoming-title">Prossimamente</h2></div><p id="upcoming-empty" class="empty-state" hidden>Nessun impegno in programma.</p><div id="upcoming-list" class="dashboard-list"></div></section>
-        <section class="dashboard-section summary-card summary-card-todo" aria-labelledby="todo-title"><div class="summary-heading"><span class="summary-icon" aria-hidden="true">✓</span><h2 id="todo-title">Da fare</h2></div><p id="todo-empty" class="empty-state" hidden>Nessuna attività da fare.</p><div id="todo-list" class="dashboard-list"></div></section>
+        <section class="dashboard-section summary-card summary-card-today" aria-labelledby="today-title">
+          <div class="summary-heading"><span class="fa-icon-badge fa-icon-badge-today" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><h2 id="today-title">Oggi</h2></div>
+          <p id="today-empty" class="fa-empty-state" hidden><strong>Nessun impegno per oggi.</strong><span>La giornata è libera per ora.</span></p>
+          <div id="today-list" class="dashboard-list"></div>
+        </section>
+        <section class="dashboard-section summary-card summary-card-upcoming" aria-labelledby="upcoming-title">
+          <div class="summary-heading"><span class="fa-icon-badge fa-icon-badge-upcoming" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2M12 2v2M12 20v2"/></svg></span><h2 id="upcoming-title">Prossimamente</h2></div>
+          <p id="upcoming-empty" class="fa-empty-state" hidden><strong>Nessun impegno in programma.</strong><span>Qui vedrai i prossimi appuntamenti e attività.</span></p>
+          <div id="upcoming-list" class="dashboard-list"></div>
+        </section>
+        <section class="dashboard-section summary-card summary-card-todo" aria-labelledby="todo-title">
+          <div class="summary-heading"><span class="fa-icon-badge fa-icon-badge-todo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6M3 4h18v16H3z"/></svg></span><h2 id="todo-title">Da fare</h2></div>
+          <p id="todo-empty" class="fa-empty-state" hidden><strong>Nessuna attività da fare.</strong><span>Le attività aperte compariranno qui.</span></p>
+          <div id="todo-list" class="dashboard-list"></div>
+        </section>
       </div>
     </main>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
