@@ -184,20 +184,33 @@
 
   loadAccountIdentity().catch(() => {});
 
-  if (personalInvitesLink) {
-    client.rpc('get_my_area_invites').then(({ data, error }) => {
-      if (error) return;
-      const pendingCount = (data || []).filter((invite) => invite.status === 'pending').length;
-      if (pendingCount > 0) {
-        const badge = document.createElement('span');
-        badge.className = 'top-nav-invites-badge';
-        badge.textContent = pendingCount >= 10 ? '9+' : String(pendingCount);
-        badge.setAttribute('aria-hidden', 'true');
-        personalInvitesLink.appendChild(badge);
-        personalInvitesLink.setAttribute('aria-label', `Inviti, ${pendingCount} in attesa`);
-      }
-    }).catch(() => {});
+  let invitesBadgeRequestVersion = 0;
+
+  async function refreshInvitesBadge() {
+    if (!personalInvitesLink) return;
+    const requestVersion = ++invitesBadgeRequestVersion;
+    const { data, error } = await client.rpc('get_my_area_invites');
+    if (error || requestVersion !== invitesBadgeRequestVersion) return;
+
+    personalInvitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
+    const pendingCount = (data || []).filter((invite) => invite.status === 'pending').length;
+    if (pendingCount === 0) {
+      personalInvitesLink.removeAttribute('aria-label');
+      return;
+    }
+
+    const badge = document.createElement('span');
+    badge.className = 'top-nav-invites-badge';
+    badge.textContent = pendingCount >= 10 ? '9+' : String(pendingCount);
+    badge.setAttribute('aria-hidden', 'true');
+    personalInvitesLink.appendChild(badge);
+    personalInvitesLink.setAttribute('aria-label', `Inviti, ${pendingCount} in attesa`);
   }
+
+  refreshInvitesBadge().catch(() => {});
+  window.addEventListener('familarea:invites-changed', () => {
+    refreshInvitesBadge().catch(() => {});
+  });
 
   const footer = document.createElement('footer');
   footer.className = 'shared-site-footer';

@@ -6,7 +6,7 @@ const invitesList = document.getElementById('invites-list');
 const invitesEmpty = document.getElementById('invites-empty');
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
-function statusLabel(status) { return ({ pending: 'In attesa', accepted: 'Accettato', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto' })[status] || status; }
+function statusLabel(status) { return ({ pending: 'In attesa', accepted: 'Attivo', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto' })[status] || status; }
 
 function inviteErrorMessage(error) {
   const text = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
@@ -28,18 +28,34 @@ async function respondToInvite(invite, rpcName, card) {
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
   pageMessage.textContent = rpcName === 'accept_area_invite' ? 'Invito accettato. Ora fai parte dell’Area.' : 'Invito rifiutato.';
   await loadInvites();
+  window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
 
 function createInviteCard(invite) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row';
+  const inviterName = fullName(invite.inviter_first_name, invite.inviter_last_name);
+  if (invite.status === 'accepted') {
+    article.classList.add('invite-card-active');
+    const details = document.createElement('div');
+    details.className = 'invite-active-details';
+    const title = document.createElement('h3');
+    title.textContent = invite.area_name || 'Area FamilArea';
+    const inviter = document.createElement('p');
+    inviter.textContent = inviterName || 'Mittente non indicato';
+    const status = document.createElement('span');
+    status.className = 'invite-status fa-status-badge invite-status-accepted';
+    status.textContent = 'Attivo';
+    details.append(title, inviter);
+    article.append(details, status);
+    return article;
+  }
   const details = document.createElement('div');
   const title = document.createElement('h3');
   const inviter = document.createElement('p');
   const metadata = document.createElement('p');
   const status = document.createElement('span');
   title.textContent = invite.area_name || 'Area FamilArea';
-  const inviterName = fullName(invite.inviter_first_name, invite.inviter_last_name);
   inviter.textContent = inviterName ? `Invitato da ${inviterName}` : 'Mittente non indicato';
   status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
   status.textContent = statusLabel(invite.status);
@@ -65,8 +81,11 @@ async function loadInvites() {
   if (error) { pageMessage.textContent = inviteErrorMessage(error); return; }
   invitesSection.hidden = false;
   invitesList.replaceChildren();
-  invitesEmpty.hidden = Boolean(data?.length);
-  (data || []).forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
+  const visibleInvites = (data || [])
+    .filter((invite) => invite.status === 'pending' || invite.status === 'accepted')
+    .sort((left, right) => (left.status === 'pending' ? 0 : 1) - (right.status === 'pending' ? 0 : 1));
+  invitesEmpty.hidden = visibleInvites.length > 0;
+  visibleInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
 }
 
 async function loadPage() {

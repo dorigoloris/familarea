@@ -209,5 +209,159 @@
     gridElement.replaceChildren(days);
   }
 
-  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, renderWeekCalendar, startOfWeek, toValidDate };
+  function weekTitle(start) {
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const monthFormatter = new Intl.DateTimeFormat('it-IT', { month: 'long' });
+    const startMonth = monthFormatter.format(start).toLocaleLowerCase('it-IT');
+    const endMonth = monthFormatter.format(end).toLocaleLowerCase('it-IT');
+    if (start.getFullYear() !== end.getFullYear()) return `${start.getDate()} ${startMonth} ${start.getFullYear()} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+    if (start.getMonth() !== end.getMonth()) return `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+    return `${start.getDate()}–${end.getDate()} ${endMonth} ${end.getFullYear()}`;
+  }
+
+  function itemEndDate(item, start) {
+    const value = itemType(item) === 'event' ? item.ends_at : item.occurrence_ends_at;
+    const end = toValidDate(value);
+    if (end && end > start) return end;
+    return new Date(start.getTime() + 30 * 60 * 1000);
+  }
+
+  function agendaItem(item, className, showTime) {
+    const link = document.createElement('a');
+    const type = itemType(item);
+    link.className = `${className} ${className}--${type}${item.status === 'completed' ? ` ${className}--completed` : ''}`;
+    link.href = itemLink(item);
+    link.title = type === 'birthday' ? item.title : `${item.title} — ${item.area_name || ''}`.trim();
+    const title = document.createElement('span');
+    title.className = `${className}-title`;
+    title.textContent = item.title;
+    link.appendChild(title);
+    if (showTime) {
+      const time = document.createElement('span');
+      time.className = `${className}-time`;
+      time.textContent = formatTime(item);
+      link.appendChild(time);
+    }
+    return link;
+  }
+
+  function layoutOverlaps(items) {
+    const sorted = [...items].sort((left, right) => left.start - right.start || left.end - right.end);
+    const groups = [];
+    let group = null;
+    sorted.forEach((item) => {
+      if (!group || item.start >= group.end) {
+        group = { end: item.end, items: [] };
+        groups.push(group);
+      } else if (item.end > group.end) {
+        group.end = item.end;
+      }
+      group.items.push(item);
+    });
+    groups.forEach((current) => {
+      const columns = [];
+      current.items.forEach((item) => {
+        let column = columns.findIndex((lastEnd) => lastEnd <= item.start);
+        if (column === -1) { column = columns.length; columns.push(item.end); } else columns[column] = item.end;
+        item.column = column;
+      });
+      current.items.forEach((item) => { item.columns = columns.length; });
+    });
+    return sorted;
+  }
+
+  function renderWeekAgenda({ weekStart, titleElement, gridElement, activities, startHour = 7, endHour = 22 }) {
+    const start = startOfWeek(weekStart);
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + offset);
+      return date;
+    });
+    const items = Array.isArray(activities) ? activities : [];
+    const dayFormatter = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric' });
+    const totalMinutes = (endHour - startHour) * 60;
+    const minuteHeight = 56 / 60;
+    titleElement.textContent = weekTitle(start);
+
+    const agenda = document.createElement('div');
+    agenda.className = 'week-agenda';
+    agenda.style.setProperty('--week-agenda-height', `${totalMinutes * minuteHeight}px`);
+
+    const header = document.createElement('div');
+    header.className = 'week-agenda-header';
+    const corner = document.createElement('div');
+    corner.className = 'week-agenda-corner';
+    corner.textContent = 'Ora';
+    header.appendChild(corner);
+    days.forEach((date) => {
+      const dayHeader = document.createElement('div');
+      dayHeader.className = 'week-agenda-day-header';
+      if (sameLocalDay(date, today)) dayHeader.classList.add('is-today');
+      dayHeader.textContent = dayFormatter.format(date);
+      header.appendChild(dayHeader);
+    });
+    agenda.appendChild(header);
+
+    const perDay = days.map(() => ({ allDay: [], outside: [], timed: [] }));
+    items.forEach((item) => {
+      const date = placementDate(item);
+      if (!date) return;
+      const dayIndex = days.findIndex((day) => sameLocalDay(day, date));
+      if (dayIndex === -1) return;
+      if (item.is_all_day || itemType(item) === 'birthday') { perDay[dayIndex].allDay.push(item); return; }
+      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour);
+      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour);
+      const end = itemEndDate(item, date);
+      if (end <= dayStart || date >= dayEnd) { perDay[dayIndex].outside.push(item); return; }
+      perDay[dayIndex].timed.push({ item, start: date, end });
+    });
+
+    const createLane = (className, label, key, showTime) => {
+      const hasItems = perDay.some((day) => day[key].length);
+      if (!hasItems && key === 'outside') return;
+      const lane = document.createElement('div'); lane.className = className;
+      const laneLabel = document.createElement('div'); laneLabel.className = `${className}-label`; laneLabel.textContent = label; lane.appendChild(laneLabel);
+      perDay.forEach((day) => {
+        const cell = document.createElement('div'); cell.className = `${className}-cell`;
+        day[key].forEach((entry) => cell.appendChild(agendaItem(entry.item || entry, `${className}-item`, showTime)));
+        lane.appendChild(cell);
+      });
+      agenda.appendChild(lane);
+    };
+    createLane('week-agenda-all-day', 'Tutto il giorno', 'allDay', false);
+    createLane('week-agenda-outside', 'Fuori orario', 'outside', true);
+
+    const body = document.createElement('div'); body.className = 'week-agenda-body';
+    const axis = document.createElement('div'); axis.className = 'week-agenda-axis';
+    for (let hour = startHour; hour <= endHour; hour += 1) {
+      const label = document.createElement('span'); label.className = 'week-agenda-hour'; label.style.top = `${((hour - startHour) / (endHour - startHour)) * 100}%`; label.textContent = `${String(hour).padStart(2, '0')}:00`; axis.appendChild(label);
+    }
+    body.appendChild(axis);
+    const columns = document.createElement('div'); columns.className = 'week-agenda-columns';
+    perDay.forEach((day, index) => {
+      const column = document.createElement('div'); column.className = 'week-agenda-day-column';
+      if (sameLocalDay(days[index], today)) column.classList.add('is-today');
+      layoutOverlaps(day.timed).forEach((entry) => {
+        const viewStart = new Date(days[index].getFullYear(), days[index].getMonth(), days[index].getDate(), startHour);
+        const viewEnd = new Date(days[index].getFullYear(), days[index].getMonth(), days[index].getDate(), endHour);
+        const clippedStart = entry.start < viewStart ? viewStart : entry.start;
+        const clippedEnd = entry.end > viewEnd ? viewEnd : entry.end;
+        const minutesFromStart = (clippedStart - viewStart) / 60000;
+        const duration = Math.max(20, (clippedEnd - clippedStart) / 60000);
+        const itemElement = agendaItem(entry.item, 'week-agenda-timed-item', true);
+        itemElement.style.top = `${(minutesFromStart / totalMinutes) * 100}%`;
+        itemElement.style.height = `${(duration / totalMinutes) * 100}%`;
+        itemElement.style.left = `calc(${(entry.column / entry.columns) * 100}% + 3px)`;
+        itemElement.style.width = `calc(${100 / entry.columns}% - 6px)`;
+        column.appendChild(itemElement);
+      });
+      columns.appendChild(column);
+    });
+    body.appendChild(columns); agenda.appendChild(body);
+    gridElement.replaceChildren(agenda);
+  }
+
+  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, renderWeekCalendar, renderWeekAgenda, startOfWeek, toValidDate };
 }(window));

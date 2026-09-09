@@ -45,18 +45,28 @@
           <h2 id="month-title" aria-live="polite"></h2>
           <button id="next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
         </div>
+        <div class="calendar-view-toolbar">
+          <div class="calendar-view-switch" role="group" aria-label="Vista del calendario">
+            <button id="month-view" class="calendar-view-button is-active" type="button" aria-pressed="true">Mese</button>
+            <button id="week-view" class="calendar-view-button" type="button" aria-pressed="false">Settimana</button>
+          </div>
+          <button id="today-calendar" class="calendar-today-button" type="button">Oggi</button>
+        </div>
         <div class="calendar-print-toolbar"><button id="print-calendar" class="calendar-print-button" type="button" aria-label="Stampa il mese visualizzato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 17H4V9h16v8h-2M7 14h10v7H7z"/></svg><span>Stampa calendario</span></button></div>
         <div class="calendar-legend" aria-label="Legenda del calendario">
           <span class="calendar-legend-item calendar-legend-activity"><i aria-hidden="true"></i>Attività</span>
           <span class="calendar-legend-item calendar-legend-event"><i aria-hidden="true"></i>Eventi</span>
           <span class="calendar-legend-item calendar-legend-birthday"><i aria-hidden="true"></i>Compleanni</span>
         </div>
-        <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+        <div id="month-calendar" class="calendar-month-view">
+          <div class="calendar-scroll" tabindex="0" aria-label="Griglia mensile del calendario">
+            <div class="calendar-weekdays" aria-hidden="true">
+              <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
           </div>
-          <div id="calendar-grid" class="calendar-grid"></div>
         </div>
+        <div id="week-calendar" class="calendar-week-view" hidden aria-label="Agenda settimanale"></div>
       </section>
 
       <section id="undated-section" class="calendar-section calendar-undated-surface fa-surface" aria-labelledby="undated-title">

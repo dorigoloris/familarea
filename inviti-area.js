@@ -27,6 +27,8 @@ const invitesEmpty = document.getElementById('invites-empty');
 let currentAreaId = null;
 let isAreaAdmin = false;
 let invitableContacts = [];
+let areaInvites = [];
+let currentUserEmail = '';
 const selectedContactIds = new Set();
 
 function fullName(firstName, lastName, fallback = '') {
@@ -63,6 +65,21 @@ function primaryEmail(contact) {
   return emails.find((method) => method.is_primary)?.value || emails[0]?.value || null;
 }
 
+function normalizeEmail(email) {
+  return (email || '').trim().toLocaleLowerCase('it-IT');
+}
+
+function contactAvailability(contact) {
+  const email = normalizeEmail(contact.email);
+  if (email && email === currentUserEmail) return 'participant';
+  const statuses = areaInvites
+    .filter((invite) => normalizeEmail(invite.recipient_email) === email)
+    .map((invite) => invite.status);
+  if (statuses.includes('accepted')) return 'participant';
+  if (statuses.includes('pending')) return 'invited';
+  return 'invitable';
+}
+
 function setInviteMode(mode) {
   const contactsMode = mode === 'contacts';
   contactInvitePanel.hidden = !contactsMode;
@@ -75,11 +92,14 @@ function setInviteMode(mode) {
 }
 
 function selectedContacts() {
-  return invitableContacts.filter((contact) => selectedContactIds.has(contact.id));
+  return invitableContacts.filter((contact) => selectedContactIds.has(contact.id) && contactAvailability(contact) === 'invitable');
 }
 
 function updateSelectedContactsUi() {
-  const count = selectedContactIds.size;
+  invitableContacts.forEach((contact) => {
+    if (contactAvailability(contact) !== 'invitable') selectedContactIds.delete(contact.id);
+  });
+  const count = selectedContacts().length;
   selectedContactSummary.textContent = `${count} selezionat${count === 1 ? 'o' : 'i'}`;
   sendContactInviteButton.disabled = count === 0;
 }
@@ -106,23 +126,32 @@ function renderContacts() {
     const details = document.createElement('div');
     const name = document.createElement('h3');
     const email = document.createElement('p');
-    const select = document.createElement('label');
-    const checkbox = document.createElement('input');
+    const availability = contactAvailability(contact);
     name.textContent = fullName(contact.first_name, contact.last_name, 'Contatto');
     email.textContent = contact.email;
-    select.className = 'invite-contact-checkbox';
-    checkbox.type = 'checkbox';
-    checkbox.checked = selectedContactIds.has(contact.id);
-    checkbox.setAttribute('aria-label', `Seleziona ${fullName(contact.first_name, contact.last_name, 'Contatto')}`);
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) selectedContactIds.add(contact.id);
-      else selectedContactIds.delete(contact.id);
-      inviteFormMessage.textContent = '';
-      updateSelectedContactsUi();
-    });
-    select.append(checkbox, document.createTextNode('Seleziona'));
     details.append(name, email);
-    card.append(details, select);
+    if (availability === 'invitable') {
+      const select = document.createElement('label');
+      const checkbox = document.createElement('input');
+      select.className = 'invite-contact-checkbox';
+      checkbox.type = 'checkbox';
+      checkbox.checked = selectedContactIds.has(contact.id);
+      checkbox.setAttribute('aria-label', `Seleziona ${fullName(contact.first_name, contact.last_name, 'Contatto')}`);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) selectedContactIds.add(contact.id);
+        else selectedContactIds.delete(contact.id);
+        inviteFormMessage.textContent = '';
+        updateSelectedContactsUi();
+      });
+      select.append(checkbox, document.createTextNode('Seleziona'));
+      card.append(details, select);
+    } else {
+      const state = document.createElement('span');
+      state.className = 'invite-contact-state';
+      state.textContent = availability === 'participant' ? 'Già partecipante' : 'Già invitato';
+      card.classList.add('is-unavailable');
+      card.append(details, state);
+    }
     contactInviteList.appendChild(card);
   });
 }
@@ -177,6 +206,8 @@ async function createInvite({ email, firstName, lastName }, button) {
   resetInviteForm();
   pageMessage.textContent = 'Invito creato correttamente.';
   await loadInvites();
+  renderContacts();
+  updateSelectedContactsUi();
 }
 
 async function sendSelectedContactInvites() {
@@ -204,8 +235,6 @@ async function sendSelectedContactInvites() {
   const successes = results.filter((result) => !result.error);
   const failures = results.filter((result) => result.error);
   successes.forEach((result) => selectedContactIds.delete(result.contact.id));
-  renderContacts();
-  updateSelectedContactsUi();
   sendContactInviteButton.textContent = originalText;
 
   const createdText = `${successes.length} invit${successes.length === 1 ? 'o creato' : 'i creati'}.`;
@@ -213,6 +242,8 @@ async function sendSelectedContactInvites() {
   inviteFormMessage.textContent = failures.length ? `${createdText} ${failures.length} non creat${failures.length === 1 ? 'o' : 'i'}: ${failuresText}` : createdText;
   pageMessage.textContent = successes.length ? 'Elenco inviti aggiornato.' : '';
   if (successes.length) await loadInvites();
+  renderContacts();
+  updateSelectedContactsUi();
 }
 
 function createInviteCard(invite) {
@@ -254,6 +285,8 @@ function createInviteCard(invite) {
       }
       pageMessage.textContent = 'Invito revocato.';
       await loadInvites();
+      renderContacts();
+      updateSelectedContactsUi();
     });
     article.appendChild(revoke);
   }
@@ -266,12 +299,14 @@ async function loadInvites() {
     pageMessage.textContent = inviteErrorMessage(error);
     return false;
   }
+  areaInvites = data || [];
+  const pendingInvites = areaInvites.filter((invite) => invite.status === 'pending');
   isAreaAdmin = true;
   inviteFormSection.hidden = false;
-  invitesSection.hidden = false;
+  invitesSection.hidden = pendingInvites.length === 0;
   invitesList.replaceChildren();
-  invitesEmpty.hidden = Boolean(data?.length);
-  (data || []).forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
+  invitesEmpty.hidden = true;
+  pendingInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
   return true;
 }
 
@@ -281,6 +316,7 @@ async function loadPage() {
     window.location.href = 'login.html';
     return;
   }
+  currentUserEmail = normalizeEmail(sessionData.session.user.email);
   currentAreaId = new URLSearchParams(window.location.search).get('area_id');
   if (!currentAreaId) {
     pageMessage.textContent = 'Area non specificata.';

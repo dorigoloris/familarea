@@ -14,8 +14,8 @@ const areaManageModal = document.getElementById('area-manage-modal');
 const areaManageDialog = document.getElementById('area-manage-dialog');
 const areaManageClose = document.getElementById('area-manage-close');
 const areaManageActions = document.getElementById('area-manage-actions');
-const addMemberLink = document.getElementById('add-member-link');
-const areaInvitesLink = document.getElementById('area-invites-link');
+const inviteParticipantsLink = document.getElementById('invite-participants-link');
+const editAreaLink = document.getElementById('edit-area-link');
 const activitiesSection = document.getElementById('activities-section');
 const activitiesMessage = document.getElementById('activities-message');
 const activitiesCount = document.getElementById('activities-count');
@@ -381,8 +381,8 @@ async function loadArea() {
     return;
   }
 
-  addMemberLink.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
-  areaInvitesLink.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
+  if (inviteParticipantsLink) inviteParticipantsLink.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
+  if (editAreaLink) editAreaLink.href = `modifica-area.html?area_id=${encodeURIComponent(areaId)}`;
   activitiesLink.href = `attivita-area.html?area_id=${encodeURIComponent(areaId)}`;
   eventsLink.href = `eventi.html?area_id=${encodeURIComponent(areaId)}`;
   listsLink.href = `liste.html?area_id=${encodeURIComponent(areaId)}`;
@@ -427,8 +427,8 @@ async function loadArea() {
   };
 
   areaManageMenu.hidden = !isAreaAdmin;
-  addMemberLink.hidden = !isAreaAdmin;
-  areaInvitesLink.hidden = !isAreaAdmin;
+  if (inviteParticipantsLink) inviteParticipantsLink.hidden = !isAreaAdmin;
+  if (editAreaLink) editAreaLink.hidden = !isAreaAdmin;
   message.textContent = '';
   await Promise.all([loadActivities(areaId), loadEvents(areaId), loadLists(areaId)]);
 }

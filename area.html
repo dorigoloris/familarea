@@ -38,10 +38,8 @@
       <section id="area-manage-dialog" class="area-manage-dialog" role="dialog" aria-modal="true" aria-labelledby="area-manage-title" tabindex="-1">
         <button id="area-manage-close" class="area-manage-close" type="button" aria-label="Chiudi gestione Area">×</button>
         <h2 id="area-manage-title">Gestisci Area</h2>
-        <p>Scegli un'azione</p>
+        <p>Modifica le informazioni dell'Area</p>
         <div id="area-manage-actions" class="area-manage-actions">
-          <a id="add-member-link" class="area-manage-action area-manage-action-primary" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"/></svg><span>Invita partecipante</span></a>
-          <a id="area-invites-link" class="area-manage-action" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 12 12l9-5.5M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg><span>Gestisci inviti</span></a>
           <a id="edit-area-link" class="area-manage-action" href="#" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20ZM13.5 7.5l3 3"/></svg><span>Modifica Area</span></a>
         </div>
       </section>
@@ -53,7 +51,10 @@
       <section class="area-overview-card area-participants-card" aria-labelledby="participants-title">
         <div class="area-card-heading">
           <div class="area-card-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8a3 3 0 1 1 0 6M22 20v-1.5a4 4 0 0 0-3-3.8"/></svg><h2 id="participants-title">Partecipanti</h2></div>
-          <span id="participants-count" class="area-count-badge">0</span>
+          <div class="area-card-heading-actions">
+            <a id="invite-participants-link" class="area-participants-invite" href="#" hidden>Invita partecipanti</a>
+            <span id="participants-count" class="area-count-badge">0</span>
+          </div>
         </div>
         <ul id="members-list" class="area-compact-list"></ul>
         <button id="members-toggle" class="area-card-link-button" type="button" hidden aria-expanded="false">Mostra tutti i partecipanti</button>
