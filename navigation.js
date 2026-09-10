@@ -45,6 +45,7 @@
     { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
     { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
+    { label: 'Scadenze', href: 'scadenze.html', active: isActive(['scadenze.html', 'nuova-scadenza.html', 'scadenza.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
     { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) }
   ].forEach((item) => {

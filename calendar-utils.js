@@ -11,12 +11,13 @@
   }
 
   function itemType(item) {
+    if (item.deadline_id) return 'deadline';
     if (item.birthday_contact_id) return 'birthday';
     return item.event_id ? 'event' : 'activity';
   }
 
   function placementDate(item) {
-    if (itemType(item) === 'birthday') return toValidDate(item.occurs_on);
+    if (itemType(item) === 'birthday' || itemType(item) === 'deadline') return toValidDate(item.occurs_on);
     if (itemType(item) === 'event') return toValidDate(item.starts_at);
     return toValidDate(item.occurrence_starts_at) || toValidDate(item.starts_at) || toValidDate(item.due_at);
   }
@@ -28,6 +29,9 @@
   }
 
   function itemLink(item) {
+    if (itemType(item) === 'deadline') {
+      return `scadenza.html?deadline_id=${encodeURIComponent(item.deadline_id)}`;
+    }
     if (itemType(item) === 'birthday') {
       return `contatto.html?contact_id=${encodeURIComponent(item.birthday_contact_id)}`;
     }
@@ -49,22 +53,22 @@
   function createCalendarItem(item) {
     const type = itemType(item);
     const link = document.createElement('a');
-    link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${type === 'birthday' ? ' calendar-birthday' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}`;
+    link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${type === 'birthday' ? ' calendar-birthday' : ''}${type === 'deadline' ? ' calendar-deadline' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}${type === 'deadline' && item.is_completed ? ' calendar-deadline-completed' : ''}`;
     link.href = itemLink(item);
-    link.title = type === 'birthday' ? item.title : `${item.title} — ${item.area_name}`;
+    link.title = (type === 'birthday' || type === 'deadline') ? item.title : `${item.title} — ${item.area_name}`;
 
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
     title.textContent = item.title;
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
-    area.textContent = type === 'birthday' ? 'Contatto personale' : item.area_name;
+    area.textContent = type === 'birthday' ? 'Contatto personale' : (type === 'deadline' ? 'Scadenza' : item.area_name);
     link.append(title, area);
 
-    if (type === 'event' || type === 'birthday') {
+    if (type === 'event' || type === 'birthday' || type === 'deadline') {
       const badge = document.createElement('span');
       badge.className = 'calendar-item-kind';
-      badge.textContent = type === 'birthday' ? 'Compleanno' : 'Evento';
+      badge.textContent = type === 'birthday' ? 'Compleanno' : (type === 'deadline' ? 'Scadenza' : 'Evento');
       link.appendChild(badge);
     }
 
@@ -72,7 +76,7 @@
     if (time || item.status === 'completed') {
       const details = document.createElement('span');
       details.className = 'calendar-activity-details';
-      details.textContent = [time, item.status === 'completed' ? 'Completata' : ''].filter(Boolean).join(' · ');
+      details.textContent = [time, (item.status === 'completed' || (type === 'deadline' && item.is_completed)) ? 'Completata' : ''].filter(Boolean).join(' · ');
       link.appendChild(details);
     }
     return link;
@@ -230,9 +234,9 @@
   function agendaItem(item, className, showTime) {
     const link = document.createElement('a');
     const type = itemType(item);
-    link.className = `${className} ${className}--${type}${item.status === 'completed' ? ` ${className}--completed` : ''}`;
+    link.className = `${className} ${className}--${type}${item.status === 'completed' || (type === 'deadline' && item.is_completed) ? ` ${className}--completed` : ''}`;
     link.href = itemLink(item);
-    link.title = type === 'birthday' ? item.title : `${item.title} — ${item.area_name || ''}`.trim();
+    link.title = (type === 'birthday' || type === 'deadline') ? item.title : `${item.title} — ${item.area_name || ''}`.trim();
     const title = document.createElement('span');
     title.className = `${className}-title`;
     title.textContent = item.title;
@@ -310,7 +314,7 @@
       if (!date) return;
       const dayIndex = days.findIndex((day) => sameLocalDay(day, date));
       if (dayIndex === -1) return;
-      if (item.is_all_day || itemType(item) === 'birthday') { perDay[dayIndex].allDay.push(item); return; }
+      if (item.is_all_day || itemType(item) === 'birthday' || itemType(item) === 'deadline') { perDay[dayIndex].allDay.push(item); return; }
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour);
       const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour);
       const end = itemEndDate(item, date);

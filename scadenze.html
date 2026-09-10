@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scadenze - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadlines-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page deadlines-page">
+    <header class="deadlines-page-header fa-surface">
+      <div><p class="eyebrow">Organizzazione personale</p><h1>Scadenze</h1><p>Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p></div>
+      <a class="btn deadlines-primary-action" href="nuova-scadenza.html">+ Nuova scadenza</a>
+    </header>
+    <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
+    <section id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong><a class="btn" href="nuova-scadenza.html">Aggiungi la prima scadenza</a></section>
+    <section id="active-deadlines-section" hidden aria-labelledby="active-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Da tenere d'occhio</p><h2 id="active-deadlines-title">Scadenze attive</h2></div></div><div id="active-deadlines-list" class="deadlines-grid"></div></section>
+    <section id="terminated-deadlines-section" hidden aria-labelledby="terminated-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Storico</p><h2 id="terminated-deadlines-title">Scadenze terminate</h2></div></div><div id="terminated-deadlines-list" class="deadlines-terminated-list"></div></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="scadenze.js"></script>
+</body>
+</html>

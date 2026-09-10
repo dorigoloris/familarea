@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Scadenza - FamilArea</title><link rel="stylesheet" href="app.css"></head>
+<body class="deadline-detail-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page deadline-detail-page"><p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p><p id="deadline-message" class="deadlines-message" aria-live="polite">Caricamento scadenza...</p>
+    <section id="deadline-content" hidden><header class="deadline-detail-header fa-surface"><div><p class="eyebrow">Scadenza</p><h1 id="deadline-title"></h1><p id="deadline-subtitle"></p></div><span id="deadline-status" class="deadline-status"></span></header><div class="deadline-detail-actions"><a id="edit-deadline" class="btn secondary-button" href="#">Modifica</a><button id="terminate-deadline" class="secondary-button" type="button">Termina scadenza</button><button id="delete-deadline" class="secondary-button list-item-delete" type="button">Elimina scadenza</button></div>
+      <section class="deadline-details fa-surface" aria-labelledby="deadline-details-title"><h2 id="deadline-details-title">Dettagli</h2><dl id="deadline-details-list" class="deadline-details-list"></dl></section>
+      <section class="deadline-occurrences-section" aria-labelledby="deadline-occurrences-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Storico e futuro</p><h2 id="deadline-occurrences-title">Scadenze</h2></div></div><div id="deadline-occurrences-list" class="deadline-occurrences-list"></div></section>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="scadenza.js"></script>
+</body>
+</html>

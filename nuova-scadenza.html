@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Nuova scadenza - FamilArea</title><link rel="stylesheet" href="app.css"></head>
+<body class="deadline-form-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page deadline-form-page">
+    <p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p>
+    <header class="deadline-form-heading"><span class="fa-icon-badge" aria-hidden="true">&#9200;</span><div><p class="eyebrow">Scadenze</p><h1 id="deadline-form-title">Nuova scadenza</h1><p id="deadline-form-intro">Inserisci le informazioni essenziali per non dimenticare nulla.</p></div></header>
+    <p id="deadline-form-message" class="deadlines-message" aria-live="polite">Caricamento...</p>
+    <form id="deadline-form" class="deadline-form fa-surface" hidden>
+      <div class="deadline-form-grid"><div><label for="deadline-title">Titolo *</label><input id="deadline-title" type="text" required></div><div><label for="deadline-category">Categoria *</label><select id="deadline-category" required><option value="vehicle">Auto e veicoli</option><option value="home">Casa</option><option value="documents">Documenti</option><option value="animals">Animali</option><option value="contracts_subscriptions">Contratti e abbonamenti</option><option value="other">Altro</option></select></div><div><label for="deadline-reference">Riferimento</label><input id="deadline-reference" type="text" placeholder="Es. Fiat 500"></div><div><label for="deadline-family-member">Membro Famiglia</label><select id="deadline-family-member"><option value="">Nessun membro</option></select></div><div><label for="deadline-first-due-on">Data prima scadenza *</label><input id="deadline-first-due-on" type="date" required></div><div><label for="deadline-recurrence">Ricorrenza</label><select id="deadline-recurrence"><option value="">Non ripetere</option><option value="1">Ogni mese</option><option value="6">Ogni 6 mesi</option><option value="12">Ogni anno</option><option value="24">Ogni 2 anni</option></select></div><div><label for="deadline-reminder">Promemoria</label><select id="deadline-reminder"><option value="0">Il giorno stesso</option><option value="7">7 giorni prima</option><option value="15">15 giorni prima</option><option value="30" selected>30 giorni prima</option></select></div></div>
+      <div><label for="deadline-notes">Note</label><textarea id="deadline-notes" rows="4"></textarea></div><div class="form-actions"><button id="deadline-submit" type="submit">Crea scadenza</button><a class="secondary-button" href="scadenze.html">Annulla</a></div>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="nuova-scadenza.js"></script>
+</body>
+</html>
