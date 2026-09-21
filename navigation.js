@@ -5,6 +5,7 @@
   const areaId = params.get('area_id');
   const path = window.location.pathname.split('/').pop() || 'dashboard.html';
   const isActive = (names) => names.includes(path) ? ' is-active' : '';
+  const isGlobalView = !areaId;
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
   const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
@@ -44,6 +45,9 @@
     { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
     { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
     { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
+    { label: 'Interessi', href: 'interessi.html', active: isActive(['interessi.html']) },
+    { label: 'Attività', href: 'attivita-globali.html', active: isGlobalView && isActive(['attivita-globali.html']) },
+    { label: 'Eventi', href: 'eventi.html', active: isGlobalView && isActive(['eventi.html']) },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Scadenze', href: 'scadenze.html', active: isActive(['scadenze.html', 'nuova-scadenza.html', 'scadenza.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le mie Attività - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="global-activities-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card global-activities-page fa-page">
+    <header class="global-activities-page-header" aria-labelledby="global-activities-title">
+      <div class="global-activities-page-heading">
+        <p class="eyebrow">Le tue Attività</p>
+        <h1 id="global-activities-title">Le mie Attività</h1>
+        <p>Qui trovi le attività personali e quelle delle tue Aree.</p>
+      </div>
+    </header>
+    <p id="message" class="global-view-message" aria-live="polite">Caricamento attività...</p>
+    <section id="activities-section" class="global-activities-surface fa-surface" hidden aria-label="Elenco attività">
+      <div id="activities-list" class="global-activities-list"></div>
+      <p id="activities-empty" class="global-activities-empty fa-empty-state" hidden><strong>Nessuna attività.</strong></p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="attivita-globali.js"></script>
+</body>
+</html>

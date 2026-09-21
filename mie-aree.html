@@ -14,11 +14,19 @@
   </header>
   <div class="dashboard-shell">
     <main class="dashboard-content">
-      <div class="dashboard-intro"><p class="eyebrow">FamilArea</p><h1>Le mie Aree</h1><p>Qui trovi gli spazi condivisi a cui partecipi.</p></div>
-      <section class="dashboard-section areas-section" aria-labelledby="areas-title">
-        <div class="section-heading"><div><p class="section-kicker">I tuoi spazi</p><h2 id="areas-title">Le mie Aree</h2></div><div class="section-actions"><a class="btn create-area-button" href="crea-area.html">+ Crea nuova Area</a></div></div>
+      <div class="dashboard-intro area-page-intro"><div><p class="eyebrow">Aree</p><h1>Le mie Aree</h1><p>Gli spazi che gestisci e quelli a cui partecipi.</p></div><a class="btn create-area-button" href="crea-area.html">+ Crea nuova Area</a></div>
+      <section class="dashboard-section areas-section" aria-label="Elenco delle Aree">
         <p id="message" aria-live="polite">Caricamento...</p>
-        <div id="areas-list" class="dashboard-list areas-grid"></div>
+        <section id="managed-areas-group" class="area-role-group" aria-labelledby="managed-areas-title" hidden>
+          <h2 id="managed-areas-title">Aree che gestisco</h2>
+          <p id="managed-areas-empty" class="area-role-empty" hidden>Nessuna Area da gestire.</p>
+          <div id="managed-areas-list" class="dashboard-list areas-grid"></div>
+        </section>
+        <section id="member-areas-group" class="area-role-group" aria-labelledby="member-areas-title" hidden>
+          <h2 id="member-areas-title">Aree a cui partecipo</h2>
+          <p id="member-areas-empty" class="area-role-empty" hidden>Nessuna Area a cui partecipare.</p>
+          <div id="member-areas-list" class="dashboard-list areas-grid"></div>
+        </section>
       </section>
     </main>
   </div>
