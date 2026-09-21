@@ -1,5 +1,54 @@
 <!DOCTYPE html>
-<html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Interessi - FamilArea</title><link rel="stylesheet" href="app.css"></head>
-<body><button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
-<main class="page-card"><p class="section-kicker">Profilo personale</p><h1>Interessi</h1><p class="page-intro">Indica ciò che ti interessa per ricevere in futuro proposte più pertinenti.</p></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script></body></html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I miei Interessi - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="global-activities-page-view interests-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card global-activities-page interests-page fa-page">
+    <header class="global-activities-page-header" aria-labelledby="interests-title">
+      <div class="global-activities-page-heading">
+        <p class="eyebrow">Interessi</p>
+        <h1 id="interests-title">I miei Interessi</h1>
+        <p>Scegli ciò che ti interessa e personalizza le proposte di FamilArea.</p>
+      </div>
+    </header>
+    <p id="interests-message" class="global-view-message interests-message" aria-live="polite">Caricamento interessi...</p>
+    <section id="interests-section" class="global-activities-surface interests-surface fa-surface" hidden aria-label="I miei interessi">
+      <div id="interests-categories" class="interests-categories"></div>
+      <p id="interests-catalog-empty" class="interests-empty fa-empty-state" hidden><strong>Il catalogo degli interessi non è ancora disponibile.</strong></p>
+      <section class="interest-proposal" aria-labelledby="interest-proposal-title">
+        <div>
+          <h2 id="interest-proposal-title">Non trovi la categoria giusta?</h2>
+          <p>Proponi una nuova categoria e aiutaci a migliorare FamilArea.</p>
+        </div>
+        <button id="interest-proposal-toggle" class="fa-button fa-button-secondary fa-button-compact" type="button" aria-expanded="false" aria-controls="interest-proposal-form">+ Proponi una categoria</button>
+        <form id="interest-proposal-form" class="interest-proposal-form" hidden>
+          <div>
+            <label for="interest-proposal-name">Nome categoria</label>
+            <input id="interest-proposal-name" name="proposed_name" type="text" maxlength="100" required autocomplete="off" placeholder="Es. Motori">
+          </div>
+          <div>
+            <label for="interest-proposal-note">Nota facoltativa</label>
+            <textarea id="interest-proposal-note" name="note" maxlength="500" rows="3" placeholder="Es. Mi interessano automobilismo, moto e auto d'epoca"></textarea>
+          </div>
+          <div class="interest-proposal-actions">
+            <button id="interest-proposal-cancel" class="fa-button fa-button-secondary fa-button-compact" type="button">Annulla</button>
+            <button id="interest-proposal-submit" class="fa-button fa-button-primary fa-button-compact" type="submit">Invia proposta</button>
+          </div>
+        </form>
+        <p id="interest-proposal-message" class="interest-proposal-message" aria-live="polite" hidden></p>
+      </section>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="interessi.js"></script>
+</body>
+</html>
