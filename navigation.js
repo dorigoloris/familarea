@@ -4,8 +4,39 @@
   const params = new URLSearchParams(window.location.search);
   const areaId = params.get('area_id');
   const path = window.location.pathname.split('/').pop() || 'dashboard.html';
-  const isActive = (names) => names.includes(path) ? ' is-active' : '';
-  const isGlobalView = !areaId;
+  const primarySectionByPage = {
+    'dashboard.html': 'dashboard',
+    'famiglia.html': 'family',
+    'mie-aree.html': 'areas',
+    'crea-area.html': 'areas',
+    'area.html': 'areas',
+    'modifica-area.html': 'areas',
+    'membro.html': 'areas',
+    'aggiungi-membro.html': 'areas',
+    'inviti-area.html': 'areas',
+    'interessi.html': 'interests',
+    'attivita-globali.html': 'activities',
+    'attivita-area.html': 'activities',
+    'attivita.html': 'activities',
+    'nuova-attivita.html': 'activities',
+    'eventi.html': 'events',
+    'evento.html': 'events',
+    'nuovo-evento.html': 'events',
+    'liste.html': 'lists',
+    'lista.html': 'lists',
+    'nuova-lista.html': 'lists',
+    'calendario.html': 'calendar',
+    'scadenze.html': 'deadlines',
+    'nuova-scadenza.html': 'deadlines',
+    'scadenza.html': 'deadlines',
+    'contatti.html': 'contacts',
+    'nuovo-contatto.html': 'contacts',
+    'contatto.html': 'contacts',
+    'inviti.html': 'invites'
+  };
+  const primarySection = primarySectionByPage[path] || null;
+  const isPrimaryNavActive = (section) => primarySection === section ? ' is-active' : '';
+  const isAreaNavActive = (names) => names.includes(path) ? ' is-active' : '';
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
   const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
@@ -41,7 +72,38 @@
   topNav.className = 'shared-top-nav';
   topNav.setAttribute('aria-label', 'Navigazione principale');
   let personalInvitesLink;
-  [
+  function renderNavigation(accountType) {
+    personalInvitesLink = null;
+    topNav.replaceChildren();
+    const sharedItems = [
+      { label: 'Dashboard', href: 'dashboard.html', active: isPrimaryNavActive('dashboard') },
+      { label: 'Aree', href: 'mie-aree.html', active: isPrimaryNavActive('areas') },
+      { label: 'Attività', href: 'attivita-globali.html', active: isPrimaryNavActive('activities') },
+      { label: 'Eventi', href: 'eventi.html', active: isPrimaryNavActive('events') },
+      { label: 'Liste', href: 'liste.html', active: isPrimaryNavActive('lists') },
+      { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
+      { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
+      { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
+    ];
+    const items = accountType === 'personal'
+      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
+      : sharedItems;
+    items.forEach((item) => {
+      const link = document.createElement('a');
+      link.className = `top-nav-link${item.active}`;
+      link.href = item.href;
+      link.textContent = item.label;
+      if (item.active) link.setAttribute('aria-current', 'page');
+      if (item.label === 'Inviti') {
+        link.classList.add('top-nav-invites-link');
+        personalInvitesLink = link;
+      }
+      topNav.appendChild(link);
+    });
+  }
+
+  /* Legacy static navigation kept below only until the account-specific menu is rendered. */
+  /*
     { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
     { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
     { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
@@ -66,6 +128,7 @@
     }
     topNav.appendChild(link);
   });
+  */
   header.insertBefore(topNav, actions);
 
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -127,7 +190,7 @@
     const willOpen = accountPanel.hidden;
     accountPanel.hidden = !willOpen;
     accountTrigger.setAttribute('aria-expanded', String(willOpen));
-    if (willOpen) profileLink.focus();
+    if (willOpen) accountPanel.querySelector('[role="menuitem"]')?.focus();
   }
 
   accountTrigger.addEventListener('click', toggleAccountMenu);
@@ -177,19 +240,43 @@
     avatarFallback.hidden = true;
   }
 
+  const accountPromise = client.rpc('get_current_account').then(({ data, error }) => (error || !data ? null : data));
+  window.FamilAreaCurrentAccount = accountPromise;
+  window.FamilAreaRequirePersonal = async () => {
+    const account = await accountPromise;
+    if (account?.account_type === 'personal') return account;
+    if (account?.account_type === 'organization') window.location.replace('dashboard.html');
+    return null;
+  };
+
   async function loadAccountIdentity() {
-    const { data } = await client.auth.getUser();
-    const user = data?.user;
-    if (!user) return;
-    const { data: profile, error } = await client
-      .from('profiles')
-      .select('first_name, last_name, avatar_path')
-      .eq('user_id', user.id)
-      .single();
-    if (!error && profile) await renderAccountIdentity(profile);
+    const account = await accountPromise;
+    if (!account) return;
+    renderNavigation(account.account_type);
+
+    if (account.account_type !== 'personal') {
+      profileLink.remove();
+      accountName.textContent = account.display_name || 'Organizzazione';
+      accountTrigger.setAttribute('aria-label', `Apri menu account di ${accountName.textContent}`);
+      avatarFallback.textContent = 'O';
+      avatarFallback.hidden = false;
+      avatarImage.hidden = true;
+      avatarImage.removeAttribute('src');
+      return;
+    }
+
+    const { data: profile, error: profileError } = await client.rpc('get_my_profile');
+    if (!profileError && profile) await renderAccountIdentity(profile);
   }
 
   loadAccountIdentity().catch(() => {});
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'interessi.html', 'inviti.html']);
+  if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
+  window.addEventListener('familarea:profile-avatar-changed', (event) => {
+    const profile = event.detail?.profile;
+    if (profile) renderAccountIdentity(profile).catch(() => {});
+    else loadAccountIdentity().catch(() => {});
+  });
 
   let invitesBadgeRequestVersion = 0;
 
@@ -214,7 +301,9 @@
     personalInvitesLink.setAttribute('aria-label', `Inviti, ${pendingCount} in attesa`);
   }
 
-  refreshInvitesBadge().catch(() => {});
+  accountPromise.then((account) => {
+    if (account?.account_type === 'personal') refreshInvitesBadge().catch(() => {});
+  }).catch(() => {});
   window.addEventListener('familarea:invites-changed', () => {
     refreshInvitesBadge().catch(() => {});
   });
@@ -256,11 +345,11 @@
   areaNav.className = 'shared-area-nav';
   areaNav.setAttribute('aria-label', 'Navigazione Area');
   areaNav.innerHTML = `<p class="shared-nav-label">AREA <span id="nav-area-name">in caricamento…</span></p>
-    <a class="sidebar-link${isActive(['area.html', 'modifica-area.html'])}" href="${areaHref()}">Panoramica Area</a>
-    <a class="sidebar-link${isActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
-    <a class="sidebar-link${isActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
-    <a class="sidebar-link${isActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Eventi</a>
-    <a class="sidebar-link${isActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
+    <a class="sidebar-link${isAreaNavActive(['area.html', 'modifica-area.html'])}" href="${areaHref()}">Panoramica Area</a>
+    <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
+    <a class="sidebar-link${isAreaNavActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
+    <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Eventi</a>
+    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
   const contextualHeader = document.querySelector(
     '.area-page-header, .area-invites-page-header, .page-card > .section-heading, .page-card > #contextual-events-content > .section-heading, .page-card > #list-view > .section-heading, .page-card > h1, body > h1'
   );
@@ -294,21 +383,18 @@
     if (iconPath) link.prepend(createAreaNavIcon(iconPath));
   });
 
-  client.from('areas').select('name').eq('id', areaId).single().then(({ data }) => {
+  Promise.all([accountPromise, client.rpc('get_area', { p_area_id: areaId }), client.rpc('get_my_areas')]).then(([account, areaResult, areasResult]) => {
+    const area = areaResult.data;
     const target = document.getElementById('nav-area-name');
-    if (target) target.textContent = data?.name || 'Area';
-  });
-  client.auth.getUser().then(async ({ data }) => {
-    const userId = data?.user?.id;
-    if (!userId) return;
-    const { data: profile } = await client.from('profiles').select('id').eq('user_id', userId).single();
-    const { data: membership } = await client.from('area_memberships').select('role').eq('area_id', areaId).eq('profile_id', profile?.id).single();
-    if (membership?.role !== 'admin') return;
+    if (target) target.textContent = area?.name || 'Area';
+    if (!account || !area) return;
+    const myArea = (areasResult.data || []).find((item) => item.id === areaId);
+    if (area.owner_account_id !== account.account_id && myArea?.role !== 'admin') return;
     const link = document.createElement('a');
-    link.className = `sidebar-link${isActive(['inviti-area.html'])}`;
+    link.className = `sidebar-link${isAreaNavActive(['inviti-area.html'])}`;
     link.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
     link.textContent = 'Inviti';
     link.prepend(createAreaNavIcon(areaNavIcons.Inviti));
     areaNav.appendChild(link);
-  });
+  }).catch(() => {});
 }());

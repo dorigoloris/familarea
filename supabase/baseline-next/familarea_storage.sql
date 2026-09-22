@@ -14,6 +14,10 @@ create function public.can_manage_own_avatar_path(p_path text) returns boolean l
 $$;
 revoke all on function public.can_manage_own_avatar_path(text) from public;
 alter function public.can_manage_own_avatar_path(text) owner to postgres;
+-- Storage RLS evaluates these helpers as the authenticated caller; grant only
+-- EXECUTE so the helpers can enforce their own account/target checks.
+grant execute on function public.can_manage_own_avatar_path(text) to authenticated;
+grant execute on function public.can_access_attachment_path(text,boolean) to authenticated;
 
 drop policy if exists profile_avatars_select on storage.objects;
 drop policy if exists profile_avatars_insert on storage.objects;

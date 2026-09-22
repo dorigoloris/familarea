@@ -15,9 +15,14 @@ La baseline non conserva RPC legacy. Il frontend sarà adattato dopo il reset.
 | Interessi | `get_interest_catalog`, `get_my_interests`, `add_my_interest`, `remove_my_interest`, `submit_my_interest_category_proposal` |
 | Inviti Area | `create_area_invite`, `get_my_area_invites`, `get_area_invites`, `accept_area_invite`, `decline_area_invite`, `revoke_area_invite` |
 | Allegati | upload nel path consentito, poi `register_attachment`; lettura `get_attachments`; rimozione `delete_attachment` |
-| Dashboard / Calendario | `get_dashboard`, `get_calendar_occurrences` |
+| Dashboard / Calendario | `get_dashboard`, `get_calendar_occurrences`; entrambe espandono server-side le ricorrenze Activity/Event nel solo intervallo richiesto. `get_dashboard.todos` contiene le Activity `open` senza date. |
 
 I form Area usano il singolo parametro facoltativo `p_area_id`: `NULL` crea un
 oggetto standalone del Current Account; un UUID crea un oggetto Area dopo la
 verifica server-side del permesso. Non esistono famiglie duplicate `*_my_*` /
 `*_area_*`.
+
+Stato frontend: Attività, Eventi, Liste e Calendario usano esclusivamente le
+RPC sopra indicate. Attività/Eventi Area leggono assegnatari e partecipanti
+tramite `get_activity_assignees` e `get_event_participants`; il Calendario usa
+le sole occorrenze già espanse dal server.

@@ -5,8 +5,7 @@ const groups = {
   member: { container: document.getElementById('member-areas-group'), list: document.getElementById('member-areas-list'), empty: document.getElementById('member-areas-empty') }
 };
 
-function createAreaCard(membership) {
-  const area = membership.areas;
+function createAreaCard(area) {
   const card = document.createElement('a');
   card.className = 'area-card';
   card.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
@@ -31,29 +30,25 @@ function renderGroup(group, memberships) {
   memberships.forEach((membership) => group.list.appendChild(createAreaCard(membership)));
 }
 
-function renderAreas(memberships) {
-  const visibleMemberships = (memberships || []).filter((membership) => membership.areas);
-  if (!visibleMemberships.length) {
+function renderAreas(areas) {
+  const visibleAreas = areas || [];
+  if (!visibleAreas.length) {
     groups.admin.container.hidden = true;
     groups.member.container.hidden = true;
     message.textContent = 'Non hai ancora nessuna Area.';
     return;
   }
-  renderGroup(groups.admin, visibleMemberships.filter((membership) => membership.role === 'admin'));
-  renderGroup(groups.member, visibleMemberships.filter((membership) => membership.role !== 'admin'));
+  renderGroup(groups.admin, visibleAreas.filter((area) => area.role === 'owner' || area.role === 'admin'));
+  renderGroup(groups.member, visibleAreas.filter((area) => area.role !== 'owner' && area.role !== 'admin'));
   message.textContent = '';
 }
 
 async function loadAreas() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
-  const { data: profile, error: profileError } = await supabaseClient
-    .from('profiles').select('id').eq('user_id', sessionData.session.user.id).single();
-  if (profileError || !profile) { message.textContent = 'Impossibile caricare le Aree.'; return; }
-  const { data: memberships, error: membershipsError } = await supabaseClient
-    .from('area_memberships').select('role,area_id,areas(id,name,area_type)').eq('profile_id', profile.id);
-  if (membershipsError) { message.textContent = 'Impossibile caricare le Aree.'; return; }
-  renderAreas(memberships);
+  const { data: areas, error } = await supabaseClient.rpc('get_my_areas');
+  if (error) { message.textContent = 'Impossibile caricare le Aree.'; return; }
+  renderAreas(areas);
 }
 
 loadAreas();

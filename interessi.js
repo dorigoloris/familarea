@@ -177,6 +177,7 @@ async function toggleInterest(interest) {
 }
 
 async function loadPage() {
+  if (window.FamilAreaRequirePersonal && !await window.FamilAreaRequirePersonal()) return;
   const { data } = await supabaseClient.auth.getSession();
   if (!data?.session) { window.location.href = 'login.html'; return; }
   await refreshInterests();

@@ -1,30 +1,5 @@
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const message = document.getElementById('message');
-const form = document.getElementById('event-form');
-const participants = document.getElementById('participants');
-const allDay = document.getElementById('all-day');
-const visibilityInputs = [...document.querySelectorAll('input[name="visibility"]')];
-let areaId;
-const selected = () => [...participants.querySelectorAll('input:checked')].map((input) => input.value);
-const visibility = () => visibilityInputs.find((input) => input.checked)?.value;
-function iso(date, time, end = false) { return !date ? null : new Date(`${date}T${time || (end ? '23:59' : '00:00')}`).toISOString(); }
-function updateUi() { const personal = !areaId; document.querySelector('fieldset').hidden = personal; document.getElementById('participants-fieldset').hidden = personal || visibility() === 'private'; document.getElementById('start-time').disabled = allDay.checked; document.getElementById('end-time').disabled = allDay.checked; }
-async function load() {
-  const { data: session } = await supabaseClient.auth.getSession(); if (!session.session) { location.href = 'login.html'; return; }
-  areaId = new URLSearchParams(location.search).get('area_id'); document.getElementById('back-link').href = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
-  if (!areaId) { form.hidden = false; message.textContent = ''; updateUi(); return; }
-  const { data: members, error } = await supabaseClient.from('area_memberships').select('profile_id,profiles(first_name,last_name)').eq('area_id', areaId);
-  if (error) { message.textContent = 'Non sei autorizzato a creare eventi in questa Area.'; return; }
-  (members || []).forEach((member) => { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = member.profile_id; label.append(input, ` ${(member.profiles?.first_name || '')} ${(member.profiles?.last_name || '')}`.trim()); participants.append(label, document.createElement('br')); });
-  form.hidden = false; message.textContent = ''; updateUi();
-}
-visibilityInputs.forEach((input) => input.addEventListener('change', updateUi)); allDay.addEventListener('change', updateUi);
-form.addEventListener('submit', async (event) => {
-  event.preventDefault(); const date = document.getElementById('start-date').value; const starts = iso(date, allDay.checked ? '' : document.getElementById('start-time').value); const ends = document.getElementById('end-time').value ? iso(date, document.getElementById('end-time').value, true) : null;
-  if (!starts || (ends && new Date(ends) < new Date(starts))) { message.textContent = 'Controlla data e orario.'; return; }
-  const payload = { p_title: document.getElementById('title').value.trim(), p_notes: document.getElementById('notes').value.trim() || null, p_starts_at: starts, p_ends_at: ends, p_is_all_day: allDay.checked, p_location: document.getElementById('location').value.trim() || null };
-  const { data, error } = areaId ? await supabaseClient.rpc('create_area_event', { p_area_id: areaId, ...payload, p_visibility: visibility(), p_participant_profile_ids: selected() }) : await supabaseClient.rpc('create_my_event', payload);
-  if (error || !data) { message.textContent = 'Impossibile creare l’evento.'; return; }
-  location.href = areaId ? `evento.html?area_id=${encodeURIComponent(areaId)}&event_id=${encodeURIComponent(data)}` : `evento.html?event_id=${encodeURIComponent(data)}`;
-});
-load();
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);const areaId=new URLSearchParams(location.search).get('area_id'),form=document.getElementById('event-form'),message=document.getElementById('message'),participants=document.getElementById('participants');
+const localIso=(date,time='00:00')=>new Date(`${date}T${time}`).toISOString();const participantIds=()=>[...participants.querySelectorAll('input:checked')].map(input=>input.value);function recurrence(){if(!document.getElementById('recurrence-enabled').checked)return{};const until=document.getElementById('recurrence-until').value;if(!until)throw new Error('Indica la fine della ripetizione.');return{frequency:'weekly',until};}
+async function loadParticipants(){const{data,error}=await supabaseClient.rpc('get_area_members',{p_area_id:areaId});if(error)throw error;(data||[]).forEach(member=>{const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.value=member.profile_id;label.append(input,` ${member.first_name||''} ${member.last_name||''}`.trim());participants.append(label,document.createElement('br'));});}
+async function load(){const{data}=await supabaseClient.auth.getSession();if(!data.session){location.href='login.html';return;}document.getElementById('back-link').href=areaId?`eventi.html?area_id=${encodeURIComponent(areaId)}`:'eventi.html';document.getElementById('participants-fieldset').hidden=!areaId;if(areaId){try{await loadParticipants();}catch(_){message.textContent='Impossibile caricare i partecipanti dell’Area.';return;}}form.hidden=false;message.textContent='';}
+document.getElementById('recurrence-enabled').addEventListener('change',event=>{document.getElementById('recurrence-fields').hidden=!event.target.checked;});form.addEventListener('submit',async event=>{event.preventDefault();const date=document.getElementById('start-date').value,start=document.getElementById('start-time').value,end=document.getElementById('end-time').value;if(!date||end&&!start){message.textContent=!date?'Indica la data dell’evento.':'Indica prima l’ora di inizio.';return;}let recurrencePayload;try{recurrencePayload=recurrence();}catch(error){message.textContent=error.message;return;}const allDay=document.getElementById('all-day').checked||!start,startsAt=localIso(date,allDay?'00:00':start),payload={p_title:document.getElementById('title').value.trim(),p_starts_at:startsAt,p_ends_at:allDay?startsAt:end?localIso(date,end):null,p_description:document.getElementById('notes').value.trim()||null,p_area_id:areaId||null,p_is_all_day:allDay,p_location:document.getElementById('location').value.trim()||null,p_recurrence:recurrencePayload};const submit=form.querySelector('[type="submit"]');submit.disabled=true;const{data,error}=await supabaseClient.rpc('create_event',payload);submit.disabled=false;if(error||!data){message.textContent='Impossibile creare l’evento.';return;}if(areaId&&participantIds().length){const result=await supabaseClient.rpc('set_event_participants',{p_event_id:data,p_profile_ids:participantIds()});if(result.error){message.textContent='Evento creato, ma non è stato possibile salvare i partecipanti.';return;}}location.href=`evento.html${areaId?`?area_id=${encodeURIComponent(areaId)}&`:'?'}event_id=${encodeURIComponent(data)}`;});load();

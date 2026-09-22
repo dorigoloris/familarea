@@ -6,7 +6,6 @@ const profileForm = document.getElementById('profile-form');
 const firstNameInput = document.getElementById('profile-first-name');
 const lastNameInput = document.getElementById('profile-last-name');
 const emailInput = document.getElementById('profile-email');
-const phoneInput = document.getElementById('profile-phone');
 const birthDateInput = document.getElementById('profile-birth-date');
 const saveButton = document.getElementById('profile-save-button');
 const avatarImage = document.getElementById('avatar-image');
@@ -21,6 +20,7 @@ const allowedAvatarTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 let authUser;
 let profile;
+let currentAccount;
 
 function fullName() {
   return `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Utente';
@@ -71,15 +71,15 @@ async function renderAvatar() {
   avatarRemoveButton.hidden = false;
 }
 
-function fillForm(privateProfile) {
+function fillForm() {
   firstNameInput.value = profile.first_name || '';
   lastNameInput.value = profile.last_name || '';
   emailInput.value = authUser.email || '';
-  phoneInput.value = privateProfile?.phone || '';
-  birthDateInput.value = privateProfile?.birth_date || '';
+  birthDateInput.value = profile.birth_date || '';
 }
 
 async function loadProfile() {
+  if (window.FamilAreaRequirePersonal && !await window.FamilAreaRequirePersonal()) return;
   const { data: userData, error: userError } = await supabaseClient.auth.getUser();
   authUser = userData?.user;
   if (userError || !authUser) {
@@ -87,11 +87,19 @@ async function loadProfile() {
     return;
   }
 
-  const { data: profileData, error: profileError } = await supabaseClient
-    .from('profiles')
-    .select('id, first_name, last_name, avatar_path')
-    .eq('user_id', authUser.id)
-    .single();
+  const { data: accountData, error: accountError } = await supabaseClient.rpc('get_current_account');
+  if (accountError || !accountData) {
+    showMessage('Impossibile verificare il tipo di account. Riprova più tardi.', true);
+    return;
+  }
+
+  currentAccount = accountData;
+  if (currentAccount.account_type !== 'personal') {
+    showMessage('Questo account è un’organizzazione: non dispone di un profilo personale.', true);
+    return;
+  }
+
+  const { data: profileData, error: profileError } = await supabaseClient.rpc('get_my_profile');
 
   if (profileError || !profileData) {
     showMessage('Il profilo del tuo account non è disponibile. Riprova più tardi.', true);
@@ -99,18 +107,7 @@ async function loadProfile() {
   }
 
   profile = profileData;
-  const { data: privateProfile, error: privateError } = await supabaseClient
-    .from('account_profile_private')
-    .select('phone, birth_date')
-    .eq('profile_id', profile.id)
-    .maybeSingle();
-
-  if (privateError) {
-    showMessage('Impossibile caricare i dati privati del profilo. Riprova più tardi.', true);
-    return;
-  }
-
-  fillForm(privateProfile);
+  fillForm();
   await renderAvatar();
   profileContent.hidden = false;
   showMessage('');
@@ -130,10 +127,12 @@ async function saveProfile(event) {
   saveButton.disabled = true;
   showMessage('Salvataggio in corso...');
 
-  const { error: profileError } = await supabaseClient
-    .from('profiles')
-    .update({ first_name: firstName, last_name: lastName })
-    .eq('id', profile.id);
+  const { data: updatedProfile, error: profileError } = await supabaseClient.rpc('update_my_profile', {
+    p_first_name: firstName,
+    p_last_name: lastName,
+    p_birth_date: birthDateInput.value || null,
+    p_avatar_path: profile.avatar_path || null
+  });
 
   if (profileError) {
     saveButton.disabled = false;
@@ -141,25 +140,8 @@ async function saveProfile(event) {
     return;
   }
 
-  const { error: privateError } = await supabaseClient
-    .from('account_profile_private')
-    .upsert({
-      profile_id: profile.id,
-      phone: phoneInput.value.trim() || null,
-      birth_date: birthDateInput.value || null
-    }, { onConflict: 'profile_id' });
-
   saveButton.disabled = false;
-  if (privateError) {
-    profile.first_name = firstName;
-    profile.last_name = lastName;
-    renderAvatarFallback();
-    showMessage('Nome e cognome sono stati salvati, ma non è stato possibile salvare i dati privati.', true);
-    return;
-  }
-
-  profile.first_name = firstName;
-  profile.last_name = lastName;
+  profile = updatedProfile;
   await renderAvatar();
   showMessage('Modifiche salvate correttamente.');
 }
@@ -185,7 +167,7 @@ async function uploadAvatar() {
     return;
   }
 
-  const path = `${profile.id}/avatar`;
+  const path = `avatars/${currentAccount.account_id}/avatar`;
   setAvatarBusy(true, 'Caricamento...');
   showMessage('Caricamento foto in corso...');
 
@@ -200,10 +182,12 @@ async function uploadAvatar() {
     return;
   }
 
-  const { error: profileError } = await supabaseClient
-    .from('profiles')
-    .update({ avatar_path: path })
-    .eq('id', profile.id);
+  const { data: updatedProfile, error: profileError } = await supabaseClient.rpc('update_my_profile', {
+    p_first_name: profile.first_name,
+    p_last_name: profile.last_name || null,
+    p_birth_date: profile.birth_date || null,
+    p_avatar_path: path
+  });
 
   setAvatarBusy(false);
   if (profileError) {
@@ -212,8 +196,9 @@ async function uploadAvatar() {
     return;
   }
 
-  profile.avatar_path = path;
+  profile = updatedProfile;
   await renderAvatar();
+  window.dispatchEvent(new CustomEvent('familarea:profile-avatar-changed', { detail: { profile } }));
   showMessage('Foto profilo aggiornata.');
 }
 
@@ -234,10 +219,12 @@ async function removeAvatar() {
     await supabaseClient.storage.from(avatarBucket).remove([path]);
   }
 
-  const { error } = await supabaseClient
-    .from('profiles')
-    .update({ avatar_path: null })
-    .eq('id', profile.id);
+  const { data: updatedProfile, error } = await supabaseClient.rpc('update_my_profile', {
+    p_first_name: profile.first_name,
+    p_last_name: profile.last_name || null,
+    p_birth_date: profile.birth_date || null,
+    p_avatar_path: null
+  });
 
   setAvatarBusy(false);
   if (error) {
@@ -246,8 +233,9 @@ async function removeAvatar() {
     return;
   }
 
-  profile.avatar_path = null;
+  profile = updatedProfile;
   renderAvatarFallback();
+  window.dispatchEvent(new CustomEvent('familarea:profile-avatar-changed', { detail: { profile } }));
   showMessage('Foto profilo rimossa.');
 }
 

@@ -12,6 +12,10 @@
     .login-panel{display:flex;align-items:center;justify-content:center;margin:0;padding:clamp(30px,5vw,80px);background:rgba(255,255,255,.56);border:0;border-radius:0;box-shadow:none}.login-card{width:min(100%,470px);padding:clamp(31px,4vw,49px);background:#fff;border:1px solid #e3ebf0;border-radius:25px;box-shadow:0 22px 56px rgba(18,49,74,.13)}.login-card h2{margin:0 0 8px;font-size:34px;letter-spacing:-1.4px;color:#0d2b4f}.login-card>p:first-of-type{margin:0 0 30px;color:#64758a}.login-card form{max-width:none;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}.login-field{margin-bottom:18px}.login-card label{display:block;margin-bottom:7px;font-size:14px}.login-card input{height:51px;margin:0;padding:12px 14px;border:1px solid #d4e0e7;border-radius:12px}.login-card input:focus{border-color:#4d8b4f;outline:3px solid rgba(77,139,79,.16)}.login-card button[type="submit"]{width:100%;margin:6px 0 0;padding:14px 18px;border-radius:12px;background:#4d8b4f;font-size:16px;box-shadow:0 7px 14px rgba(77,139,79,.22)}.login-card button[type="submit"]:hover{background:#3e783f}.login-message{min-height:23px;margin:15px 0 0;font-size:14px;font-weight:700}.login-divider{display:flex;align-items:center;gap:13px;margin:30px 0 16px;color:#8a9aaa;font-size:12px;font-weight:700}.login-divider::before,.login-divider::after{content:'';height:1px;flex:1;background:#e2e9ee}.google-auth-button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:0 0 23px;padding:13px 18px;border:1px solid #d4e0e7;border-radius:12px;background:#fff;color:#0d2b4f;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}.google-auth-button:hover{border-color:#9ab5c4;background:#f7fafc;box-shadow:0 5px 12px rgba(18,49,74,.08)}.google-auth-button:focus-visible{outline:3px solid rgba(77,139,79,.24);outline-offset:2px}.google-auth-button:disabled{cursor:wait;opacity:.7}.google-auth-mark{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;color:#fff;background:#4285f4;font-size:13px;font-weight:800;line-height:1}.login-register{margin:0;text-align:center;font-size:14px}.login-register span{display:block;margin-bottom:5px;color:#64758a}.login-register a{font-size:15px;text-decoration:none}.login-security{margin:29px 0 0;padding:12px 14px;border-radius:11px;background:#f1f7ef;color:#557559;font-size:12px;text-align:center}.login-security strong{color:#39753c}
     @media(max-width:850px){.login-layout{grid-template-columns:1fr}.login-panel{order:1;min-height:620px}.login-branding{order:2;min-height:480px;padding:58px 9vw}.login-logo{margin-bottom:38px}.login-quote{margin-top:35px}.login-branding::after{bottom:-140px}}@media(max-width:560px){.login-panel{min-height:0;padding:28px 18px}.login-card{padding:29px 23px;border-radius:20px}.login-card h2{font-size:30px}.login-branding{min-height:0;padding:43px 27px 118px}.login-logo{margin-bottom:32px;font-size:36px}.login-branding h1{font-size:42px;letter-spacing:-2.3px}.login-intro{font-size:16px;margin-bottom:29px}.login-benefits{gap:14px}.login-quote{margin-top:29px;font-size:14px}.login-branding::before{width:300px;height:300px;right:-150px;top:-155px}.login-branding::after{left:-180px;width:460px;height:175px}}
   </style>
+  <style>
+    .signup-account-type{margin:0 0 22px;padding:0;border:0}.signup-account-type legend{margin-bottom:10px;color:#0d2b4f;font-size:14px;font-weight:700}.signup-account-type-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.signup-account-type label{display:flex;align-items:center;gap:8px;margin:0;padding:12px 13px;border:1px solid #d4e0e7;border-radius:12px;color:#0d2b4f;font-size:14px;font-weight:700;cursor:pointer}.signup-account-type input{width:16px;height:16px;padding:0;accent-color:#4d8b4f}.login-card select{width:100%;height:51px;padding:12px 14px;border:1px solid #d4e0e7;border-radius:12px;background:#fff;color:#0d2b4f;font:inherit}.login-card select:focus{border-color:#4d8b4f;outline:3px solid rgba(77,139,79,.16)}
+    @media(max-width:400px){.signup-account-type-options{grid-template-columns:1fr}}
+  </style>
 </head>
 <body class="signup-page">
   <main class="login-layout">
@@ -34,15 +38,30 @@
         <h2 id="signup-title">Crea il tuo account</h2>
         <p>Registrati a FamilArea e inizia a organizzare ciò che conta.</p>
         <form id="signup-form">
-          <div class="login-field"><label for="first-name">Nome</label><input type="text" id="first-name" required></div>
-          <div class="login-field"><label for="last-name">Cognome</label><input type="text" id="last-name"></div>
+          <fieldset class="signup-account-type">
+            <legend>Tipo di account</legend>
+            <div class="signup-account-type-options">
+              <label><input type="radio" name="account-type" value="personal" checked> Persona</label>
+              <label><input type="radio" name="account-type" value="organization"> Organizzazione</label>
+            </div>
+          </fieldset>
+          <div id="personal-signup-fields">
+            <div class="login-field"><label for="first-name">Nome</label><input type="text" id="first-name" required></div>
+            <div class="login-field"><label for="last-name">Cognome</label><input type="text" id="last-name"></div>
+          </div>
+          <div id="organization-signup-fields" hidden>
+            <div class="login-field"><label for="organization-name">Nome organizzazione</label><input type="text" id="organization-name"></div>
+            <div class="login-field"><label for="organization-type">Tipo organizzazione</label><select id="organization-type"><option value="">Seleziona un tipo</option><option value="Associazione">Associazione</option><option value="Cultura / Spettacolo">Cultura / Spettacolo</option><option value="Sport">Sport</option><option value="Scuola / Formazione">Scuola / Formazione</option><option value="Altro">Altro</option></select></div>
+          </div>
           <div class="login-field"><label for="email">Email</label><input type="email" id="email" required></div>
           <div class="login-field"><label for="password">Password</label><input type="password" id="password" required></div>
           <button type="submit">Registrati</button>
         </form>
         <p id="message" class="login-message" aria-live="polite"></p>
-        <div class="login-divider" aria-hidden="true">oppure</div>
-        <button id="google-sign-in" class="google-auth-button" type="button"><span class="google-auth-mark" aria-hidden="true">G</span>Continua con Google</button>
+        <div id="google-sign-in-section">
+          <div class="login-divider" aria-hidden="true">oppure</div>
+          <button id="google-sign-in" class="google-auth-button" type="button"><span class="google-auth-mark" aria-hidden="true">G</span>Continua con Google</button>
+        </div>
         <p class="login-register"><span>Hai già un account?</span><a href="login.html">Accedi a FamilArea</a></p>
         <p class="login-security"><strong>I tuoi dati sono al sicuro</strong><br>Privati per impostazione predefinita</p>
       </div>

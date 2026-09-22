@@ -19,10 +19,9 @@
         <dt>Tipo</dt><dd id="activity-type"></dd>
         <dt>Priorità</dt><dd id="activity-priority"></dd>
         <dt>Stato</dt><dd id="activity-status"></dd>
-        <dt>Visibilità</dt><dd id="activity-visibility"></dd>
         <dt>Quando</dt><dd id="activity-due"></dd>
         <dt id="activity-recurrence-label" hidden>Ripetizione</dt><dd id="activity-recurrence" hidden></dd>
-        <dt>Assegnatari</dt><dd id="activity-assignees"></dd>
+        <dt id="activity-assignees-label">Assegnatari</dt><dd id="activity-assignees"></dd>
         <dt>Note</dt><dd id="activity-notes"></dd>
       </dl>
       <p id="activity-actions" hidden>
@@ -56,13 +55,6 @@
       </fieldset>
       <br>
       <fieldset><legend>Assegnatari</legend><div id="edit-assignees"></div></fieldset>
-      <br>
-      <fieldset><legend>Visibilità</legend>
-        <p id="visibility-help"></p>
-        <label><input type="radio" name="visibility" value="creator_assignees"> Solo tu e gli assegnatari</label>
-        <label><input type="radio" name="visibility" value="private"> Solo tu</label>
-        <label><input type="radio" name="visibility" value="area"> Tutti i partecipanti dell'Area</label>
-      </fieldset>
       <br>
       <button type="submit">Salva modifiche</button>
       <button type="button" id="cancel-button">Annulla</button>

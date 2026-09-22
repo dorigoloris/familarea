@@ -23,7 +23,8 @@ function createBadge(className, text) {
 function createActivityRow(activity) {
   const row = document.createElement('a');
   row.className = 'global-activity-row';
-  row.href = activity.area_id ? `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}` : `attivita.html?activity_id=${encodeURIComponent(activity.activity_id)}`;
+  const activityId = activity.id || activity.activity_id;
+  row.href = activity.area_id ? `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activityId)}` : `attivita.html?activity_id=${encodeURIComponent(activityId)}`;
   row.setAttribute('aria-label', `Apri attività ${activity.title}`);
 
   const main = document.createElement('div');
@@ -32,7 +33,7 @@ function createActivityRow(activity) {
   title.textContent = activity.title;
   const area = document.createElement('p');
   area.className = 'global-activity-area';
-  area.textContent = activity.area_name || 'Personale';
+  area.textContent = activity.area_id ? 'Area condivisa' : 'Personale';
   main.append(title, area);
 
   const details = document.createElement('div');
@@ -57,7 +58,7 @@ function createActivityRow(activity) {
 async function loadActivities() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
-  const { data, error } = await supabaseClient.rpc('get_my_visible_activities');
+  const { data, error } = await supabaseClient.rpc('get_visible_activities');
   if (error) { message.textContent = 'Impossibile caricare le attività visibili.'; return; }
 
   list.replaceChildren();

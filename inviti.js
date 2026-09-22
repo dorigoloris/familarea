@@ -23,10 +23,10 @@ function setCardBusy(card, busy) { card.querySelectorAll('button').forEach((butt
 
 async function respondToInvite(invite, rpcName, card) {
   setCardBusy(card, true);
-  pageMessage.textContent = rpcName === 'accept_area_invite' ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
+  pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
   const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
-  pageMessage.textContent = rpcName === 'accept_area_invite' ? 'Invito accettato. Ora fai parte dell’Area.' : 'Invito rifiutato.';
+  pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Invito accettato. Ora fai parte dell’Area.' : 'Invito rifiutato.';
   await loadInvites();
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
@@ -67,10 +67,10 @@ function createInviteCard(invite) {
     actions.className = 'invite-actions';
     const decline = document.createElement('button');
     decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
-    decline.addEventListener('click', () => respondToInvite(invite, 'decline_area_invite', article));
+    decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_area_invite', article));
     const accept = document.createElement('button');
     accept.type = 'button'; accept.textContent = 'Accetta';
-    accept.addEventListener('click', () => respondToInvite(invite, 'accept_area_invite', article));
+    accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_area_invite', article));
     actions.append(decline, accept); article.appendChild(actions);
   }
   return article;
@@ -89,6 +89,7 @@ async function loadInvites() {
 }
 
 async function loadPage() {
+  if (window.FamilAreaRequirePersonal && !await window.FamilAreaRequirePersonal()) return;
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
   await loadInvites();
