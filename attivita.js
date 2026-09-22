@@ -16,6 +16,7 @@ const recurrenceWeekday = document.getElementById('edit-recurrence-weekday');
 const editSubmitButton = editForm.querySelector('button[type="submit"]');
 let areaId; let activityId; let ownProfileId; let ownRole; let memberships = []; let activity;
 let recurrenceWeekdayManuallySelected = false;
+const isPersonal = () => !areaId;
 
 const labels = {
   type: { task: 'Da fare', reminder: 'Promemoria', deadline: 'Scadenza', appointment: 'Appuntamento' },
@@ -70,15 +71,17 @@ function schedulePayload() {
 function currentAssigneeIds() { return [...editAssignees.querySelectorAll('input:checked')].map((input) => input.value); }
 function friendlyError(error, fallback) { return /permission denied|non accessibile|not authorized/i.test(error?.message || '') ? 'Non sei autorizzato a eseguire questa operazione.' : fallback; }
 function sameIds(left, right) { return [...left].sort().join(',') === [...right].sort().join(','); }
-function canEdit() { return activity.created_by_profile_id === ownProfileId || (activity.visibility === 'area' && ownRole === 'admin'); }
-function canDelete() { return (activity.visibility === 'area' && ownRole === 'admin') || (activity.created_by_profile_id === ownProfileId && (activity.visibility !== 'area' || activity.status === 'open')); }
+function canEdit() { return isPersonal() || activity.created_by_profile_id === ownProfileId || (activity.visibility === 'area' && ownRole === 'admin'); }
+function canDelete() { return isPersonal() || (activity.visibility === 'area' && ownRole === 'admin') || (activity.created_by_profile_id === ownProfileId && (activity.visibility !== 'area' || activity.status === 'open')); }
 function memberName(profileId) { const profile = memberships.find((item) => item.profile_id === profileId)?.profiles; return `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Partecipante dell’Area'; }
 function renderActivity() {
   document.getElementById('activity-title').textContent = activity.title;
   document.getElementById('activity-type').textContent = label('type', activity.activity_type);
   document.getElementById('activity-priority').textContent = label('priority', activity.priority);
   document.getElementById('activity-status').textContent = label('status', activity.status);
-  document.getElementById('activity-visibility').textContent = label('visibility', activity.visibility);
+  document.getElementById('personal-status').value = activity.status;
+  document.getElementById('save-personal-status').disabled = true;
+  document.getElementById('activity-visibility').textContent = isPersonal() ? 'Personale' : label('visibility', activity.visibility);
   document.getElementById('activity-due').textContent = activity.starts_at && !activity.is_all_day && activity.due_at ? `${formatDate(activity.starts_at, false)}${localTimeInput(activity.due_at) !== localTimeInput(activity.starts_at) ? `–${localTimeInput(activity.due_at)}` : ''}` : formatDate(activity.due_at, activity.is_all_day);
   const recurrence = recurrenceDescription();
   document.getElementById('activity-recurrence-label').hidden = !recurrence;
@@ -86,6 +89,9 @@ function renderActivity() {
   document.getElementById('activity-notes').textContent = activity.notes || 'Nessuna nota.';
   const assigneeNames = (activity.assignee_profile_ids || []).map(memberName);
   document.getElementById('activity-assignees').textContent = assigneeNames.length ? assigneeNames.join(', ') : 'Nessun assegnatario.';
+  document.getElementById('activity-assignees').previousElementSibling.hidden = isPersonal();
+  document.getElementById('activity-assignees').hidden = isPersonal();
+  document.getElementById('personal-status-actions').hidden = !isPersonal();
   actions.hidden = !canEdit() && !canDelete(); editButton.hidden = !canEdit(); deleteButton.hidden = !canDelete(); view.hidden = false;
 }
 function updateVisibilityChoices() {
@@ -96,6 +102,8 @@ function updateVisibilityChoices() {
   else { visibilityHelp.textContent = 'Scegli chi può vedere l’attività.'; if (creator.checked) creator.checked = false; if (!privateInput.checked && !areaInput.checked) privateInput.checked = true; }
 }
 function prepareEditForm() {
+  editAssignees.closest('fieldset').hidden = isPersonal();
+  visibilityHelp.closest('fieldset').hidden = isPersonal();
   document.getElementById('edit-title').value = activity.title; document.getElementById('edit-type').value = activity.activity_type; document.getElementById('edit-priority').value = activity.priority; document.getElementById('edit-notes').value = activity.notes || '';
   document.getElementById('edit-activity-date').value = localDateInput(activity.starts_at || activity.due_at);
   document.getElementById('edit-start-time').value = activity.is_all_day ? '' : localTimeInput(activity.starts_at || activity.due_at);
@@ -104,14 +112,13 @@ function prepareEditForm() {
   recurrenceWeekdayManuallySelected = recurrenceEnabled.checked;
   recurrenceWeekday.value = String(activity.recurrence_weekdays?.[0] || (document.getElementById('edit-activity-date').value ? isoWeekday(document.getElementById('edit-activity-date').value) : 1));
   document.getElementById('edit-recurrence-until').value = activity.recurrence_until || ''; toggleRecurrenceFields();
-  editAssignees.replaceChildren(); const selected = new Set(activity.assignee_profile_ids || []);
-  memberships.forEach((membership) => { const labelElement = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = membership.profile_id; input.checked = selected.has(membership.profile_id); input.addEventListener('change', updateVisibilityChoices); labelElement.append(input, ` ${memberName(membership.profile_id)}`); editAssignees.append(labelElement, document.createElement('br')); });
-  visibilityInputs.forEach((input) => { input.checked = input.value === activity.visibility; }); updateVisibilityChoices();
+  if (!isPersonal()) { editAssignees.replaceChildren(); const selected = new Set(activity.assignee_profile_ids || []); memberships.forEach((membership) => { const labelElement = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = membership.profile_id; input.checked = selected.has(membership.profile_id); input.addEventListener('change', updateVisibilityChoices); labelElement.append(input, ` ${memberName(membership.profile_id)}`); editAssignees.append(labelElement, document.createElement('br')); }); visibilityInputs.forEach((input) => { input.checked = input.value === activity.visibility; }); updateVisibilityChoices(); }
 }
-async function loadActivity() { message.textContent = 'Caricamento attività...'; const { data, error } = await supabaseClient.rpc('get_area_activity', { p_area_id: areaId, p_activity_id: activityId }); if (error || !data?.[0]) { message.textContent = friendlyError(error, 'Attività non disponibile.'); return; } activity = data[0]; renderActivity(); message.textContent = ''; }
+async function loadActivity() { message.textContent = 'Caricamento attività...'; const { data, error } = isPersonal() ? await supabaseClient.rpc('get_my_activity', { p_activity_id: activityId }) : await supabaseClient.rpc('get_area_activity', { p_area_id: areaId, p_activity_id: activityId }); if (error || !data?.[0]) { message.textContent = friendlyError(error, 'Attività non disponibile.'); return; } activity = data[0]; renderActivity(); message.textContent = ''; }
 async function load() {
   const { data: sessionData } = await supabaseClient.auth.getSession(); if (!sessionData.session) { window.location.href = 'login.html'; return; }
-  areaId = new URLSearchParams(window.location.search).get('area_id'); activityId = new URLSearchParams(window.location.search).get('activity_id'); if (!areaId || !activityId) { message.textContent = 'Attività non specificata.'; return; }
+  areaId = new URLSearchParams(window.location.search).get('area_id'); activityId = new URLSearchParams(window.location.search).get('activity_id'); if (!activityId) { message.textContent = 'Attività non specificata.'; return; }
+  if (isPersonal()) { backLink.href = 'attivita-globali.html'; backLink.textContent = 'Torna alle Attività'; await loadActivity(); return; }
   backLink.href = `attivita-area.html?area_id=${encodeURIComponent(areaId)}`;
   const { data: ownProfile } = await supabaseClient.from('profiles').select('id').eq('user_id', sessionData.session.user.id).single(); const { data, error } = await supabaseClient.from('area_memberships').select('profile_id,role,profiles(first_name,last_name)').eq('area_id', areaId);
   if (!ownProfile || error || !data) { message.textContent = 'Impossibile preparare la pagina attività.'; return; }
@@ -132,17 +139,29 @@ recurrenceWeekday.addEventListener('change', () => {
   dateInput.value = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 });
 editForm.addEventListener('submit', async (event) => {
-  event.preventDefault(); const assigneeIds = currentAssigneeIds(); const visibility = visibilityInputs.find((input) => input.checked)?.value; if (!visibility) { message.textContent = 'Scegli la visibilità dell’attività.'; return; }
+  event.preventDefault(); const assigneeIds = currentAssigneeIds(); const visibility = visibilityInputs.find((input) => input.checked)?.value; if (!isPersonal() && !visibility) { message.textContent = 'Scegli la visibilità dell’attività.'; return; }
   let schedule; try { schedule = schedulePayload(); } catch (error) { message.textContent = error.message; return; }
   editSubmitButton.disabled = true; message.textContent = 'Salvataggio in corso...';
   try {
-    if (!sameIds(assigneeIds, activity.assignee_profile_ids || []) || visibility !== activity.visibility) { const { error } = await supabaseClient.rpc('set_area_activity_assignees', { p_area_id: areaId, p_activity_id: activityId, p_assignee_profile_ids: assigneeIds, p_visibility: visibility }); if (error) throw error; }
-    const { error } = await supabaseClient.rpc('update_area_activity', { p_area_id: areaId, p_activity_id: activityId, p_title: document.getElementById('edit-title').value.trim(), p_notes: document.getElementById('edit-notes').value.trim() || null, p_activity_type: document.getElementById('edit-type').value, p_priority: document.getElementById('edit-priority').value, p_starts_at: schedule.startsAt, p_due_at: schedule.dueAt, p_is_all_day: schedule.isAllDay, p_visibility: visibility, p_update_recurrence: schedule.updateRecurrence, ...(schedule.recurrence || {}) });
+    if (!isPersonal() && (!sameIds(assigneeIds, activity.assignee_profile_ids || []) || visibility !== activity.visibility)) { const { error } = await supabaseClient.rpc('set_area_activity_assignees', { p_area_id: areaId, p_activity_id: activityId, p_assignee_profile_ids: assigneeIds, p_visibility: visibility }); if (error) throw error; }
+    const payload = { p_activity_id: activityId, p_title: document.getElementById('edit-title').value.trim(), p_notes: document.getElementById('edit-notes').value.trim() || null, p_activity_type: document.getElementById('edit-type').value, p_priority: document.getElementById('edit-priority').value, p_starts_at: schedule.startsAt, p_due_at: schedule.dueAt, p_is_all_day: schedule.isAllDay, p_update_recurrence: schedule.updateRecurrence, ...(schedule.recurrence || {}) };
+    const { error } = isPersonal() ? await supabaseClient.rpc('update_my_activity', payload) : await supabaseClient.rpc('update_area_activity', { p_area_id: areaId, ...payload, p_visibility: visibility });
     if (error) throw error; editForm.hidden = true; message.textContent = 'Attività aggiornata.'; await loadActivity();
   } catch (error) { message.textContent = friendlyError(error, 'Impossibile salvare le modifiche.'); } finally { editSubmitButton.disabled = false; }
 });
 deleteButton.addEventListener('click', async () => {
   const confirmed = await FamilAreaConfirm.confirm({ variant: 'danger', title: 'Vuoi eliminare questa attività?', message: activity.recurrence_frequency ? 'Questa operazione eliminerà tutta la serie.' : 'L’attività verrà eliminata definitivamente dall’Area.', warning: 'Questa azione non può essere annullata.', confirmText: 'Elimina attività' });
-  if (!confirmed) return; deleteButton.disabled = true; message.textContent = 'Eliminazione in corso...'; const { error } = await supabaseClient.rpc('delete_area_activity', { p_area_id: areaId, p_activity_id: activityId }); deleteButton.disabled = false; if (error) { message.textContent = friendlyError(error, 'Impossibile eliminare l’attività.'); return; } window.location.href = `attivita-area.html?area_id=${encodeURIComponent(areaId)}`;
+  if (!confirmed) return; deleteButton.disabled = true; message.textContent = 'Eliminazione in corso...'; const { error } = isPersonal() ? await supabaseClient.rpc('delete_my_activity', { p_activity_id: activityId }) : await supabaseClient.rpc('delete_area_activity', { p_area_id: areaId, p_activity_id: activityId }); deleteButton.disabled = false; if (error) { message.textContent = friendlyError(error, 'Impossibile eliminare l’attività.'); return; } window.location.href = isPersonal() ? 'attivita-globali.html' : `attivita-area.html?area_id=${encodeURIComponent(areaId)}`;
+});
+const personalStatus = document.getElementById('personal-status');
+const savePersonalStatus = document.getElementById('save-personal-status');
+personalStatus.addEventListener('change', () => { savePersonalStatus.disabled = !isPersonal() || personalStatus.value === activity.status; });
+savePersonalStatus.addEventListener('click', async () => {
+  if (!isPersonal() || personalStatus.value === activity.status) return;
+  savePersonalStatus.disabled = true; personalStatus.disabled = true;
+  const { error } = await supabaseClient.rpc('set_my_activity_status', { p_activity_id: activityId, p_status: personalStatus.value });
+  personalStatus.disabled = false;
+  if (error) { message.textContent = friendlyError(error, 'Impossibile aggiornare lo stato dell’attività.'); return; }
+  await loadActivity();
 });
 load();

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Nuova Organizzazione - FamilArea</title><link rel="stylesheet" href="app.css"></head>
+<body class="protected-page organization-form-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
+  <main class="organization-form-page">
+    <p class="organization-back"><a href="organizzazioni.html">Torna alle Organizzazioni</a></p>
+    <header class="organization-form-heading"><p class="eyebrow">ORGANIZZAZIONI</p><h1>Nuova Organizzazione</h1><p>Inserisci le informazioni essenziali.</p></header>
+    <p id="organization-message" class="organizations-message" aria-live="polite"></p>
+    <form id="organization-form" class="organization-form">
+      <div><label for="organization-name">Nome Organizzazione</label><input id="organization-name" type="text" maxlength="160" required autocomplete="organization"></div>
+      <div><label for="organization-type">Tipo Organizzazione</label><select id="organization-type" required><option value="Associazione">Associazione</option><option value="Attività / Impresa">Attività / Impresa</option><option value="Scuola / Formazione">Scuola / Formazione</option><option value="Sport">Sport</option><option value="Cultura / Spettacolo">Cultura / Spettacolo</option><option value="Ente">Ente</option><option value="Professionista">Professionista</option><option value="Altro">Altro</option></select></div>
+      <div class="organization-form-wide"><label for="organization-description">Descrizione <span>facoltativa</span></label><textarea id="organization-description" maxlength="1000"></textarea></div>
+      <div class="organization-form-actions"><a class="fa-button fa-button-secondary" href="organizzazioni.html">Annulla</a><button id="organization-submit" class="fa-button fa-button-primary" type="submit">Crea Organizzazione</button></div>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="nuova-organizzazione.js"></script>
+</body>
+</html>

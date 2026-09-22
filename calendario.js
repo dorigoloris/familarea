@@ -6,10 +6,12 @@ const monthTitle = document.getElementById('month-title');
 const calendarGrid = document.getElementById('calendar-grid');
 const monthCalendar = document.getElementById('month-calendar');
 const weekCalendar = document.getElementById('week-calendar');
+const dayCalendar = document.getElementById('day-calendar');
 const previousMonthButton = document.getElementById('previous-month');
 const nextMonthButton = document.getElementById('next-month');
 const monthViewButton = document.getElementById('month-view');
 const weekViewButton = document.getElementById('week-view');
+const dayViewButton = document.getElementById('day-view');
 const todayCalendarButton = document.getElementById('today-calendar');
 const printToolbar = document.querySelector('.calendar-print-toolbar');
 const printCalendarButton = document.getElementById('print-calendar');
@@ -26,6 +28,7 @@ let visibleDeadlines = [];
 let visibleCalendarItems = [];
 let displayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let displayedWeek = calendarUtils.startOfWeek(new Date());
+let displayedDay = new Date();
 let activeView = 'month';
 let printModeStyle = null;
 
@@ -41,6 +44,11 @@ function monthBounds() {
 function weekBounds() {
   const start = calendarUtils.startOfWeek(displayedWeek);
   const end = new Date(start); end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+function dayBounds() {
+  const start = new Date(displayedDay.getFullYear(), displayedDay.getMonth(), displayedDay.getDate());
+  const end = new Date(start); end.setDate(end.getDate() + 1);
   return { start, end };
 }
 function updateVisibleCalendarItems() { visibleCalendarItems = [...visibleActivityOccurrences, ...visibleEvents, ...visibleBirthdays, ...visibleDeadlines]; }
@@ -64,19 +72,29 @@ function renderWeek() {
   calendarUtils.renderWeekAgenda({ weekStart: displayedWeek, titleElement: monthTitle, gridElement: weekCalendar, activities: visibleCalendarItems });
   printMonthTitle.textContent = monthTitle.textContent;
 }
+function renderDay() {
+  calendarUtils.renderDayAgenda({ day: displayedDay, titleElement: monthTitle, gridElement: dayCalendar, activities: visibleCalendarItems });
+  printMonthTitle.textContent = monthTitle.textContent;
+}
 function updateViewUi() {
+  const isMonth = activeView === 'month';
   const isWeek = activeView === 'week';
-  monthCalendar.hidden = isWeek;
+  const isDay = activeView === 'day';
+  monthCalendar.hidden = !isMonth;
   weekCalendar.hidden = !isWeek;
-  undatedList.closest('#undated-section').hidden = isWeek;
+  dayCalendar.hidden = !isDay;
+  undatedList.closest('#undated-section').hidden = !isMonth;
   printToolbar.hidden = false;
-  monthViewButton.classList.toggle('is-active', !isWeek);
+  monthViewButton.classList.toggle('is-active', isMonth);
   weekViewButton.classList.toggle('is-active', isWeek);
-  monthViewButton.setAttribute('aria-pressed', String(!isWeek));
+  dayViewButton.classList.toggle('is-active', isDay);
+  monthViewButton.setAttribute('aria-pressed', String(isMonth));
   weekViewButton.setAttribute('aria-pressed', String(isWeek));
-  previousMonthButton.setAttribute('aria-label', isWeek ? 'Settimana precedente' : 'Mese precedente');
-  nextMonthButton.setAttribute('aria-label', isWeek ? 'Settimana successiva' : 'Mese successivo');
-  printCalendarButton.setAttribute('aria-label', isWeek ? 'Stampa la settimana visualizzata' : 'Stampa il mese visualizzato');
+  dayViewButton.setAttribute('aria-pressed', String(isDay));
+  const periodLabel = isWeek ? 'Settimana' : (isDay ? 'Giorno' : 'Mese');
+  previousMonthButton.setAttribute('aria-label', `${periodLabel} precedente`);
+  nextMonthButton.setAttribute('aria-label', `${periodLabel} successivo`);
+  printCalendarButton.setAttribute('aria-label', `Stampa ${periodLabel.toLowerCase()} visualizzato`);
 }
 function resultData(result) { return result.status === 'fulfilled' && !result.value.error ? result.value.data || [] : []; }
 function failed(result) { return result.status === 'rejected' || (result.status === 'fulfilled' && result.value.error); }
@@ -124,26 +142,56 @@ async function loadWeekSources() {
   updateVisibleCalendarItems();
   return { occurrenceFailed, birthdayFailed: birthdayResults.some(failed), deadlineFailed: failed(deadlineResult) };
 }
+async function loadDaySources() {
+  const { start, end } = dayBounds();
+  const deadlineEnd = new Date(end); deadlineEnd.setDate(deadlineEnd.getDate() - 1);
+  const [occurrenceResult, birthdayResult, deadlineResult] = await Promise.allSettled([
+    supabaseClient.rpc('get_my_visible_activity_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
+    supabaseClient.rpc('get_my_contact_birthdays', { p_year: start.getFullYear() }),
+    supabaseClient.rpc('get_my_deadline_occurrences', { p_from: localDateValue(start), p_to: localDateValue(deadlineEnd) })
+  ]);
+  const occurrenceFailed = failed(occurrenceResult);
+  visibleActivityOccurrences = occurrenceFailed
+    ? visibleActivities.filter((activity) => activity.status !== 'cancelled' && (activity.starts_at || activity.due_at))
+    : resultData(occurrenceResult);
+  visibleBirthdays = failed(birthdayResult) ? [] : birthdayCalendarItems(resultData(birthdayResult));
+  visibleDeadlines = failed(deadlineResult) ? [] : deadlineCalendarItems(resultData(deadlineResult));
+  updateVisibleCalendarItems();
+  return { occurrenceFailed, birthdayFailed: failed(birthdayResult), deadlineFailed: failed(deadlineResult) };
+}
 async function changePeriod(offset) {
   if (activeView === 'week') {
     displayedWeek = new Date(displayedWeek); displayedWeek.setDate(displayedWeek.getDate() + offset * 7);
     const results = await loadWeekSources(); renderCurrentView(); calendarMessage.textContent = updateMessage(results.occurrenceFailed, false, results.birthdayFailed, results.deadlineFailed); return;
   }
+  if (activeView === 'day') {
+    displayedDay = new Date(displayedDay); displayedDay.setDate(displayedDay.getDate() + offset);
+    const results = await loadDaySources(); renderCurrentView(); calendarMessage.textContent = updateMessage(results.occurrenceFailed, false, results.birthdayFailed, results.deadlineFailed); return;
+  }
   displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + offset, 1);
   const results = await loadMonthSources(); renderCurrentView(); calendarMessage.textContent = updateMessage(results.occurrenceFailed, false, results.birthdayFailed, results.deadlineFailed);
 }
-function renderCurrentView() { updateViewUi(); if (activeView === 'week') renderWeek(); else renderMonth(); }
+function renderCurrentView() { updateViewUi(); if (activeView === 'week') renderWeek(); else if (activeView === 'day') renderDay(); else renderMonth(); }
 async function setView(view) {
   if (activeView === view) return;
+  if (view === 'week') {
+    displayedWeek = calendarUtils.startOfWeek(activeView === 'day' ? displayedDay : displayedMonth);
+  } else if (view === 'day') {
+    displayedDay = new Date(activeView === 'week' ? displayedWeek : displayedMonth);
+  } else {
+    const sourceDate = activeView === 'week' ? displayedWeek : displayedDay;
+    displayedMonth = new Date(sourceDate.getFullYear(), sourceDate.getMonth(), 1);
+  }
   activeView = view;
-  const results = activeView === 'week' ? await loadWeekSources() : await loadMonthSources();
+  const results = activeView === 'week' ? await loadWeekSources() : (activeView === 'day' ? await loadDaySources() : await loadMonthSources());
   renderCurrentView(); calendarMessage.textContent = updateMessage(results.occurrenceFailed, false, results.birthdayFailed, results.deadlineFailed);
 }
 async function goToToday() {
   const now = new Date();
   if (activeView === 'week') displayedWeek = calendarUtils.startOfWeek(now);
+  else if (activeView === 'day') displayedDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   else displayedMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const results = activeView === 'week' ? await loadWeekSources() : await loadMonthSources();
+  const results = activeView === 'week' ? await loadWeekSources() : (activeView === 'day' ? await loadDaySources() : await loadMonthSources());
   renderCurrentView(); calendarMessage.textContent = updateMessage(results.occurrenceFailed, false, results.birthdayFailed, results.deadlineFailed);
 }
 async function loadCalendar() {
@@ -162,17 +210,19 @@ previousMonthButton.addEventListener('click', () => { void changePeriod(-1); });
 nextMonthButton.addEventListener('click', () => { void changePeriod(1); });
 monthViewButton.addEventListener('click', () => { void setView('month'); });
 weekViewButton.addEventListener('click', () => { void setView('week'); });
+dayViewButton.addEventListener('click', () => { void setView('day'); });
 todayCalendarButton.addEventListener('click', () => { void goToToday(); });
 function clearPrintMode() {
-  document.body.classList.remove('calendar-print-month', 'calendar-print-week');
+  document.body.classList.remove('calendar-print-month', 'calendar-print-week', 'calendar-print-day');
   if (printModeStyle) { printModeStyle.remove(); printModeStyle = null; }
 }
 function printCalendar() {
   clearPrintMode();
   const isWeek = activeView === 'week';
-  document.body.classList.add(isWeek ? 'calendar-print-week' : 'calendar-print-month');
+  const isDay = activeView === 'day';
+  document.body.classList.add(isWeek ? 'calendar-print-week' : (isDay ? 'calendar-print-day' : 'calendar-print-month'));
   printModeStyle = document.createElement('style');
-  printModeStyle.textContent = `@page { size: A4 ${isWeek ? 'portrait' : 'landscape'}; margin: ${isWeek ? '9mm' : '10mm'}; }`;
+  printModeStyle.textContent = `@page { size: A4 ${isWeek || isDay ? 'portrait' : 'landscape'}; margin: ${isWeek || isDay ? '9mm' : '10mm'}; }`;
   document.head.appendChild(printModeStyle);
   window.print();
 }

@@ -54,7 +54,12 @@ async function load() {
   }
   areaId = new URLSearchParams(window.location.search).get('area_id');
   if (!areaId) {
-    message.textContent = 'Area non specificata.';
+    document.getElementById('back-link').href = 'liste.html';
+    document.getElementById('cancel-link').href = 'liste.html';
+    document.querySelector('fieldset:not(#participants-fieldset)').hidden = true;
+    document.getElementById('participants-fieldset').hidden = true;
+    form.hidden = false;
+    message.textContent = '';
     return;
   }
   const backUrl = `liste.html?area_id=${encodeURIComponent(areaId)}`;
@@ -85,25 +90,21 @@ form.addEventListener('submit', async (event) => {
     message.textContent = 'Inserisci il titolo della lista.';
     return;
   }
-  if (visibility === 'creator_participants' && !participantIds.length) {
+  if (areaId && visibility === 'creator_participants' && !participantIds.length) {
     message.textContent = 'Seleziona almeno un partecipante.';
     return;
   }
   saveButton.disabled = true;
   message.textContent = 'Creazione lista in corso...';
-  const { data, error } = await supabaseClient.rpc('create_area_list', {
-    p_area_id: areaId,
-    p_title: title,
-    p_description: document.getElementById('description').value.trim() || null,
-    p_visibility: visibility,
-    p_participant_profile_ids: participantIds
-  });
+  const { data, error } = areaId
+    ? await supabaseClient.rpc('create_area_list', { p_area_id: areaId, p_title: title, p_description: document.getElementById('description').value.trim() || null, p_visibility: visibility, p_participant_profile_ids: participantIds })
+    : await supabaseClient.rpc('create_my_list', { p_title: title, p_description: document.getElementById('description').value.trim() || null });
   if (error || !data) {
     message.textContent = 'Impossibile creare la lista.';
     saveButton.disabled = false;
     return;
   }
-  window.location.href = `lista.html?area_id=${encodeURIComponent(areaId)}&list_id=${encodeURIComponent(data)}`;
+  window.location.href = areaId ? `lista.html?area_id=${encodeURIComponent(areaId)}&list_id=${encodeURIComponent(data)}` : `lista.html?list_id=${encodeURIComponent(data)}`;
 });
 
 updateVisibilityUi();

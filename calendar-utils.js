@@ -36,9 +36,9 @@
       return `contatto.html?contact_id=${encodeURIComponent(item.birthday_contact_id)}`;
     }
     if (itemType(item) === 'event') {
-      return `evento.html?area_id=${encodeURIComponent(item.area_id)}&event_id=${encodeURIComponent(item.event_id)}`;
+      return item.area_id ? `evento.html?area_id=${encodeURIComponent(item.area_id)}&event_id=${encodeURIComponent(item.event_id)}` : `evento.html?event_id=${encodeURIComponent(item.event_id)}`;
     }
-    return `attivita.html?area_id=${encodeURIComponent(item.area_id)}&activity_id=${encodeURIComponent(item.activity_id)}`;
+    return item.area_id ? `attivita.html?area_id=${encodeURIComponent(item.area_id)}&activity_id=${encodeURIComponent(item.activity_id)}` : `attivita.html?activity_id=${encodeURIComponent(item.activity_id)}`;
   }
 
   function formatTime(item) {
@@ -275,10 +275,12 @@
     return sorted;
   }
 
-  function renderWeekAgenda({ weekStart, titleElement, gridElement, activities, startHour = 7, endHour = 22 }) {
-    const start = startOfWeek(weekStart);
+  function renderWeekAgenda({ weekStart, titleElement, gridElement, activities, startHour = 0, endHour = 24, daysCount = 7 }) {
+    const start = daysCount === 1
+      ? new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate())
+      : startOfWeek(weekStart);
     const today = new Date();
-    const days = Array.from({ length: 7 }, (_, offset) => {
+    const days = Array.from({ length: daysCount }, (_, offset) => {
       const date = new Date(start);
       date.setDate(start.getDate() + offset);
       return date;
@@ -287,10 +289,12 @@
     const dayFormatter = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric' });
     const totalMinutes = (endHour - startHour) * 60;
     const minuteHeight = 56 / 60;
-    titleElement.textContent = weekTitle(start);
+    titleElement.textContent = daysCount === 1
+      ? new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(start)
+      : weekTitle(start);
 
     const agenda = document.createElement('div');
-    agenda.className = 'week-agenda';
+    agenda.className = `week-agenda${daysCount === 1 ? ' day-agenda' : ''}`;
     agenda.style.setProperty('--week-agenda-height', `${totalMinutes * minuteHeight}px`);
 
     const header = document.createElement('div');
@@ -367,5 +371,9 @@
     gridElement.replaceChildren(agenda);
   }
 
-  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, renderWeekCalendar, renderWeekAgenda, startOfWeek, toValidDate };
+  function renderDayAgenda({ day, titleElement, gridElement, activities }) {
+    renderWeekAgenda({ weekStart: day, titleElement, gridElement, activities, daysCount: 1 });
+  }
+
+  global.FamilAreaCalendarUtils = { itemLink, itemType, placementDate, renderMonthCalendar, renderWeekCalendar, renderWeekAgenda, renderDayAgenda, startOfWeek, toValidDate };
 }(window));

@@ -9,7 +9,7 @@
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
   const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
-  const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
+  const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
 
   let header;
   let actions;
@@ -45,9 +45,11 @@
     { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
     { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
     { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
+    { label: 'Organizzazioni', href: 'organizzazioni.html', active: isActive(['organizzazioni.html', 'nuova-organizzazione.html', 'organizzazione.html']) },
     { label: 'Interessi', href: 'interessi.html', active: isActive(['interessi.html']) },
     { label: 'Attività', href: 'attivita-globali.html', active: isGlobalView && isActive(['attivita-globali.html']) },
     { label: 'Eventi', href: 'eventi.html', active: isGlobalView && isActive(['eventi.html']) },
+    { label: 'Liste', href: 'liste.html', active: isGlobalView && isActive(['liste.html']) },
     { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
     { label: 'Scadenze', href: 'scadenze.html', active: isActive(['scadenze.html', 'nuova-scadenza.html', 'scadenza.html']) },
     { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
@@ -259,7 +261,15 @@
     <a class="sidebar-link${isActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
     <a class="sidebar-link${isActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Eventi</a>
     <a class="sidebar-link${isActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
-  body.prepend(areaNav);
+  const contextualHeader = document.querySelector(
+    '.area-page-header, .area-invites-page-header, .page-card > .section-heading, .page-card > #contextual-events-content > .section-heading, .page-card > #list-view > .section-heading, .page-card > h1, body > h1'
+  );
+  if (contextualHeader) {
+    contextualHeader.after(areaNav);
+  } else {
+    const pageContent = document.querySelector('main');
+    if (pageContent) pageContent.prepend(areaNav);
+  }
 
   const areaNavIcons = {
     'Panoramica Area': 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5ZM9 21v-6h6v6',

@@ -23,7 +23,7 @@ function createBadge(className, text) {
 function createActivityRow(activity) {
   const row = document.createElement('a');
   row.className = 'global-activity-row';
-  row.href = `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}`;
+  row.href = activity.area_id ? `attivita.html?area_id=${encodeURIComponent(activity.area_id)}&activity_id=${encodeURIComponent(activity.activity_id)}` : `attivita.html?activity_id=${encodeURIComponent(activity.activity_id)}`;
   row.setAttribute('aria-label', `Apri attività ${activity.title}`);
 
   const main = document.createElement('div');
@@ -32,7 +32,7 @@ function createActivityRow(activity) {
   title.textContent = activity.title;
   const area = document.createElement('p');
   area.className = 'global-activity-area';
-  area.textContent = activity.area_name || 'Area';
+  area.textContent = activity.area_name || 'Personale';
   main.append(title, area);
 
   const details = document.createElement('div');

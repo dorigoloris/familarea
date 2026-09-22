@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le mie Organizzazioni - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="protected-page organizations-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="organizations-page">
+    <header class="organizations-intro">
+      <div><p class="eyebrow">ORGANIZZAZIONI</p><h1>Le mie Organizzazioni</h1><p>Gli enti e i gruppi a cui collabori.</p></div>
+      <a class="fa-button fa-button-primary" href="nuova-organizzazione.html">+ Nuova organizzazione</a>
+    </header>
+    <p id="organizations-message" class="organizations-message" aria-live="polite">Caricamento...</p>
+    <section id="organizations-surface" class="organizations-surface" aria-label="Elenco delle Organizzazioni" hidden>
+      <div id="organizations-list" class="organizations-list"></div>
+      <p id="organizations-empty" class="organizations-empty" hidden>Non fai ancora parte di alcuna Organizzazione.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="organizzazioni.js"></script>
+</body>
+</html>

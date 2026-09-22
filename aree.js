@@ -5,27 +5,22 @@ const groups = {
   member: { container: document.getElementById('member-areas-group'), list: document.getElementById('member-areas-list'), empty: document.getElementById('member-areas-empty') }
 };
 
-function roleLabel(role) {
-  return ({ admin: 'Amministratore', member: 'Partecipante', managed: 'Profilo gestito' })[role] || role;
-}
-
 function createAreaCard(membership) {
   const area = membership.areas;
-  const card = document.createElement('article');
+  const card = document.createElement('a');
   card.className = 'area-card';
+  card.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
   const icon = document.createElement('span');
   icon.className = 'area-card-icon';
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = '⌂';
   const title = document.createElement('h3');
   title.textContent = area.name;
-  const info = document.createElement('p');
-  info.textContent = `${area.area_type} — ${roleLabel(membership.role)}`;
-  const link = document.createElement('a');
-  link.className = 'btn';
-  link.textContent = 'Apri Area';
-  link.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
-  card.append(icon, title, info, link);
+  const indicator = document.createElement('span');
+  indicator.className = 'area-card-open-indicator';
+  indicator.setAttribute('aria-hidden', 'true');
+  indicator.textContent = '→';
+  card.append(icon, title, indicator);
   return card;
 }
 

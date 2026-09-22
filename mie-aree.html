@@ -15,7 +15,7 @@
   <div class="dashboard-shell">
     <main class="dashboard-content">
       <div class="dashboard-intro area-page-intro"><div><p class="eyebrow">Aree</p><h1>Le mie Aree</h1><p>Gli spazi che gestisci e quelli a cui partecipi.</p></div><a class="btn create-area-button" href="crea-area.html">+ Crea nuova Area</a></div>
-      <section class="dashboard-section areas-section" aria-label="Elenco delle Aree">
+      <div class="areas-section" aria-label="Elenco delle Aree">
         <p id="message" aria-live="polite">Caricamento...</p>
         <section id="managed-areas-group" class="area-role-group" aria-labelledby="managed-areas-title" hidden>
           <h2 id="managed-areas-title">Aree che gestisco</h2>
@@ -27,7 +27,7 @@
           <p id="member-areas-empty" class="area-role-empty" hidden>Nessuna Area a cui partecipare.</p>
           <div id="member-areas-list" class="dashboard-list areas-grid"></div>
         </section>
-      </section>
+      </div>
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

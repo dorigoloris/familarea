@@ -69,12 +69,7 @@ function renderItem(item) {
   check.setAttribute('aria-label', `Segna ${item.text} come ${item.status === 'completed' ? 'da fare' : 'completato'}`);
   check.addEventListener('change', async () => {
     check.disabled = true;
-    const { error } = await supabaseClient.rpc('set_area_list_item_status', {
-      p_area_id: areaId,
-      p_list_id: listId,
-      p_item_id: item.id,
-      p_status: check.checked ? 'completed' : 'open'
-    });
+    const { error } = areaId ? await supabaseClient.rpc('set_area_list_item_status', { p_area_id: areaId, p_list_id: listId, p_item_id: item.id, p_status: check.checked ? 'completed' : 'open' }) : await supabaseClient.rpc('set_my_list_item_status', { p_list_id: listId, p_item_id: item.id, p_status: check.checked ? 'completed' : 'open' });
     if (error) {
       await loadList();
       message.textContent = 'Impossibile aggiornare lo stato dell’elemento.';
@@ -129,10 +124,7 @@ function render() {
 }
 
 async function loadList() {
-  const { data, error } = await supabaseClient.rpc('get_area_list', {
-    p_area_id: areaId,
-    p_list_id: listId
-  });
+  const { data, error } = areaId ? await supabaseClient.rpc('get_area_list', { p_area_id: areaId, p_list_id: listId }) : await supabaseClient.rpc('get_my_list', { p_list_id: listId });
   if (error || !data?.[0]) {
     message.textContent = 'Lista non disponibile.';
     return false;
@@ -146,6 +138,7 @@ async function loadList() {
 function showListEditor() {
   document.getElementById('edit-title').value = listData.title || '';
   document.getElementById('edit-description').value = listData.description || '';
+  editForm.querySelector('fieldset').hidden = !areaId;
   editVisibilityInputs.forEach((input) => { input.checked = input.value === listData.visibility; });
   renderEditParticipants();
   updateEditVisibilityUi();
@@ -173,13 +166,7 @@ function showItemEditor(row, item) {
     const text = input.value.trim();
     if (!text) return;
     save.disabled = true;
-    const { error } = await supabaseClient.rpc('update_area_list_item', {
-      p_area_id: areaId,
-      p_list_id: listId,
-      p_item_id: item.id,
-      p_text: text,
-      p_position: null
-    });
+    const { error } = areaId ? await supabaseClient.rpc('update_area_list_item', { p_area_id: areaId, p_list_id: listId, p_item_id: item.id, p_text: text, p_position: null }) : await supabaseClient.rpc('update_my_list_item', { p_list_id: listId, p_item_id: item.id, p_text: text, p_position: null });
     if (error) {
       await loadList();
       message.textContent = 'Impossibile modificare l’elemento.';
@@ -197,9 +184,7 @@ async function deleteItem(item) {
     message: item.text, confirmText: 'Elimina'
   });
   if (!confirmed) return;
-  const { error } = await supabaseClient.rpc('delete_area_list_item', {
-    p_area_id: areaId, p_list_id: listId, p_item_id: item.id
-  });
+  const { error } = areaId ? await supabaseClient.rpc('delete_area_list_item', { p_area_id: areaId, p_list_id: listId, p_item_id: item.id }) : await supabaseClient.rpc('delete_my_list_item', { p_list_id: listId, p_item_id: item.id });
   if (error) {
     message.textContent = 'Impossibile eliminare l’elemento.';
     return;
@@ -214,9 +199,7 @@ document.getElementById('add-item-form').addEventListener('submit', async (event
   if (!text) return;
   const button = document.getElementById('add-item-button');
   button.disabled = true;
-  const { error } = await supabaseClient.rpc('add_area_list_item', {
-    p_area_id: areaId, p_list_id: listId, p_text: text, p_position: null
-  });
+  const { error } = areaId ? await supabaseClient.rpc('add_area_list_item', { p_area_id: areaId, p_list_id: listId, p_text: text, p_position: null }) : await supabaseClient.rpc('add_my_list_item', { p_list_id: listId, p_text: text, p_position: null });
   button.disabled = false;
   if (error) {
     message.textContent = 'Impossibile aggiungere l’elemento.';
@@ -248,14 +231,7 @@ editForm.addEventListener('submit', async (event) => {
   }
   const button = document.getElementById('save-list-button');
   button.disabled = true;
-  const { error } = await supabaseClient.rpc('update_area_list', {
-    p_area_id: areaId,
-    p_list_id: listId,
-    p_title: title,
-    p_description: document.getElementById('edit-description').value.trim() || null,
-    p_visibility: visibility,
-    p_participant_profile_ids: participantIds
-  });
+  const { error } = areaId ? await supabaseClient.rpc('update_area_list', { p_area_id: areaId, p_list_id: listId, p_title: title, p_description: document.getElementById('edit-description').value.trim() || null, p_visibility: visibility, p_participant_profile_ids: participantIds }) : await supabaseClient.rpc('update_my_list', { p_list_id: listId, p_title: title, p_description: document.getElementById('edit-description').value.trim() || null });
   button.disabled = false;
   if (error) {
     message.textContent = 'Impossibile salvare le modifiche alla lista.';
@@ -273,13 +249,13 @@ document.getElementById('delete-list-button').addEventListener('click', async ()
   if (!confirmed) return;
   const button = document.getElementById('delete-list-button');
   button.disabled = true;
-  const { error } = await supabaseClient.rpc('delete_area_list', { p_area_id: areaId, p_list_id: listId });
+  const { error } = areaId ? await supabaseClient.rpc('delete_area_list', { p_area_id: areaId, p_list_id: listId }) : await supabaseClient.rpc('delete_my_list', { p_list_id: listId });
   if (error) {
     message.textContent = 'Impossibile eliminare la lista.';
     button.disabled = false;
     return;
   }
-  window.location.href = `liste.html?area_id=${encodeURIComponent(areaId)}`;
+  window.location.href = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
 });
 
 async function load() {
@@ -290,11 +266,16 @@ async function load() {
   }
   areaId = new URLSearchParams(window.location.search).get('area_id');
   listId = new URLSearchParams(window.location.search).get('list_id');
-  if (!areaId || !listId) {
+  if (!listId) {
     message.textContent = 'Lista non specificata.';
     return;
   }
-  document.getElementById('back-link').href = `liste.html?area_id=${encodeURIComponent(areaId)}`;
+  document.getElementById('back-link').href = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
+  if (!areaId) {
+    const { data: profile } = await supabaseClient.from('profiles').select('id').eq('user_id', sessionData.session.user.id).single();
+    if (!profile) { message.textContent = 'Profilo non disponibile.'; return; }
+    ownProfileId = profile.id; document.getElementById('area-name').textContent = 'Personale'; await loadList(); return;
+  }
   const [{ data: profile }, { data: participants, error: participantsError }, { data: area }] = await Promise.all([
     supabaseClient.from('profiles').select('id').eq('user_id', sessionData.session.user.id).single(),
     supabaseClient.rpc('get_area_participants', { p_area_id: areaId }),

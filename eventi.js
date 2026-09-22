@@ -36,12 +36,12 @@ function createContextualCard(event, areaId) {
 function createGlobalRow(event) {
   const row = document.createElement('a');
   row.className = 'global-activity-row';
-  row.href = `evento.html?area_id=${encodeURIComponent(event.area_id)}&event_id=${encodeURIComponent(event.event_id)}`;
+  row.href = event.area_id ? `evento.html?area_id=${encodeURIComponent(event.area_id)}&event_id=${encodeURIComponent(event.event_id)}` : `evento.html?event_id=${encodeURIComponent(event.event_id)}`;
   row.setAttribute('aria-label', `Apri evento ${event.title}`);
   const main = document.createElement('div');
   main.className = 'global-activity-main';
   const title = document.createElement('h2'); title.textContent = event.title;
-  const area = document.createElement('p'); area.className = 'global-activity-area'; area.textContent = event.area_name || 'Area';
+  const area = document.createElement('p'); area.className = 'global-activity-area'; area.textContent = event.area_name || 'Personale';
   main.append(title, area);
   const details = document.createElement('div'); details.className = 'global-activity-details';
   const date = document.createElement('span'); date.className = 'global-activity-date'; date.textContent = `${when(event)}${event.location ? ` · ${event.location}` : ''}`;

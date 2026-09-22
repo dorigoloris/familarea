@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Organizzazione - FamilArea</title><link rel="stylesheet" href="app.css"></head>
+<body class="protected-page organization-detail-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
+  <main class="organization-detail-page">
+    <p class="organization-back"><a href="organizzazioni.html">Torna alle Organizzazioni</a></p>
+    <p id="organization-message" class="organizations-message" aria-live="polite">Caricamento...</p>
+    <section id="organization-detail" class="organization-detail" hidden>
+      <header class="organization-detail-header"><div><p class="eyebrow">ORGANIZZAZIONE</p><h1 id="organization-name"></h1><p id="organization-type"></p></div><button id="edit-organization" class="fa-button fa-button-primary" type="button" hidden>Modifica</button></header>
+      <div class="organization-detail-body"><div><h2>Descrizione</h2><p id="organization-description"></p></div><dl><dt>Stato</dt><dd id="organization-status"></dd><dt>Il tuo ruolo</dt><dd id="organization-role"></dd></dl></div>
+      <form id="organization-edit-form" class="organization-form" hidden>
+        <h2>Modifica Organizzazione</h2><div><label for="edit-organization-name">Nome Organizzazione</label><input id="edit-organization-name" type="text" maxlength="160" required></div><div><label for="edit-organization-type">Tipo Organizzazione</label><input id="edit-organization-type" type="text" maxlength="160" required></div><div class="organization-form-wide"><label for="edit-organization-description">Descrizione <span>facoltativa</span></label><textarea id="edit-organization-description" maxlength="1000"></textarea></div><div id="edit-status-wrap" class="organization-form-wide" hidden><label for="edit-organization-status">Stato</label><select id="edit-organization-status"><option value="draft">Bozza</option><option value="active">Attiva</option><option value="archived">Archiviata</option></select></div><div class="organization-form-actions"><button id="cancel-organization-edit" class="fa-button fa-button-secondary" type="button">Annulla</button><button id="save-organization" class="fa-button fa-button-primary" type="submit">Salva modifiche</button></div>
+      </form>
+      <section id="organization-areas" class="organization-areas" hidden><h2>Aree dell’Organizzazione</h2><div id="organization-areas-list" class="organization-areas-list"></div><p id="organization-areas-empty" hidden>Nessuna Area collegata.</p></section>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="organizzazione.js"></script>
+</body>
+</html>

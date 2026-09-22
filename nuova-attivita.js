@@ -84,7 +84,15 @@ async function load() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
   areaId = new URLSearchParams(window.location.search).get('area_id');
-  if (!areaId) { message.textContent = 'Area non specificata.'; return; }
+  if (!areaId) {
+    backLink.href = 'attivita-globali.html';
+    backLink.textContent = 'Torna alle Attività';
+    assignees.closest('fieldset').hidden = true;
+    document.getElementById('visibility-fieldset').hidden = true;
+    form.hidden = false;
+    message.textContent = '';
+    return;
+  }
   backLink.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
   const { data: ownProfile } = await supabaseClient.from('profiles').select('id').eq('user_id', sessionData.session.user.id).single();
   if (!ownProfile) { message.textContent = 'Impossibile preparare la nuova attività.'; return; }
@@ -128,20 +136,21 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const selected = [...assignees.querySelectorAll('input:checked')].map((input) => input.value);
   const visibility = visibilityInputs.find((input) => input.checked)?.value;
-  if (!isAdmin && selected.some((id) => id !== ownProfileId)) { message.textContent = 'Puoi assegnare attività solo a te stesso.'; return; }
-  if (!visibility) { message.textContent = 'Scegli la visibilità dell’attività.'; return; }
+  if (areaId && !isAdmin && selected.some((id) => id !== ownProfileId)) { message.textContent = 'Puoi assegnare attività solo a te stesso.'; return; }
+  if (areaId && !visibility) { message.textContent = 'Scegli la visibilità dell’attività.'; return; }
   let schedule;
   try { schedule = schedulePayload(); } catch (error) { message.textContent = error.message; return; }
   submitButton.disabled = true;
   message.textContent = 'Creazione in corso...';
   try {
-    const { error } = await supabaseClient.rpc('create_area_activity', {
-      p_area_id: areaId, p_title: document.getElementById('title').value.trim(), p_notes: document.getElementById('notes').value.trim() || null,
+    const { data, error } = await supabaseClient.rpc(areaId ? 'create_area_activity' : 'create_my_activity', {
+      p_title: document.getElementById('title').value.trim(), p_notes: document.getElementById('notes').value.trim() || null,
       p_activity_type: document.getElementById('activity-type').value, p_priority: document.getElementById('priority').value,
-      p_starts_at: schedule.startsAt, p_due_at: schedule.dueAt, p_is_all_day: schedule.isAllDay, p_assignee_profile_ids: selected, p_visibility: visibility, ...(schedule.recurrence || {})
+      ...(areaId ? { p_area_id: areaId, p_assignee_profile_ids: selected, p_visibility: visibility } : {}),
+      p_starts_at: schedule.startsAt, p_due_at: schedule.dueAt, p_is_all_day: schedule.isAllDay, ...(schedule.recurrence || {})
     });
-    if (error) throw error;
-    window.location.href = `attivita-area.html?area_id=${encodeURIComponent(areaId)}`;
+    if (error || !data) throw error || new Error('Attività non creata.');
+    window.location.href = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : `attivita.html?activity_id=${encodeURIComponent(data)}`;
   } catch (error) {
     message.textContent = 'Impossibile creare l’attività. Verifica i dati e riprova.';
   } finally { submitButton.disabled = false; }

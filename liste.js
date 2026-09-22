@@ -58,7 +58,8 @@ function createListCard(list, { areaId, showArea = false, showProgress = false }
   const open = document.createElement('a');
   open.className = 'btn';
   open.textContent = 'Apri';
-  open.href = `lista.html?area_id=${encodeURIComponent(areaId)}&list_id=${encodeURIComponent(list.id || list.list_id)}`;
+  const listId = list.id || list.list_id;
+  open.href = areaId ? `lista.html?area_id=${encodeURIComponent(areaId)}&list_id=${encodeURIComponent(listId)}` : `lista.html?list_id=${encodeURIComponent(listId)}`;
   article.appendChild(open);
   return article;
 }
@@ -76,7 +77,7 @@ function renderLists(data, options, emptyText) {
 }
 
 function newListUrl(areaId) {
-  return `nuova-lista.html?area_id=${encodeURIComponent(areaId)}`;
+  return areaId ? `nuova-lista.html?area_id=${encodeURIComponent(areaId)}` : 'nuova-lista.html';
 }
 
 async function getCreatableAreas() {
@@ -126,6 +127,7 @@ async function startNewList() {
     return;
   }
 
+  if (!requestedAreaId) { window.location.href = newListUrl(); return; }
   newListButton.disabled = true;
   message.textContent = 'Caricamento Aree...';
   try {

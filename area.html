@@ -20,30 +20,14 @@
           <p id="area-type-label" class="area-type-label">Area</p>
           <span id="area-role-badge" class="area-role-badge" hidden></span>
         </div>
-        <h1 id="area-name">Area FamilArea</h1>
+        <div class="area-page-title-row">
+          <h1 id="area-name">Area FamilArea</h1>
+          <a id="edit-area-link" class="btn area-edit-link" href="#" hidden>Modifica</a>
+        </div>
       </div>
 
       <div id="area-illustration" class="area-header-illustration" aria-hidden="true"></div>
-
-      <div id="area-manage-menu" class="area-manage-menu" hidden>
-        <button id="area-manage-trigger" class="area-manage-trigger" type="button" aria-haspopup="dialog" aria-controls="area-manage-modal" aria-expanded="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05-2.1 2.1-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.65v.08h-3v-.08a1.8 1.8 0 0 0-1.1-1.65 1.8 1.8 0 0 0-1.98.36l-.05.05-2.1-2.1.05-.05A1.8 1.8 0 0 0 6.74 15a1.8 1.8 0 0 0-1.65-1.1H5v-3h.09a1.8 1.8 0 0 0 1.65-1.1 1.8 1.8 0 0 0-.36-1.98l-.05-.05 2.1-2.1.05.05a1.8 1.8 0 0 0 1.98.36 1.8 1.8 0 0 0 1.1-1.65V4.35h3v.08a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 1.98-.36l.05-.05 2.1 2.1-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.65 1.1H20v3h-.08A1.8 1.8 0 0 0 18.27 15Z"/></svg>
-          Gestisci
-          <svg class="area-manage-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-        </button>
-      </div>
     </header>
-
-    <div id="area-manage-modal" class="area-manage-modal" hidden>
-      <section id="area-manage-dialog" class="area-manage-dialog" role="dialog" aria-modal="true" aria-labelledby="area-manage-title" tabindex="-1">
-        <button id="area-manage-close" class="area-manage-close" type="button" aria-label="Chiudi gestione Area">×</button>
-        <h2 id="area-manage-title">Gestisci Area</h2>
-        <p>Modifica le informazioni dell'Area</p>
-        <div id="area-manage-actions" class="area-manage-actions">
-          <a id="edit-area-link" class="area-manage-action" href="#" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20ZM13.5 7.5l3 3"/></svg><span>Modifica Area</span></a>
-        </div>
-      </section>
-    </div>
 
     <p id="message" class="area-page-message" aria-live="polite">Caricamento...</p>
 

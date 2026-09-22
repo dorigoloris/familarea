@@ -8,12 +8,6 @@ const message = document.getElementById('message');
 const membersList = document.getElementById('members-list');
 const participantsCount = document.getElementById('participants-count');
 const membersToggle = document.getElementById('members-toggle');
-const areaManageMenu = document.getElementById('area-manage-menu');
-const areaManageTrigger = document.getElementById('area-manage-trigger');
-const areaManageModal = document.getElementById('area-manage-modal');
-const areaManageDialog = document.getElementById('area-manage-dialog');
-const areaManageClose = document.getElementById('area-manage-close');
-const areaManageActions = document.getElementById('area-manage-actions');
 const inviteParticipantsLink = document.getElementById('invite-participants-link');
 const editAreaLink = document.getElementById('edit-area-link');
 const activitiesSection = document.getElementById('activities-section');
@@ -43,50 +37,6 @@ const areaTypeLabels = {
 };
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
-
-function closeAreaManageMenu(returnFocus = false) {
-  if (!areaManageModal || !areaManageTrigger) return;
-  areaManageModal.hidden = true;
-  areaManageTrigger.setAttribute('aria-expanded', 'false');
-  document.body.classList.remove('area-manage-modal-open');
-  if (returnFocus) areaManageTrigger.focus();
-}
-
-function openAreaManageModal() {
-  if (!areaManageModal || !areaManageTrigger) return;
-  areaManageModal.hidden = false;
-  areaManageTrigger.setAttribute('aria-expanded', 'true');
-  document.body.classList.add('area-manage-modal-open');
-  requestAnimationFrame(() => areaManageActions?.querySelector('a:not([hidden])')?.focus());
-}
-
-if (areaManageMenu && areaManageTrigger && areaManageModal && areaManageDialog) {
-  areaManageTrigger.addEventListener('click', openAreaManageModal);
-  areaManageClose?.addEventListener('click', () => closeAreaManageMenu(true));
-  areaManageModal.addEventListener('pointerdown', (event) => {
-    if (event.target === areaManageModal) closeAreaManageMenu(true);
-  });
-  areaManageActions?.addEventListener('click', () => closeAreaManageMenu());
-  document.addEventListener('keydown', (event) => {
-    if (areaManageModal.hidden) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeAreaManageMenu(true);
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = [...areaManageDialog.querySelectorAll('button:not([disabled]), a[href]:not([hidden])')];
-    const first = focusable[0];
-    const last = focusable.at(-1);
-    if (!first || !last) return;
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  });
-}
 
 function svgElement(name, attributes = {}) {
   const element = document.createElementNS(svgNamespace, name);
@@ -426,7 +376,6 @@ async function loadArea() {
     renderMembers(participants, areaId, showingAllParticipants);
   };
 
-  areaManageMenu.hidden = !isAreaAdmin;
   if (inviteParticipantsLink) inviteParticipantsLink.hidden = !isAreaAdmin;
   if (editAreaLink) editAreaLink.hidden = !isAreaAdmin;
   message.textContent = '';
