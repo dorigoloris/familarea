@@ -286,10 +286,10 @@ async function renderParticipantControls() {
   const available = (members || []).filter((member) => !selected.some((person) => person.profile_id === member.profile_id));
   const control = document.createElement('div'); const select = document.createElement('select'); const add = document.createElement('button');
   add.type = 'button'; add.textContent = '+ Aggiungi partecipante';
-  if (!available.length) { select.disabled = true; add.disabled = true; select.append(new Option('Nessun altro membro dell’Area disponibile.', '')); }
+  if (!available.length) { select.disabled = true; add.remove(); select.append(new Option('Nessun membro dell’Area disponibile da aggiungere.', '')); const invite = document.createElement('a'); invite.className = 'secondary-button'; invite.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}&return_to=${encodeURIComponent(location.pathname.split('/').pop() + location.search)}`; invite.textContent = 'Invita una persona nell’Area'; control.appendChild(invite); }
   else { select.append(new Option('Seleziona un membro dell’Area', '')); available.forEach((member) => select.append(new Option(`${member.first_name || ''} ${member.last_name || ''}`.trim(), member.profile_id))); }
   add.addEventListener('click', async () => { if (!select.value) return; const { error } = await supabaseClient.rpc('set_event_participants', { p_event_id: eventId, p_profile_ids: [...selected.map((person) => person.profile_id), select.value] }); if (error) { message.textContent = 'Impossibile aggiungere il partecipante.'; return; } await renderParticipantControls(); });
-  control.append(select, add); list.appendChild(control);
+  control.prepend(select, add); list.appendChild(control);
 }
 const renderEventView = render;
 render = async function () { await renderEventView(); await renderParticipantControls(); };
