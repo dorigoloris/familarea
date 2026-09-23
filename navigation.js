@@ -134,6 +134,7 @@
   header.insertBefore(topNav, actions);
 
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  window.FamilAreaSupabaseClient = client;
   actions.querySelector('.header-user-name')?.remove();
   const logoutButton = actions.querySelector('[data-logout]');
 

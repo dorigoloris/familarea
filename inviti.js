@@ -26,7 +26,7 @@ async function respondToInvite(invite, rpcName, card) {
   pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
   const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
-  await loadInvites();
+  if (await loadInvites()) pageMessage.textContent = '';
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
 
@@ -77,7 +77,7 @@ function createInviteCard(invite) {
 
 async function loadInvites() {
   const { data, error } = await supabaseClient.rpc('get_my_area_invites');
-  if (error) { pageMessage.textContent = inviteErrorMessage(error); return; }
+  if (error) { pageMessage.textContent = inviteErrorMessage(error); return false; }
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleInvites = (data || [])
@@ -85,6 +85,7 @@ async function loadInvites() {
     .sort((left, right) => (left.status === 'pending' ? 0 : 1) - (right.status === 'pending' ? 0 : 1));
   invitesEmpty.hidden = visibleInvites.length > 0;
   visibleInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
+  return true;
 }
 
 async function loadPage() {

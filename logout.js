@@ -6,7 +6,7 @@
   button.addEventListener('click', async () => {
     button.disabled = true;
     message.textContent = 'Uscita in corso...';
-    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const client = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const { error } = await client.auth.signOut();
     if (error) {
       message.textContent = 'Non è stato possibile uscire. Riprova.';

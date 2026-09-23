@@ -263,3 +263,62 @@ body.protected-page.has-area-context .shared-area-nav{position:relative;top:auto
     width: 100%;
   }
 }
+
+/* Asse di pagina condiviso: i contenuti principali mantengono gli stessi gutter. */
+:root {
+  --fa-layout-gutter: 16px;
+  --fa-page-standard-max: 1100px;
+}
+
+.fa-page--standard {
+  width: min(100%, var(--fa-page-standard-max));
+  max-width: var(--fa-page-standard-max);
+  margin-inline: auto;
+}
+
+/* Viste che usano ancora classi di pagina precedenti al contenitore condiviso. */
+.area-page,
+.global-activities-page,
+.personal-invites-page-view .personal-invites-page,
+.invites-area-page,
+.deadlines-page {
+  width: min(100%, var(--fa-page-standard-max));
+  max-width: var(--fa-page-standard-max);
+  margin-inline: auto;
+}
+
+/* Famiglia: stato vuoto e contenuto ordinario condividono la larghezza dell'hero. */
+.family-empty-state {
+  width: 100%;
+  max-width: none;
+  margin: 22px 0;
+}
+
+.family-empty-state[hidden] {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  :root { --fa-layout-gutter: 16px; }
+
+  .global-activities-page-view.protected-page,
+  .contacts-page-view.protected-page,
+  .personal-invites-page-view.protected-page,
+  .invites-area-page-view.protected-page {
+    padding-right: var(--fa-layout-gutter);
+    padding-left: var(--fa-layout-gutter);
+  }
+}
+
+@media (max-width: 700px) {
+  :root { --fa-layout-gutter: 16px; }
+
+  .global-activities-page-view.protected-page,
+  .contacts-page-view.protected-page,
+  .personal-invites-page-view.protected-page,
+  .invites-area-page-view.protected-page,
+  .family-page-view.protected-page {
+    padding-right: var(--fa-layout-gutter);
+    padding-left: var(--fa-layout-gutter);
+  }
+}
