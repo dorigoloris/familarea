@@ -7,6 +7,12 @@ const invitesEmpty = document.getElementById('invites-empty');
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
 function statusLabel(status) { return ({ pending: 'In attesa', accepted: 'Attivo', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto' })[status] || status; }
+function inviteSenderLabel(invite) {
+  const organizationName = (invite.organization_name || '').trim();
+  if (organizationName) return `Invitato da ${organizationName}`;
+  const inviterName = fullName(invite.inviter_first_name, invite.inviter_last_name);
+  return inviterName ? `Invitato da ${inviterName}` : '';
+}
 
 function inviteErrorMessage(error) {
   const text = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
@@ -33,19 +39,22 @@ async function respondToInvite(invite, rpcName, card) {
 function createInviteCard(invite) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row';
-  const inviterName = fullName(invite.inviter_first_name, invite.inviter_last_name);
+  const senderLabel = inviteSenderLabel(invite);
   if (invite.status === 'accepted') {
     article.classList.add('invite-card-active');
     const details = document.createElement('div');
     details.className = 'invite-active-details';
     const title = document.createElement('h3');
     title.textContent = invite.area_name || 'Area FamilArea';
-    const inviter = document.createElement('p');
-    inviter.textContent = inviterName || 'Mittente non indicato';
     const status = document.createElement('span');
     status.className = 'invite-status fa-status-badge invite-status-accepted';
     status.textContent = 'Attivo';
-    details.append(title, inviter);
+    details.append(title);
+    if (senderLabel) {
+      const inviter = document.createElement('p');
+      inviter.textContent = senderLabel;
+      details.append(inviter);
+    }
     article.append(details, status);
     return article;
   }
@@ -55,11 +64,13 @@ function createInviteCard(invite) {
   const metadata = document.createElement('p');
   const status = document.createElement('span');
   title.textContent = invite.area_name || 'Area FamilArea';
-  inviter.textContent = inviterName ? `Invitato da ${inviterName}` : 'Mittente non indicato';
+  inviter.textContent = senderLabel;
   status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
   status.textContent = statusLabel(invite.status);
   metadata.textContent = 'Invito a partecipare all’Area';
-  details.append(title, inviter, status, metadata);
+  details.append(title);
+  if (senderLabel) details.append(inviter);
+  details.append(status, metadata);
   article.appendChild(details);
   if (invite.status === 'pending') {
     const actions = document.createElement('div');

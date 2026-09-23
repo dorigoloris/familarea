@@ -28,6 +28,20 @@
         <option value="other">Altro</option>
       </select>
       <br><br>
+      <section class="organization-cover-section area-image-section" aria-labelledby="area-image-title">
+        <div id="area-image-preview" class="organization-cover-preview" hidden>
+          <img id="area-image" alt="">
+        </div>
+        <div class="organization-cover-actions">
+          <h2 id="area-image-title">Immagine Area</h2>
+          <p>JPG, PNG o WebP, massimo 5 MB.</p>
+          <input id="area-image-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <label id="area-image-upload-label" class="btn profile-avatar-upload" for="area-image-file-input">Carica immagine</label>
+          <button id="area-image-remove-button" class="secondary-button" type="button" hidden>Rimuovi immagine</button>
+          <p id="area-image-message" aria-live="polite"></p>
+        </div>
+      </section>
+      <br>
       <button id="save-button" type="submit">Salva modifiche</button>
       <button id="cancel-button" type="button">Annulla</button>
     </form>
@@ -58,6 +72,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
   <script src="modifica-area.js"></script>
 </body>
 </html>

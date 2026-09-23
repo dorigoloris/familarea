@@ -60,10 +60,13 @@
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
     title.textContent = item.title;
+    link.appendChild(title);
+    if (type === 'event') return link;
+
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
     area.textContent = type === 'birthday' ? 'Contatto' : (type === 'deadline' ? 'Scadenza' : item.area_name);
-    link.append(title, area);
+    link.appendChild(area);
 
     if (type === 'event' || type === 'birthday' || type === 'deadline') {
       const badge = document.createElement('span');
@@ -241,7 +244,7 @@
     title.className = `${className}-title`;
     title.textContent = item.title;
     link.appendChild(title);
-    if (showTime) {
+    if (showTime && type !== 'event') {
       const time = document.createElement('span');
       time.className = `${className}-time`;
       time.textContent = formatTime(item);

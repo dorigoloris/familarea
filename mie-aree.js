@@ -123,13 +123,15 @@ async function loadDashboardTimeline() {
   const events = (data.events || []).map((item) => normaliseItem(item, 'event'));
   const deadlines = (data.deadlines || []).map((item) => normaliseItem(item, 'deadline')).sort((a, b) => calendarUtils.toValidDate(a.occurrence_on) - calendarUtils.toValidDate(b.occurrence_on));
   const todos = (data.todos || []).map((item) => normaliseItem(item, 'activity'));
-  const todayStart = dayStart(); const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+  const todayStart = dayStart();
+  const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+  const nextSevenDaysEnd = new Date(todayEnd); nextSevenDaysEnd.setDate(nextSevenDaysEnd.getDate() + 7);
   dashboardCalendarItems = [...activities, ...events, ...deadlines];
   dashboardCalendarSection.hidden = false;
   renderDashboardCalendar();
   const scheduled = [...activities, ...events];
   const today = scheduled.filter((item) => fallsWithin(item, todayStart, todayEnd)).sort((a, b) => compareItems(a, b, (item) => upcomingTime(item, todayStart)));
-  const upcoming = scheduled.filter((item) => upcomingTime(item, todayEnd)).sort((a, b) => compareItems(a, b, (item) => upcomingTime(item, todayEnd)));
+  const upcoming = scheduled.filter((item) => fallsWithin(item, todayEnd, nextSevenDaysEnd)).sort((a, b) => compareItems(a, b, (item) => upcomingTime(item, todayEnd)));
   renderItems(sections.today, today, 5); renderItems(sections.upcoming, upcoming, 5); renderItems(sections.todo, todos, 5); renderDeadlines(deadlines);
   dashboardMessage.textContent = '';
 }

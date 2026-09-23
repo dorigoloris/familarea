@@ -21,11 +21,15 @@ function localIso(date, time = '00:00') {
   return new Date(`${date}T${time}`).toISOString();
 }
 
-function formatWhen(value, isAllDay) {
+function formatWhen(value, endValue, isAllDay) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('it-IT', isAllDay
+  const formatter = new Intl.DateTimeFormat('it-IT', isAllDay
     ? { dateStyle: 'long' }
-    : { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
+    : { dateStyle: 'long', timeStyle: 'short' });
+  const end = endValue ? new Date(endValue) : null;
+  return end && localDate(value) !== localDate(endValue)
+    ? `${formatter.format(new Date(value))} → ${formatter.format(end)}`
+    : formatter.format(new Date(value));
 }
 
 function statusLabel(status) {
@@ -39,11 +43,81 @@ function recurrenceOf(event) {
   };
 }
 
-function formRecurrence() {
+function formatRecurrenceDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+}
+
+function formRecurrence(startDate) {
   if (!document.getElementById('edit-recurrence-enabled').checked) return {};
   const until = document.getElementById('edit-recurrence-until').value;
   if (!until) throw new Error('Indica la fine della ripetizione.');
+  if (until < startDate) throw new Error('La fine della ripetizione non può precedere la data iniziale.');
   return { frequency: 'weekly', until, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || eventData.recurrence_timezone || 'UTC' };
+}
+
+function editElements() {
+  return {
+    date: document.getElementById('edit-date'),
+    start: document.getElementById('edit-start'),
+    endDate: document.getElementById('edit-end-date'),
+    end: document.getElementById('edit-end'),
+    allDay: document.getElementById('edit-all-day'),
+    multiDay: document.getElementById('edit-multi-day'),
+    startDates: document.getElementById('edit-start-dates'),
+    startTimeField: document.getElementById('edit-start-time-field'),
+    endTimeField: document.getElementById('edit-end-time-field'),
+    normalEndSlot: document.getElementById('edit-end-time-normal-slot'),
+    multiDayEndSlot: document.getElementById('edit-end-time-multi-day-slot'),
+    multiDayEndRow: document.getElementById('edit-multi-day-end-row')
+  };
+}
+
+function syncEditMultiDayLayout() {
+  const fields = editElements();
+  const multiDay = fields.multiDay.checked;
+  const allDay = fields.allDay.checked;
+  if (multiDay && !fields.endDate.value) fields.endDate.value = fields.date.value;
+  (multiDay ? fields.multiDayEndSlot : fields.normalEndSlot).appendChild(fields.endTimeField);
+  fields.normalEndSlot.hidden = multiDay || allDay;
+  fields.multiDayEndRow.hidden = !multiDay;
+  fields.startDates.classList.toggle('is-multi-day', multiDay);
+  fields.startDates.classList.toggle('is-all-day', allDay);
+  fields.multiDayEndRow.classList.toggle('is-all-day', allDay);
+  fields.startTimeField.hidden = allDay;
+  fields.endTimeField.hidden = allDay;
+}
+
+function buildEditInterval() {
+  const fields = editElements();
+  const startDate = fields.date.value;
+  const startTime = fields.start.value;
+  const endDate = fields.multiDay.checked ? fields.endDate.value : startDate;
+  const endTime = fields.end.value;
+  const allDay = fields.allDay.checked || !startTime;
+  if (!startDate) throw new Error('Indica la data dell’evento.');
+  if (fields.multiDay.checked && !endDate) throw new Error('Indica la data di fine.');
+  if (fields.multiDay.checked && endDate <= startDate) {
+    throw new Error(endDate === startDate
+      ? 'Per un’attività di un solo giorno, disattiva Più giorni.'
+      : 'La data di fine non può essere precedente alla data iniziale.');
+  }
+  if (!fields.allDay.checked && endTime && !startTime) throw new Error('Indica prima l’ora di inizio.');
+  if (fields.multiDay.checked && !allDay && !endTime) throw new Error('Indica l’ora di fine.');
+  const startsAt = localIso(startDate, allDay ? '00:00' : startTime);
+  const endsAt = allDay
+    ? (fields.multiDay.checked ? localIso(endDate, '00:00') : startsAt)
+    : endTime ? localIso(endDate, endTime) : null;
+  if (endsAt && new Date(endsAt) <= new Date(startsAt)) throw new Error('La fine deve essere successiva all’inizio.');
+  return { startsAt, endsAt, allDay };
+}
+
+function focusOnEnter(next) {
+  return (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    next()?.focus();
+  };
 }
 
 async function renderParticipants(container, selected = []) {
@@ -73,7 +147,7 @@ function renderStatus() {
 
 async function render() {
   document.getElementById('event-title').textContent = eventData.title;
-  document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.is_all_day);
+  document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
   document.getElementById('location').textContent = eventData.location || '—';
   document.getElementById('notes').textContent = eventData.description || '—';
   renderStatus();
@@ -82,7 +156,7 @@ async function render() {
   document.getElementById('recurrence-label').hidden = !recurrence.frequency;
   document.getElementById('recurrence').hidden = !recurrence.frequency;
   document.getElementById('recurrence').textContent = recurrence.frequency === 'weekly'
-    ? `Ogni settimana fino al ${recurrence.until}`
+    ? `Ogni settimana fino al ${formatRecurrenceDate(recurrence.until)}`
     : recurrence.frequency;
 
   document.getElementById('participants-label').hidden = !isArea;
@@ -139,6 +213,9 @@ async function openEdit() {
   document.getElementById('edit-start').value = eventData.is_all_day ? '' : localTime(eventData.starts_at);
   document.getElementById('edit-end').value = eventData.is_all_day || !eventData.ends_at ? '' : localTime(eventData.ends_at);
   document.getElementById('edit-all-day').checked = Boolean(eventData.is_all_day);
+  document.getElementById('edit-multi-day').checked = Boolean(eventData.ends_at) && localDate(eventData.starts_at) !== localDate(eventData.ends_at);
+  document.getElementById('edit-end-date').value = eventData.ends_at ? localDate(eventData.ends_at) : localDate(eventData.starts_at);
+  syncEditMultiDayLayout();
   document.getElementById('edit-location').value = eventData.location || '';
   document.getElementById('edit-recurrence-enabled').checked = Boolean(recurrence.frequency);
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
@@ -189,34 +266,39 @@ document.getElementById('save-status').addEventListener('click', () => void save
 document.getElementById('edit-recurrence-enabled').addEventListener('change', (event) => {
   document.getElementById('edit-recurrence-fields').hidden = !event.target.checked;
 });
+document.getElementById('edit-multi-day').addEventListener('change', syncEditMultiDayLayout);
+document.getElementById('edit-all-day').addEventListener('change', syncEditMultiDayLayout);
+document.getElementById('edit-date').addEventListener('change', () => {
+  const fields = editElements();
+  if (fields.multiDay.checked && !fields.endDate.value) fields.endDate.value = fields.date.value;
+});
+document.getElementById('edit-date').addEventListener('keydown', focusOnEnter(() => {
+  const fields = editElements();
+  return fields.allDay.checked ? (fields.multiDay.checked ? fields.endDate : null) : fields.start;
+}));
+document.getElementById('edit-start').addEventListener('keydown', focusOnEnter(() => document.getElementById('edit-multi-day').checked ? document.getElementById('edit-end-date') : document.getElementById('edit-end')));
+document.getElementById('edit-end-date').addEventListener('keydown', focusOnEnter(() => document.getElementById('edit-all-day').checked ? null : document.getElementById('edit-end')));
+document.getElementById('edit-end').addEventListener('keydown', focusOnEnter(() => null));
 
 document.getElementById('edit-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  const date = document.getElementById('edit-date').value;
-  const start = document.getElementById('edit-start').value;
-  const end = document.getElementById('edit-end').value;
-  if (!date || (end && !start)) {
-    message.textContent = !date ? 'Indica la data dell’evento.' : 'Indica prima l’ora di inizio.';
-    return;
-  }
-
+  let interval;
   let recurrence;
   try {
-    recurrence = formRecurrence();
+    interval = buildEditInterval();
+    recurrence = formRecurrence(document.getElementById('edit-date').value);
   } catch (error) {
     message.textContent = error.message;
     return;
   }
 
-  const allDay = document.getElementById('edit-all-day').checked || !start;
-  const startsAt = localIso(date, allDay ? '00:00' : start);
   const { error } = await supabaseClient.rpc('update_event', {
     p_event_id: eventId,
     p_title: document.getElementById('edit-title').value.trim(),
-    p_starts_at: startsAt,
-    p_ends_at: allDay ? startsAt : end ? localIso(date, end) : null,
+    p_starts_at: interval.startsAt,
+    p_ends_at: interval.endsAt,
     p_description: document.getElementById('edit-notes').value.trim() || null,
-    p_is_all_day: allDay,
+    p_is_all_day: interval.allDay,
     p_location: document.getElementById('edit-location').value.trim() || null,
     p_recurrence: recurrence
   });
@@ -287,45 +369,31 @@ async function renderParticipantControls() {
   const available = (members || []).filter((member) => !selected.some((person) => person.profile_id === member.profile_id));
   const actions = document.createElement('div');
   actions.className = 'event-participant-actions';
-  const add = document.createElement('button');
-  add.type = 'button';
-  add.className = 'fa-button fa-button-primary fa-button-compact';
-  add.textContent = '+ Aggiungi partecipante';
   const invite = document.createElement('a');
   invite.className = 'secondary-button';
   invite.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}&return_to=${encodeURIComponent(location.pathname.split('/').pop() + location.search)}`;
-  invite.textContent = 'Invita nuovo partecipante';
+  invite.textContent = 'Invita una persona';
 
   if (!available.length) {
-    add.disabled = true;
     const unavailable = document.createElement('p');
     unavailable.className = 'event-participant-unavailable';
     unavailable.textContent = 'Non ci sono membri dell’Area disponibili da aggiungere.';
     actions.append(unavailable);
   } else {
-    const panel = document.createElement('div');
-    panel.className = 'event-participant-add-panel';
-    panel.hidden = true;
-    const label = document.createElement('label');
-    label.textContent = 'Membro dell’Area';
+    const addControls = document.createElement('div');
+    addControls.className = 'event-participant-add-controls';
     const select = document.createElement('select');
     select.id = 'event-participant-select';
-    label.htmlFor = select.id;
+    select.setAttribute('aria-label', 'Seleziona un membro dell’Area');
     select.append(new Option('Seleziona un membro dell’Area', ''));
     available.forEach((member) => select.append(new Option(`${member.first_name || ''} ${member.last_name || ''}`.trim(), member.profile_id)));
-    const confirm = document.createElement('button');
-    confirm.type = 'button';
-    confirm.className = 'fa-button fa-button-primary fa-button-compact';
-    confirm.textContent = 'Conferma aggiunta';
-    confirm.disabled = true;
-    select.addEventListener('change', () => { confirm.disabled = !select.value; });
-    add.setAttribute('aria-expanded', 'false');
-    add.addEventListener('click', () => {
-      panel.hidden = !panel.hidden;
-      add.setAttribute('aria-expanded', String(!panel.hidden));
-      if (!panel.hidden) select.focus();
-    });
-    confirm.addEventListener('click', async () => {
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'fa-button fa-button-primary fa-button-compact';
+    add.textContent = 'Aggiungi';
+    add.disabled = true;
+    select.addEventListener('change', () => { add.disabled = !select.value; });
+    add.addEventListener('click', async () => {
       if (!select.value) return;
       const { error } = await supabaseClient.rpc('set_event_participants', {
         p_event_id: eventId,
@@ -334,10 +402,15 @@ async function renderParticipantControls() {
       if (error) { message.textContent = 'Impossibile aggiungere il partecipante.'; return; }
       await renderParticipantControls();
     });
-    panel.append(label, select, confirm);
-    actions.append(panel);
+    addControls.append(select, add);
+    actions.append(addControls);
   }
-  actions.prepend(add, invite);
+  const invitePrompt = document.createElement('div');
+  invitePrompt.className = 'event-participant-invite';
+  const prompt = document.createElement('p');
+  prompt.textContent = 'La persona non fa ancora parte dell’Area?';
+  invitePrompt.append(prompt, invite);
+  actions.append(invitePrompt);
   list.appendChild(actions);
 }
 const renderEventView = render;

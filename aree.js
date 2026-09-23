@@ -20,7 +20,17 @@ function createAreaCard(area) {
   indicator.setAttribute('aria-hidden', 'true');
   indicator.textContent = '→';
   card.append(icon, title, indicator);
+  void renderAreaCardImage(area, card);
   return card;
+}
+
+async function renderAreaCardImage(area, card) {
+  if (!area.image_path) return;
+  const { data, error } = await supabaseClient.storage.from('area-images').createSignedUrl(area.image_path, 3600);
+  if (error || !data?.signedUrl || !card.isConnected) return;
+  const safeUrl = data.signedUrl.replace(/["\\]/g, '\\$&');
+  card.style.setProperty('--area-card-cover', `url("${safeUrl}")`);
+  card.classList.add('has-area-cover');
 }
 
 function renderGroup(group, memberships) {

@@ -1,4 +1,50 @@
-<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Nuovo evento - FamilArea</title><link rel="stylesheet" href="app.css"></head><body>
-<button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p><main class="page-card"><p><a id="back-link" href="#">Torna agli eventi</a></p><h1>Nuovo evento</h1><p id="message" aria-live="polite">Caricamento...</p><form id="event-form" hidden>
-<label for="title">Titolo</label><input id="title" required><br><br><label for="notes">Note</label><textarea id="notes"></textarea><br><br><div class="event-dates"><div><label for="start-date">Data</label><input id="start-date" type="date" required></div><div><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div><div><label for="end-time">Ora fine</label><input id="end-time" type="time"></div></div><br><label><input id="all-day" type="checkbox"> Tutto il giorno</label><br><label><input id="recurrence-enabled" type="checkbox"> Ripeti ogni settimana</label><div id="recurrence-fields" hidden><label for="recurrence-until">Fine ripetizione</label><input id="recurrence-until" type="date"></div><br><br><label for="location">Luogo</label><input id="location"><br><br><fieldset id="participants-fieldset"><legend>Partecipanti</legend><div id="participants"></div></fieldset><br><button type="submit">Crea evento</button></form></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="nuovo-evento.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuovo evento - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card">
+    <p><a id="back-link" href="#">Torna agli eventi</a></p>
+    <h1>Nuovo evento</h1>
+    <p id="message" aria-live="polite">Caricamento...</p>
+    <form id="event-form" hidden>
+      <label for="title">Titolo</label><input id="title" required>
+      <br><br>
+      <label for="notes">Note</label><textarea id="notes"></textarea>
+      <br><br>
+      <div id="event-start-dates" class="event-dates">
+        <div><label for="start-date">Data</label><input id="start-date" type="date" required></div>
+        <div id="start-time-field"><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
+        <div id="end-time-normal-slot"><div id="end-time-field"><label for="end-time">Ora fine</label><input id="end-time" type="time"></div></div>
+      </div>
+      <div class="event-form-options">
+        <label class="event-form-option"><input id="all-day" type="checkbox"><span>Tutto il giorno</span></label>
+        <label class="event-form-option"><input id="multi-day" type="checkbox"><span>Più giorni</span></label>
+        <div id="multi-day-end-row" class="event-dates event-multi-day-end" hidden>
+          <div><label for="end-date">Data fine</label><input id="end-date" type="date"></div>
+          <div id="end-time-multi-day-slot"></div>
+        </div>
+        <label class="event-form-option"><input id="recurrence-enabled" type="checkbox"><span>Ripeti ogni settimana</span></label>
+      </div>
+      <div id="recurrence-fields" class="event-recurrence-fields" hidden><label for="recurrence-until">Fine ripetizione</label><input id="recurrence-until" type="date"></div>
+      <br><br>
+      <label for="location">Luogo</label><input id="location">
+      <br><br>
+      <fieldset id="participants-fieldset"><legend>Partecipanti</legend><div id="participants"></div></fieldset>
+      <br>
+      <button type="submit">Crea evento</button>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="nuovo-evento.js"></script>
+</body>
+</html>
