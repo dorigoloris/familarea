@@ -24,6 +24,21 @@
       <div class="form-actions"><button id="preferences-save-button" type="submit">Salva impostazioni</button></div>
     </form>
     </section>
+    <section id="organization-settings" class="settings-card" hidden aria-labelledby="organization-settings-title">
+      <div class="profile-avatar-section">
+        <div id="organization-avatar-fallback" class="profile-avatar profile-avatar-fallback" aria-hidden="true"></div>
+        <img id="organization-avatar-image" class="profile-avatar profile-avatar-image" alt="" hidden>
+        <div class="profile-avatar-actions">
+          <p class="eyebrow">Organizzazione corrente</p>
+          <h2 id="organization-settings-title"></h2>
+          <p>Carica un'immagine JPG, PNG o WebP, massimo 2 MB.</p>
+          <input id="organization-avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <label id="organization-avatar-upload-label" class="btn profile-avatar-upload" for="organization-avatar-file-input">Carica immagine</label>
+          <button id="organization-avatar-remove-button" class="secondary-button" type="button" hidden>Rimuovi immagine</button>
+          <p id="organization-avatar-message" class="preferences-message" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
     <section class="settings-card security-settings-card" aria-labelledby="security-title">
       <h2 id="security-title">Sicurezza</h2>
       <p>Gestisci la sicurezza del tuo account.</p>
@@ -34,6 +49,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
   <script src="impostazioni.js"></script>
 </body>
 </html>

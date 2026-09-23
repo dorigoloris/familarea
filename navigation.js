@@ -240,6 +240,32 @@
     avatarFallback.hidden = true;
   }
 
+  async function renderOrganizationIdentity(organization) {
+    const name = organization?.name || 'Organizzazione';
+    accountName.textContent = name;
+    accountTrigger.setAttribute('aria-label', `Apri menu account di ${name}`);
+    avatarFallback.textContent = name.trim().charAt(0).toLocaleUpperCase('it-IT') || 'O';
+    avatarFallback.hidden = false;
+    avatarImage.hidden = true;
+    avatarImage.removeAttribute('src');
+    if (!organization?.avatar_path) return;
+
+    const { data, error } = await client.storage.from('organization-avatars').createSignedUrl(organization.avatar_path, 60 * 60);
+    if (error || !data?.signedUrl) return;
+    const imageLoaded = await new Promise((resolve) => {
+      avatarImage.onload = () => resolve(true);
+      avatarImage.onerror = () => resolve(false);
+      avatarImage.src = `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}v=${Date.now()}`;
+    });
+    if (!imageLoaded) {
+      avatarImage.removeAttribute('src');
+      return;
+    }
+    avatarImage.alt = `Immagine di ${name}`;
+    avatarImage.hidden = false;
+    avatarFallback.hidden = true;
+  }
+
   const accountPromise = client.rpc('get_current_account').then(({ data, error }) => (error || !data ? null : data));
   window.FamilAreaCurrentAccount = accountPromise;
   window.FamilAreaRequirePersonal = async () => {
@@ -256,12 +282,9 @@
 
     if (account.account_type !== 'personal') {
       profileLink.remove();
-      accountName.textContent = account.display_name || 'Organizzazione';
-      accountTrigger.setAttribute('aria-label', `Apri menu account di ${accountName.textContent}`);
-      avatarFallback.textContent = 'O';
-      avatarFallback.hidden = false;
-      avatarImage.hidden = true;
-      avatarImage.removeAttribute('src');
+      const { data: organization, error: organizationError } = await client.rpc('get_my_organization');
+      if (!organizationError && organization) await renderOrganizationIdentity(organization);
+      else await renderOrganizationIdentity({ name: account.display_name });
       return;
     }
 
@@ -275,6 +298,11 @@
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;
     if (profile) renderAccountIdentity(profile).catch(() => {});
+    else loadAccountIdentity().catch(() => {});
+  });
+  window.addEventListener('familarea:organization-avatar-changed', (event) => {
+    const organization = event.detail?.organization;
+    if (organization) renderOrganizationIdentity(organization).catch(() => {});
     else loadAccountIdentity().catch(() => {});
   });
 
