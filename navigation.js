@@ -37,7 +37,9 @@
   const primarySection = primarySectionByPage[path] || null;
   const isPrimaryNavActive = (section) => primarySection === section ? ' is-active' : '';
   const isAreaNavActive = (names) => names.includes(path) ? ' is-active' : '';
+  const isParticipantsView = path === 'area.html' && params.get('view') === 'participants';
   const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
+  const participantsHref = areaId ? `area.html?area_id=${encodeURIComponent(areaId)}&view=participants` : 'mie-aree.html#areas-title';
   const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
@@ -373,8 +375,8 @@
   areaNav.className = 'shared-area-nav';
   areaNav.setAttribute('aria-label', 'Navigazione Area');
   areaNav.innerHTML = `<p class="shared-nav-label">AREA <span id="nav-area-name">in caricamento…</span></p>
-    <a class="sidebar-link${isAreaNavActive(['area.html', 'modifica-area.html'])}" href="${areaHref()}">Panoramica Area</a>
-    <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
+    <a class="sidebar-link${isAreaNavActive(['modifica-area.html']) || (path === 'area.html' && !isParticipantsView) ? ' is-active' : ''}" href="${areaHref()}">Panoramica Area</a>
+    <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html']) || isParticipantsView ? ' is-active' : ''}" href="${participantsHref}">Partecipanti</a>
     <a class="sidebar-link${isAreaNavActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
     <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Programma</a>
     <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;

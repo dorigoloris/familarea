@@ -1,1 +1,42 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inviti Area - FamilArea</title><link rel="stylesheet" href="app.css"></head><body><main class="page-card fa-page"><header><p class="eyebrow">GESTIONE AREA</p><h1>Inviti dell’Area</h1><p id="area-description">Gestisci gli inviti per questa Area.</p><a id="back-to-area-link" href="#">Torna all’Area</a></header><p id="page-message" aria-live="polite">Caricamento inviti…</p><section id="invite-form-section" class="fa-surface" hidden><h2>Nuovo invito</h2><form id="invite-form"><label for="invite-email">Email destinatario</label><input id="invite-email" type="email" required autocomplete="email"><div class="form-actions"><button type="submit">Crea invito</button><button type="reset" class="secondary-button">Annulla</button></div></form><p id="invite-form-message" aria-live="polite"></p></section><section id="invites-section" class="fa-surface" hidden><h2>Inviti in attesa</h2><div id="invites-list"></div><p id="invites-empty" hidden>Nessun invito in attesa.</p></section></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="inviti-area.js"></script></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inviti Area - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page-card fa-page">
+    <header>
+      <p class="eyebrow">GESTIONE AREA</p>
+      <h1>Inviti dell’Area</h1>
+      <p id="area-description">Gestisci gli inviti per questa Area.</p>
+      <a id="back-to-area-link" href="#">Torna all’Area</a>
+    </header>
+    <p id="page-message" aria-live="polite">Caricamento inviti…</p>
+    <section id="invite-form-section" class="fa-surface" hidden>
+      <h2>Nuovo invito</h2>
+      <form id="invite-form">
+        <label for="invite-email">Email destinatario</label>
+        <input id="invite-email" type="email" required autocomplete="email">
+        <div class="form-actions">
+          <button type="submit">Crea invito</button>
+          <button type="reset" class="secondary-button">Annulla</button>
+        </div>
+      </form>
+      <p id="invite-form-message" aria-live="polite"></p>
+    </section>
+    <section id="invites-section" class="fa-surface" hidden>
+      <h2>Inviti in attesa</h2>
+      <div id="invites-list"></div>
+      <p id="invites-empty" hidden>Nessun invito in attesa.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="inviti-area.js"></script>
+</body>
+</html>

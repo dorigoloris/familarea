@@ -26,7 +26,6 @@ async function respondToInvite(invite, rpcName, card) {
   pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
   const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
-  pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Invito accettato. Ora fai parte dell’Area.' : 'Invito rifiutato.';
   await loadInvites();
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }

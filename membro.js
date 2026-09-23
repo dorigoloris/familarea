@@ -107,7 +107,7 @@ async function removeMemberFromArea() {
     return;
   }
 
-  window.location.href = `area.html?area_id=${encodeURIComponent(currentAreaId)}#members-list`;
+  window.location.href = `area.html?area_id=${encodeURIComponent(currentAreaId)}&view=participants`;
 }
 
 function showEditForm() {
@@ -310,7 +310,7 @@ async function loadMember() {
   currentProfileId = profileId;
 
   backToAreaLink.href = `area.html?area_id=${encodeURIComponent(areaId)}`;
-  backToMembersLink.href = `area.html?area_id=${encodeURIComponent(areaId)}#members-list`;
+  backToMembersLink.href = `area.html?area_id=${encodeURIComponent(areaId)}&view=participants`;
 
   const { data: participants, error: participantsError } = await supabaseClient.rpc('get_area_participants', {
     p_area_id: areaId
