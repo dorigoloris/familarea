@@ -257,4 +257,40 @@ document.getElementById('delete-button').addEventListener('click', async () => {
   location.href = isArea ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
 });
 
+async function renderParticipantControls() {
+  if (!isArea) return;
+  const list = document.getElementById('participant-list');
+  const [{ data: participants, error: participantsError }, { data: members, error: membersError }] = await Promise.all([
+    supabaseClient.rpc('get_event_participants', { p_event_id: eventId }),
+    supabaseClient.rpc('get_area_members', { p_area_id: areaId })
+  ]);
+  if (participantsError || membersError) return;
+  const selected = participants || [];
+  list.replaceChildren();
+  if (!selected.length) list.textContent = 'Nessun partecipante.';
+  selected.forEach((person) => {
+    const row = document.createElement('div');
+    row.textContent = `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Partecipante';
+    if (canManage) {
+      const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Rimuovi';
+      remove.addEventListener('click', async () => {
+        if (!await FamilAreaConfirm.confirm({ variant: 'standard', title: 'Rimuovere il partecipante?', message: 'La persona resterà membro dell’Area e negli altri elementi del Programma.', confirmText: 'Rimuovi' })) return;
+        const { error } = await supabaseClient.rpc('set_event_participants', { p_event_id: eventId, p_profile_ids: selected.filter((item) => item.profile_id !== person.profile_id).map((item) => item.profile_id) });
+        if (error) { message.textContent = 'Impossibile rimuovere il partecipante.'; return; }
+        await renderParticipantControls();
+      }); row.append(' ', remove);
+    }
+    list.appendChild(row);
+  });
+  if (!canManage) return;
+  const available = (members || []).filter((member) => !selected.some((person) => person.profile_id === member.profile_id));
+  const control = document.createElement('div'); const select = document.createElement('select'); const add = document.createElement('button');
+  add.type = 'button'; add.textContent = '+ Aggiungi partecipante';
+  if (!available.length) { select.disabled = true; add.disabled = true; select.append(new Option('Nessun altro membro dell’Area disponibile.', '')); }
+  else { select.append(new Option('Seleziona un membro dell’Area', '')); available.forEach((member) => select.append(new Option(`${member.first_name || ''} ${member.last_name || ''}`.trim(), member.profile_id))); }
+  add.addEventListener('click', async () => { if (!select.value) return; const { error } = await supabaseClient.rpc('set_event_participants', { p_event_id: eventId, p_profile_ids: [...selected.map((person) => person.profile_id), select.value] }); if (error) { message.textContent = 'Impossibile aggiungere il partecipante.'; return; } await renderParticipantControls(); });
+  control.append(select, add); list.appendChild(control);
+}
+const renderEventView = render;
+render = async function () { await renderEventView(); await renderParticipantControls(); };
 load();
