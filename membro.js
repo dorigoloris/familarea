@@ -263,7 +263,13 @@ async function setContactPrimary(contact) {
 }
 
 async function deleteContact(contact) {
-  if (!window.confirm(`Eliminare ${contact.contact_value}?`)) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: `Eliminare ${contact.contact_value}?`,
+    message: 'Il contatto verrà eliminato definitivamente.',
+    confirmText: 'Elimina'
+  });
+  if (!confirmed) return;
 
   showContactsMessage('Eliminazione in corso...');
   const { error } = await supabaseClient.rpc('delete_area_member_contact', {

@@ -62,7 +62,7 @@
     title.textContent = item.title;
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
-    area.textContent = type === 'birthday' ? 'Contatto personale' : (type === 'deadline' ? 'Scadenza' : item.area_name);
+    area.textContent = type === 'birthday' ? 'Contatto' : (type === 'deadline' ? 'Scadenza' : item.area_name);
     link.append(title, area);
 
     if (type === 'event' || type === 'birthday' || type === 'deadline') {

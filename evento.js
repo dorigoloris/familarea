@@ -241,7 +241,13 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
 });
 
 document.getElementById('delete-button').addEventListener('click', async () => {
-  if (!confirm('Eliminare questo evento?')) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Eliminare l’evento?',
+    message: 'L’evento verrà eliminato definitivamente.',
+    confirmText: 'Elimina'
+  });
+  if (!confirmed) return;
   const { error } = await supabaseClient.rpc('delete_event', { p_event_id: eventId });
   if (error) {
     message.textContent = 'Impossibile eliminare l’evento.';

@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="app.css">
 </head>
 
-<body>
+<body class="account-page">
 
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <h1>Crea la tua prima Area</h1>
+  <main class="page-card account-page-shell create-area-page">
+    <header class="account-page-heading">
+      <div><h1>Crea la tua prima Area</h1></div>
+    </header>
 
-  <form id="area-form">
+    <form id="area-form">
     <div>
       <label for="area-name">Nome Area</label><br>
       <input type="text" id="area-name" required>
@@ -38,9 +41,15 @@
     <br>
 
     <button type="submit">Crea Area</button>
-  </form>
+    </form>
 
-  <p id="message"></p>
+    <p id="message" aria-live="polite"></p>
+  </main>
+
+  <style>
+    .create-area-page{width:min(100%,1060px)}
+    .create-area-page>.account-page-heading,.create-area-page>#area-form{width:min(100%,780px);max-width:none;margin-right:auto;margin-left:auto}
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>

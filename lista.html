@@ -47,6 +47,13 @@
       <div class="form-actions"><button id="save-list-button" type="submit">Salva modifiche</button><button id="cancel-edit-button" type="button" class="secondary-button">Annulla</button></div>
     </form>
   </main>
+  <style>
+    .list-detail-page .list-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center}
+    .list-detail-page .list-item-text{min-width:0;overflow-wrap:anywhere}
+    .list-detail-page .list-item>input{width:20px;height:20px;margin:0;accent-color:var(--green)}
+    .list-detail-page .list-item-delete{width:auto;margin:0;white-space:nowrap}
+    @media(max-width:600px){.list-detail-page .list-item{grid-template-columns:minmax(0,1fr) auto}.list-detail-page .list-item-delete{grid-column:1/-1;width:100%}}
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
