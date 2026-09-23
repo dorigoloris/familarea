@@ -36,10 +36,6 @@ function createContextualCard(event, areaId) {
 
   const metadata = document.createElement('div');
   metadata.className = 'activity-card-meta';
-  const kind = document.createElement('span');
-  kind.className = 'event-badge';
-  kind.textContent = 'Evento';
-  metadata.appendChild(kind);
   if (event.status && event.status !== 'active') {
     const status = document.createElement('span');
     status.className = 'activity-status-badge';
@@ -124,7 +120,7 @@ async function load() {
 
   const { data: visibleEvents, error } = await supabaseClient.rpc('get_visible_events');
   if (error) {
-    message.textContent = 'Impossibile caricare gli eventi visibili.';
+    message.textContent = isGlobal ? 'Impossibile caricare gli eventi visibili.' : 'Impossibile caricare il programma.';
     return;
   }
   const events = isGlobal
@@ -139,7 +135,7 @@ async function load() {
     empty.hidden = events.length > 0;
     events.forEach((event) => list.appendChild(createGlobalRow(event)));
   } else if (!events.length) {
-    message.textContent = 'Nessun evento visibile in questa Area.';
+    message.textContent = 'Nessun elemento visibile nel programma di questa Area.';
   } else {
     events.forEach((event) => list.appendChild(createContextualCard(event, areaId)));
   }

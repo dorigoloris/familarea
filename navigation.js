@@ -376,8 +376,9 @@
     <a class="sidebar-link${isAreaNavActive(['area.html', 'modifica-area.html'])}" href="${areaHref()}">Panoramica Area</a>
     <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
     <a class="sidebar-link${isAreaNavActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
-    <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Eventi</a>
-    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
+    <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Programma</a>
+    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>
+    <a class="sidebar-link${isAreaNavActive(['inviti-area.html'])}" href="inviti-area.html?area_id=${encodeURIComponent(areaId)}">Inviti</a>`;
   const contextualHeader = document.querySelector(
     '.area-page-header, .area-invites-page-header, .page-card > .section-heading, .page-card > #contextual-events-content > .section-heading, .page-card > #list-view > .section-heading, .page-card > h1, body > h1'
   );
@@ -386,6 +387,16 @@
   } else {
     const pageContent = document.querySelector('main');
     if (pageContent) pageContent.prepend(areaNav);
+  }
+  if (path === 'nuovo-evento.html') {
+    document.querySelector('main h1').textContent = 'Aggiungi al programma';
+    document.querySelector('#back-link').textContent = 'Torna al programma';
+    document.querySelector('#event-form button[type="submit"]').textContent = 'Aggiungi';
+  }
+  if (path === 'evento.html') {
+    document.querySelector('#back-link').textContent = 'Torna al programma';
+    document.querySelector('#delete-button').textContent = 'Elimina';
+    document.querySelector('#edit-form h2').textContent = 'Modifica';
   }
 
   const areaNavIcons = {

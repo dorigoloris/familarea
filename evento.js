@@ -113,6 +113,7 @@ async function load() {
   document.getElementById('back-link').href = isArea
     ? `eventi.html?area_id=${encodeURIComponent(areaId)}`
     : 'eventi.html';
+  document.getElementById('back-link').textContent = isArea ? 'Torna al programma' : 'Torna agli eventi';
   const [{ data: event, error }, { data: account }, { data: areas }] = await Promise.all([
     supabaseClient.rpc('get_event', { p_event_id: eventId }),
     supabaseClient.rpc('get_current_account'),
