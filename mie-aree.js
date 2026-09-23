@@ -13,6 +13,7 @@ const dashboardInvitesTitle = document.getElementById('dashboard-invites-title')
 const dashboardInvitesDescription = document.getElementById('dashboard-invites-description');
 const dashboardDeadlinesSection = document.getElementById('dashboard-deadlines-section');
 const dashboardDeadlinesList = document.getElementById('dashboard-deadlines-list');
+const dashboardHero = document.querySelector('.dashboard-intro.dashboard-page-header');
 const sections = {
   today: { list: document.getElementById('today-list'), empty: document.getElementById('today-empty') },
   upcoming: { list: document.getElementById('upcoming-list'), empty: document.getElementById('upcoming-empty') },
@@ -145,11 +146,22 @@ async function loadPendingInvites(account) {
   dashboardInvitesDescription.textContent = count === 1 ? 'Sei stato invitato a partecipare a un’Area.' : 'Hai nuovi inviti a partecipare ad alcune Aree.';
   dashboardInvitesSection.hidden = false;
 }
+async function loadOrganizationDashboardCover(account) {
+  if (account?.account_type !== 'organization') return;
+  const { data: organization, error: organizationError } = await supabaseClient.rpc('get_my_organization');
+  if (organizationError || !organization?.dashboard_cover_path) return;
+  const { data, error } = await supabaseClient.storage.from('organization-dashboard-covers').createSignedUrl(organization.dashboard_cover_path, 60 * 60);
+  if (error || !data?.signedUrl) return;
+  const safeUrl = data.signedUrl.replace(/["\\]/g, '\\$&');
+  dashboardHero.style.setProperty('--organization-dashboard-cover', `url("${safeUrl}")`);
+  dashboardHero.classList.add('has-organization-dashboard-cover');
+}
 async function initialiseDashboard() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data?.session) { window.location.href = 'login.html'; return; }
   const account = window.FamilAreaCurrentAccount ? await window.FamilAreaCurrentAccount : null;
   dashboardTitle.textContent = account?.account_type === 'organization' ? 'Dashboard' : 'La mia Dashboard';
+  void loadOrganizationDashboardCover(account);
   await Promise.all([loadDashboardTimeline(), loadPendingInvites(account)]);
 }
 dashboardPreviousWeekButton.addEventListener('click', () => { void changeDashboardWeek(-1); });

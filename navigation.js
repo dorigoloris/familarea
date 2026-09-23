@@ -300,7 +300,7 @@
     if (profile) renderAccountIdentity(profile).catch(() => {});
     else loadAccountIdentity().catch(() => {});
   });
-  window.addEventListener('familarea:organization-avatar-changed', (event) => {
+  window.addEventListener('familarea:organization-changed', (event) => {
     const organization = event.detail?.organization;
     if (organization) renderOrganizationIdentity(organization).catch(() => {});
     else loadAccountIdentity().catch(() => {});
