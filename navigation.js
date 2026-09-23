@@ -377,8 +377,7 @@
     <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html'])}" href="${areaHref('#members-list')}">Partecipanti</a>
     <a class="sidebar-link${isAreaNavActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
     <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Programma</a>
-    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>
-    <a class="sidebar-link${isAreaNavActive(['inviti-area.html'])}" href="inviti-area.html?area_id=${encodeURIComponent(areaId)}">Inviti</a>`;
+    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
   const contextualHeader = document.querySelector(
     '.area-page-header, .area-invites-page-header, .page-card > .section-heading, .page-card > #contextual-events-content > .section-heading, .page-card > #list-view > .section-heading, .page-card > h1, body > h1'
   );
