@@ -43,7 +43,7 @@ function formRecurrence() {
   if (!document.getElementById('edit-recurrence-enabled').checked) return {};
   const until = document.getElementById('edit-recurrence-until').value;
   if (!until) throw new Error('Indica la fine della ripetizione.');
-  return { frequency: 'weekly', until };
+  return { frequency: 'weekly', until, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || eventData.recurrence_timezone || 'UTC' };
 }
 
 async function renderParticipants(container, selected = []) {
