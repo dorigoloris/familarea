@@ -751,6 +751,9 @@ body.protected-page.has-area-context .shared-area-nav{position:relative;top:auto
   }
 }
 
+/* Azioni per ciascun invito Evento ancora in attesa. */
+.event-pending-invite-actions{display:flex!important;align-items:center;justify-content:flex-end;gap:8px}.event-pending-invite-actions .event-pending-invite-cancel{margin:0;padding:8px 10px;font-size:13px}@media(max-width:700px){.event-pending-invite-actions{align-items:stretch;flex-direction:column}.event-pending-invite-actions button{width:100%}}
+
 @media (max-width: 980px) {
   :root { --fa-layout-gutter: 16px; }
 

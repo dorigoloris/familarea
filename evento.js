@@ -5,7 +5,6 @@ const isArea = Boolean(areaId);
 const message = document.getElementById('message');
 let eventData;
 let canManage = false;
-const pendingInviteLinks = new Map();
 
 const statusLabels = { active: 'Attivo', cancelled: 'Annullato' };
 
@@ -393,7 +392,6 @@ async function renderParticipantControls() {
       message.textContent = knownErrors[error.message] || 'Impossibile creare l’invito attività. Riprova.';
       return;
     }
-    pendingInviteLinks.set(data.invite_id, eventInviteUrl(data.token));
     await renderParticipantControls();
     message.textContent = `Invito creato per ${email}.`;
   });
@@ -447,28 +445,49 @@ async function renderParticipantControls() {
       const email = document.createElement('span'); email.textContent = pendingInvite.recipient_email;
       const state = document.createElement('span'); state.className = 'event-pending-invite-state'; state.textContent = 'In attesa';
       details.append(name, email, state);
+      const rowActions = document.createElement('div');
+      rowActions.className = 'event-pending-invite-actions';
       const linkAction = document.createElement('button');
       linkAction.type = 'button';
       linkAction.className = 'secondary-button';
-      linkAction.textContent = pendingInviteLinks.has(pendingInvite.invite_id) ? 'Copia link' : 'Genera nuovo link';
+      linkAction.textContent = 'Genera nuovo link';
       linkAction.addEventListener('click', async () => {
-        let inviteUrl = pendingInviteLinks.get(pendingInvite.invite_id);
         try {
-          if (!inviteUrl) {
-            const { data, error } = await supabaseClient.rpc('regenerate_event_invite_link', { p_event_invite_id: pendingInvite.invite_id });
-            if (error) throw error;
-            inviteUrl = eventInviteUrl(data.token);
-            pendingInviteLinks.set(pendingInvite.invite_id, inviteUrl);
-            linkAction.textContent = 'Copia link';
-          }
-          await copyInviteUrl(inviteUrl);
+          const { data, error } = await supabaseClient.rpc('regenerate_event_invite_link', { p_event_invite_id: pendingInvite.invite_id });
+          if (error) throw error;
+          await copyInviteUrl(eventInviteUrl(data.token));
           message.textContent = 'Link invito copiato. Ora invialo alla persona invitata.';
         } catch (error) {
           console.error('event invite link failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
           message.textContent = 'Non è stato possibile generare o copiare il link invito.';
         }
       });
-      row.append(details, linkAction);
+      const cancelAction = document.createElement('button');
+      cancelAction.type = 'button';
+      cancelAction.className = 'area-delete-button event-pending-invite-cancel';
+      cancelAction.textContent = 'Annulla invito';
+      cancelAction.addEventListener('click', async () => {
+        const confirmed = await FamilAreaConfirm.confirm({
+          variant: 'danger',
+          title: 'Annulla invito',
+          message: `Vuoi annullare l'invito inviato a ${fullName} (${pendingInvite.recipient_email})?`,
+          cancelText: 'Annulla',
+          confirmText: 'Annulla invito'
+        });
+        if (!confirmed) return;
+        cancelAction.disabled = true;
+        const { error } = await supabaseClient.rpc('cancel_event_invite', { p_event_invite_id: pendingInvite.invite_id });
+        if (error) {
+          console.error('cancel_event_invite failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
+          message.textContent = 'Non è stato possibile annullare l’invito. Riprova.';
+          cancelAction.disabled = false;
+          return;
+        }
+        await renderParticipantControls();
+        message.textContent = 'Invito annullato.';
+      });
+      rowActions.append(linkAction, cancelAction);
+      row.append(details, rowActions);
       pendingSection.appendChild(row);
     });
     actions.appendChild(pendingSection);
