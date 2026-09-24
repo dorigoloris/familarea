@@ -5,6 +5,7 @@ const isArea = Boolean(areaId);
 const message = document.getElementById('message');
 let eventData;
 let canManage = false;
+const pendingInviteLinks = new Map();
 
 const statusLabels = { active: 'Attivo', cancelled: 'Annullato' };
 
@@ -15,6 +16,31 @@ function localDate(value) {
 
 function localTime(value) {
   return new Date(value).toTimeString().slice(0, 5);
+}
+
+function eventInviteUrl(token) {
+  const link = new URL('invito-evento.html', location.href);
+  link.searchParams.set('token', token);
+  return link.toString();
+}
+
+async function copyInviteUrl(inviteUrl) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(inviteUrl);
+    return;
+  }
+  const fallback = document.createElement('textarea');
+  fallback.value = inviteUrl;
+  fallback.setAttribute('readonly', '');
+  fallback.style.position = 'fixed';
+  fallback.style.opacity = '0';
+  document.body.appendChild(fallback);
+  try {
+    fallback.select();
+    if (!document.execCommand('copy')) throw new Error('copy failed');
+  } finally {
+    fallback.remove();
+  }
 }
 
 function localIso(date, time = '00:00') {
@@ -120,23 +146,6 @@ function focusOnEnter(next) {
   };
 }
 
-async function renderParticipants(container, selected = []) {
-  if (!isArea) return;
-  const { data, error } = await supabaseClient.rpc('get_area_members', { p_area_id: areaId });
-  if (error) throw error;
-
-  container.replaceChildren();
-  (data || []).forEach((member) => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = member.profile_id;
-    input.checked = selected.includes(member.profile_id);
-    label.append(input, ` ${member.first_name || ''} ${member.last_name || ''}`.trim());
-    container.append(label, document.createElement('br'));
-  });
-}
-
 function renderStatus() {
   const select = document.getElementById('status-select');
   const save = document.getElementById('save-status');
@@ -220,15 +229,7 @@ async function openEdit() {
   document.getElementById('edit-recurrence-enabled').checked = Boolean(recurrence.frequency);
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
   document.getElementById('edit-recurrence-until').value = recurrence.until || '';
-  document.getElementById('edit-participants-fieldset').hidden = !isArea;
-
-  if (isArea) {
-    const { data } = await supabaseClient.rpc('get_event_participants', { p_event_id: eventId });
-    await renderParticipants(
-      document.getElementById('edit-participants'),
-      (data || []).map((person) => person.profile_id)
-    );
-  }
+  document.getElementById('edit-participants-fieldset').hidden = true;
 
   document.getElementById('event-view').hidden = true;
   form.hidden = false;
@@ -307,17 +308,6 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
     return;
   }
 
-  if (isArea) {
-    const result = await supabaseClient.rpc('set_event_participants', {
-      p_event_id: eventId,
-      p_profile_ids: [...document.querySelectorAll('#edit-participants input:checked')].map((input) => input.value)
-    });
-    if (result.error) {
-      message.textContent = 'Dati salvati, ma partecipanti non aggiornati.';
-      return;
-    }
-  }
-
   document.getElementById('edit-form').hidden = true;
   document.getElementById('event-view').hidden = false;
   await load();
@@ -342,11 +332,12 @@ document.getElementById('delete-button').addEventListener('click', async () => {
 async function renderParticipantControls() {
   if (!isArea) return;
   const list = document.getElementById('participant-list');
-  const [{ data: participants, error: participantsError }, { data: members, error: membersError }] = await Promise.all([
+  const [{ data: participants, error: participantsError }, { data: contacts, error: contactsError }, { data: pendingInvites, error: pendingInvitesError }] = await Promise.all([
     supabaseClient.rpc('get_event_participants', { p_event_id: eventId }),
-    supabaseClient.rpc('get_area_members', { p_area_id: areaId })
+    supabaseClient.rpc('get_my_contacts_for_event', { p_event_id: eventId }),
+    supabaseClient.rpc('get_pending_event_invites', { p_event_id: eventId })
   ]);
-  if (participantsError || membersError) return;
+  if (participantsError || contactsError || pendingInvitesError) return;
   const selected = participants || [];
   list.replaceChildren();
   if (!selected.length) list.textContent = 'Nessun partecipante.';
@@ -357,8 +348,8 @@ async function renderParticipantControls() {
     if (canManage) {
       const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Rimuovi';
       remove.addEventListener('click', async () => {
-        if (!await FamilAreaConfirm.confirm({ variant: 'standard', title: 'Rimuovere il partecipante?', message: 'La persona resterà membro dell’Area e negli altri elementi del Programma.', confirmText: 'Rimuovi' })) return;
-        const { error } = await supabaseClient.rpc('set_event_participants', { p_event_id: eventId, p_profile_ids: selected.filter((item) => item.profile_id !== person.profile_id).map((item) => item.profile_id) });
+        if (!await FamilAreaConfirm.confirm({ variant: 'standard', title: 'Rimuovere il partecipante?', message: 'La persona resterà nei Contatti e negli altri elementi del Programma.', confirmText: 'Rimuovi' })) return;
+        const { error } = await supabaseClient.rpc('remove_event_participant', { p_event_id: eventId, p_contact_id: person.contact_id });
         if (error) { message.textContent = 'Impossibile rimuovere il partecipante.'; return; }
         await renderParticipantControls();
       }); row.append(' ', remove);
@@ -366,27 +357,60 @@ async function renderParticipantControls() {
     list.appendChild(row);
   });
   if (!canManage) return;
-  const available = (members || []).filter((member) => !selected.some((person) => person.profile_id === member.profile_id));
+  const available = (contacts || []).filter((contact) => !contact.is_active_participant);
   const actions = document.createElement('div');
   actions.className = 'event-participant-actions';
-  const invite = document.createElement('a');
+  const invite = document.createElement('button');
+  invite.type = 'button';
   invite.className = 'secondary-button';
-  invite.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}&return_to=${encodeURIComponent(location.pathname.split('/').pop() + location.search)}`;
   invite.textContent = 'Invita una persona';
+  invite.addEventListener('click', async () => {
+    const recipient = await FamilAreaConfirm.form({
+      title: 'Invita una persona',
+      message: 'Crea un Contatto privato e un invito per questa attività.',
+      confirmText: 'Crea invito',
+      fields: [
+        { name: 'firstName', label: 'Nome', required: true, autocomplete: 'given-name' },
+        { name: 'lastName', label: 'Cognome', autocomplete: 'family-name' },
+        { name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' }
+      ]
+    });
+    if (!recipient) return;
+    const email = recipient.email.trim();
+    const firstName = recipient.firstName.trim();
+    const lastName = recipient.lastName.trim() || null;
+    const { data, error } = await supabaseClient.rpc('create_event_invite', {
+      p_event_id: eventId, p_recipient_email: email, p_first_name: firstName, p_last_name: lastName
+    });
+    if (error) {
+      const knownErrors = {
+        'pending event invite already exists': 'Esiste già un invito in attesa per questa email.',
+        'contact already participates in this event': 'Questa persona partecipa già all’attività.',
+        'ambiguous contact email': 'L’email è associata a più Contatti. Verifica i Contatti prima di inviare l’invito.',
+        'permission denied': 'Non hai i permessi per invitare persone a questa attività.'
+      };
+      console.error('create_event_invite failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
+      message.textContent = knownErrors[error.message] || 'Impossibile creare l’invito attività. Riprova.';
+      return;
+    }
+    pendingInviteLinks.set(data.invite_id, eventInviteUrl(data.token));
+    await renderParticipantControls();
+    message.textContent = `Invito creato per ${email}.`;
+  });
 
   if (!available.length) {
     const unavailable = document.createElement('p');
     unavailable.className = 'event-participant-unavailable';
-    unavailable.textContent = 'Non ci sono membri dell’Area disponibili da aggiungere.';
+    unavailable.textContent = 'Non ci sono Contatti disponibili da aggiungere.';
     actions.append(unavailable);
   } else {
     const addControls = document.createElement('div');
     addControls.className = 'event-participant-add-controls';
     const select = document.createElement('select');
     select.id = 'event-participant-select';
-    select.setAttribute('aria-label', 'Seleziona un membro dell’Area');
-    select.append(new Option('Seleziona un membro dell’Area', ''));
-    available.forEach((member) => select.append(new Option(`${member.first_name || ''} ${member.last_name || ''}`.trim(), member.profile_id)));
+    select.setAttribute('aria-label', 'Seleziona un contatto');
+    select.append(new Option('Seleziona un contatto', ''));
+    available.forEach((contact) => select.append(new Option(`${contact.first_name || ''} ${contact.last_name || ''}`.trim(), contact.contact_id)));
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'fa-button fa-button-primary fa-button-compact';
@@ -395,10 +419,7 @@ async function renderParticipantControls() {
     select.addEventListener('change', () => { add.disabled = !select.value; });
     add.addEventListener('click', async () => {
       if (!select.value) return;
-      const { error } = await supabaseClient.rpc('set_event_participants', {
-        p_event_id: eventId,
-        p_profile_ids: [...selected.map((person) => person.profile_id), select.value]
-      });
+      const { error } = await supabaseClient.rpc('add_event_participant', { p_event_id: eventId, p_contact_id: select.value });
       if (error) { message.textContent = 'Impossibile aggiungere il partecipante.'; return; }
       await renderParticipantControls();
     });
@@ -408,9 +429,50 @@ async function renderParticipantControls() {
   const invitePrompt = document.createElement('div');
   invitePrompt.className = 'event-participant-invite';
   const prompt = document.createElement('p');
-  prompt.textContent = 'La persona non fa ancora parte dell’Area?';
+  prompt.textContent = 'La persona non è ancora nei Contatti?';
   invitePrompt.append(prompt, invite);
   actions.append(invitePrompt);
+  if ((pendingInvites || []).length) {
+    const pendingSection = document.createElement('section');
+    pendingSection.className = 'event-pending-invites';
+    const pendingTitle = document.createElement('h3');
+    pendingTitle.textContent = 'Inviti in attesa';
+    pendingSection.appendChild(pendingTitle);
+    pendingInvites.forEach((pendingInvite) => {
+      const row = document.createElement('div');
+      row.className = 'event-pending-invite-row';
+      const details = document.createElement('div');
+      const fullName = `${pendingInvite.first_name || ''} ${pendingInvite.last_name || ''}`.trim() || 'Contatto';
+      const name = document.createElement('strong'); name.textContent = fullName;
+      const email = document.createElement('span'); email.textContent = pendingInvite.recipient_email;
+      const state = document.createElement('span'); state.className = 'event-pending-invite-state'; state.textContent = 'In attesa';
+      details.append(name, email, state);
+      const linkAction = document.createElement('button');
+      linkAction.type = 'button';
+      linkAction.className = 'secondary-button';
+      linkAction.textContent = pendingInviteLinks.has(pendingInvite.invite_id) ? 'Copia link' : 'Genera nuovo link';
+      linkAction.addEventListener('click', async () => {
+        let inviteUrl = pendingInviteLinks.get(pendingInvite.invite_id);
+        try {
+          if (!inviteUrl) {
+            const { data, error } = await supabaseClient.rpc('regenerate_event_invite_link', { p_event_invite_id: pendingInvite.invite_id });
+            if (error) throw error;
+            inviteUrl = eventInviteUrl(data.token);
+            pendingInviteLinks.set(pendingInvite.invite_id, inviteUrl);
+            linkAction.textContent = 'Copia link';
+          }
+          await copyInviteUrl(inviteUrl);
+          message.textContent = 'Link invito copiato. Ora invialo alla persona invitata.';
+        } catch (error) {
+          console.error('event invite link failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
+          message.textContent = 'Non è stato possibile generare o copiare il link invito.';
+        }
+      });
+      row.append(details, linkAction);
+      pendingSection.appendChild(row);
+    });
+    actions.appendChild(pendingSection);
+  }
   list.appendChild(actions);
 }
 const renderEventView = render;
