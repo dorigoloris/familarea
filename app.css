@@ -364,6 +364,393 @@ body.protected-page.has-area-context .shared-area-nav{position:relative;top:auto
   }
 }
 
+/* Calendario stampato: documento essenziale, leggibile e coerente con FamilArea. */
+@media print {
+  @page { size: A4 landscape; margin: 9mm; }
+
+  body.calendar-print-month {
+    page: auto;
+  }
+
+  .calendar-print-heading {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 4mm !important;
+    margin: 0 1.5mm 3mm !important;
+    padding: 0 0 2.5mm !important;
+    border-bottom: .3mm solid #d7e3e9 !important;
+  }
+
+  .calendar-print-heading strong {
+    grid-column: 1;
+    color: #0d2b4f !important;
+    font-size: 12.5pt !important;
+    letter-spacing: -.25pt;
+    white-space: nowrap;
+  }
+
+  .calendar-print-brand-prefix { font-weight: 700; }
+  .calendar-print-brand-accent { color: #4d8b4f; }
+
+  .calendar-print-heading b {
+    grid-column: 2 !important;
+    grid-row: 1;
+    margin: 0;
+    color: #193a56;
+    font-size: 13pt !important;
+    font-weight: 800;
+    letter-spacing: -.15pt;
+    text-align: center;
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+
+  .calendar-page-view .calendar-month-surface {
+    overflow: visible !important;
+  }
+
+  .calendar-page-view .calendar-weekdays {
+    display: grid !important;
+    gap: 1.25mm;
+    margin: 0 0 1.25mm !important;
+    border: 0 !important;
+  }
+
+  .calendar-page-view .calendar-weekdays span {
+    padding: 1.8mm 1mm !important;
+    border: .25mm solid #e1eaee;
+    border-radius: 2mm;
+    background: #f8fbfc;
+    color: #536d80 !important;
+    font-size: 7.5pt !important;
+    letter-spacing: .06em;
+  }
+
+  .calendar-page-view .calendar-weekdays span:last-child {
+    background: #fcfaf5;
+  }
+
+  .calendar-page-view .calendar-grid {
+    display: grid !important;
+    gap: 1.25mm;
+    background: transparent !important;
+  }
+
+  .calendar-page-view .calendar-day {
+    min-height: 22.25mm !important;
+    padding: 1.5mm !important;
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2.25mm;
+    background: #fff !important;
+    overflow: hidden;
+  }
+
+  .calendar-page-view .calendar-day:nth-child(7n) {
+    background: #fcfaf5 !important;
+  }
+
+  .calendar-page-view .calendar-day-empty {
+    background: #fbfcfd !important;
+  }
+
+  .calendar-page-view .calendar-day-today {
+    border-color: #8fb990 !important;
+    background: #f5faf3 !important;
+    box-shadow: inset 0 0 0 .35mm #b9d8b8 !important;
+  }
+
+  .calendar-page-view .calendar-day-number {
+    margin: 0 0 1.1mm !important;
+    color: #38536f !important;
+    font-size: 8pt !important;
+  }
+
+  .calendar-page-view .calendar-activity {
+    margin: 0 0 1mm !important;
+    padding: 1mm 1.15mm !important;
+    border: .25mm solid #d9e6ec !important;
+    border-left: 1.2mm solid #82afcf !important;
+    border-radius: 1.6mm !important;
+    background: #f2f7fb !important;
+    color: #244563 !important;
+    font-size: 6.8pt !important;
+    line-height: 1.18 !important;
+    box-shadow: none !important;
+  }
+
+  .calendar-page-view .calendar-event {
+    border-left-color: #9b83c2 !important;
+    background: #f4f1fa !important;
+    color: #59477f !important;
+  }
+
+  .calendar-page-view .calendar-birthday {
+    border-left-color: #e39a2d !important;
+    background: #fff8ea !important;
+    color: #80520d !important;
+  }
+
+  .calendar-page-view .calendar-deadline {
+    border-left-color: #6d9bc4 !important;
+    background: #f1f6fb !important;
+    color: #365979 !important;
+  }
+
+  .calendar-page-view .calendar-activity-completed,
+  .calendar-page-view .calendar-deadline-completed {
+    border-left-color: #9aaab7 !important;
+    background: #f3f5f6 !important;
+    color: #627589 !important;
+  }
+
+  .calendar-page-view .calendar-activity-title,
+  .calendar-page-view .calendar-activity-area,
+  .calendar-page-view .calendar-activity-details {
+    color: currentColor !important;
+  }
+
+  .calendar-page-view .calendar-activity-title {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-page-view .calendar-activity-area,
+  .calendar-page-view .calendar-activity-details {
+    font-size: 6pt !important;
+    opacity: .8;
+  }
+
+  /* Testata condivisa: più aria sopra e una gerarchia vicina al wordmark dell'app. */
+  .calendar-print-heading {
+    min-height: 13mm;
+    margin: 1.5mm 2mm 4.5mm !important;
+    padding: 2.3mm 1.5mm 3mm !important;
+  }
+
+  .calendar-print-heading strong,
+  .calendar-print-heading b {
+    font-size: 15pt !important;
+    line-height: 1.15;
+  }
+
+  /* Settimana e Giorno: il DOM reale e' week-agenda/day-agenda, non calendar-grid. */
+  body.calendar-print-week .week-agenda,
+  body.calendar-print-day .week-agenda {
+    display: grid !important;
+    gap: 1.25mm !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    --week-agenda-height: 151mm !important;
+  }
+
+  body.calendar-print-week,
+  body.calendar-print-day {
+    page: auto !important;
+  }
+
+  body.calendar-print-week .week-agenda-header,
+  body.calendar-print-week .week-agenda-all-day,
+  body.calendar-print-week .week-agenda-outside,
+  body.calendar-print-day .week-agenda-header,
+  body.calendar-print-day .week-agenda-all-day,
+  body.calendar-print-day .week-agenda-outside {
+    column-gap: 1.25mm !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  body.calendar-print-week .week-agenda-header,
+  body.calendar-print-day .week-agenda-header {
+    position: static !important;
+  }
+
+  body.calendar-print-week .week-agenda-corner,
+  body.calendar-print-week .week-agenda-day-header,
+  body.calendar-print-day .week-agenda-corner,
+  body.calendar-print-day .week-agenda-day-header {
+    display: grid !important;
+    min-height: 9mm !important;
+    padding: 1.4mm .8mm !important;
+    place-items: center;
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2mm !important;
+    background: #f8fbfc !important;
+    color: #536d80 !important;
+    font-size: 6.4pt !important;
+    font-weight: 800;
+    letter-spacing: .045em;
+    line-height: 1.15 !important;
+  }
+
+  body.calendar-print-week .week-agenda-day-header:last-child,
+  body.calendar-print-day .week-agenda-day-header:last-child {
+    background: #fcfaf5 !important;
+  }
+
+  body.calendar-print-week .week-agenda-day-header.is-today,
+  body.calendar-print-day .week-agenda-day-header.is-today {
+    border-color: #8fb990 !important;
+    background: #f5faf3 !important;
+    box-shadow: inset 0 -.7mm 0 #b9d8b8 !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-label,
+  body.calendar-print-week .week-agenda-outside-label,
+  body.calendar-print-day .week-agenda-all-day-label,
+  body.calendar-print-day .week-agenda-outside-label {
+    display: grid !important;
+    min-height: 8mm;
+    padding: 1mm .5mm !important;
+    place-items: center;
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2mm !important;
+    background: #f8fbfc;
+    color: #647b8e !important;
+    font-size: 5.5pt !important;
+    line-height: 1.1 !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-cell,
+  body.calendar-print-week .week-agenda-outside-cell,
+  body.calendar-print-day .week-agenda-all-day-cell,
+  body.calendar-print-day .week-agenda-outside-cell {
+    min-height: 8mm !important;
+    padding: .8mm !important;
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2mm !important;
+    background: #fff !important;
+  }
+
+  body.calendar-print-week .week-agenda-body,
+  body.calendar-print-day .week-agenda-body {
+    column-gap: 1.25mm !important;
+  }
+
+  body.calendar-print-week .week-agenda-axis,
+  body.calendar-print-day .week-agenda-axis {
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2.25mm !important;
+    background: #f8fbfc !important;
+  }
+
+  body.calendar-print-week .week-agenda-columns,
+  body.calendar-print-day .week-agenda-columns {
+    gap: 1.25mm !important;
+  }
+
+  body.calendar-print-week .week-agenda-day-column,
+  body.calendar-print-day .week-agenda-day-column {
+    border: .25mm solid #dfe8ed !important;
+    border-radius: 2.25mm !important;
+    background-color: #fff !important;
+    background-image: repeating-linear-gradient(to bottom,transparent 0,transparent calc((151mm / 24) - .25mm),#e9eef1 calc(151mm / 24)) !important;
+    overflow: hidden;
+  }
+
+  body.calendar-print-week .week-agenda-day-column:last-child,
+  body.calendar-print-day .week-agenda-day-column:last-child {
+    background-color: #fcfaf5 !important;
+  }
+
+  body.calendar-print-week .week-agenda-day-column.is-today,
+  body.calendar-print-day .week-agenda-day-column.is-today {
+    border-color: #8fb990 !important;
+    background-color: #f5faf3 !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item,
+  body.calendar-print-week .week-agenda-outside-item,
+  body.calendar-print-week .week-agenda-timed-item,
+  body.calendar-print-day .week-agenda-all-day-item,
+  body.calendar-print-day .week-agenda-outside-item,
+  body.calendar-print-day .week-agenda-timed-item {
+    margin: 0 0 .8mm !important;
+    padding: .85mm 1mm !important;
+    border: .25mm solid #d9e6ec !important;
+    border-left: 1.2mm solid #82afcf !important;
+    border-radius: 1.6mm !important;
+    background: #f2f7fb !important;
+    color: #244563 !important;
+    font-size: 5.8pt !important;
+    line-height: 1.13 !important;
+    box-shadow: none !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item--event,
+  body.calendar-print-week .week-agenda-outside-item--event,
+  body.calendar-print-week .week-agenda-timed-item--event,
+  body.calendar-print-day .week-agenda-all-day-item--event,
+  body.calendar-print-day .week-agenda-outside-item--event,
+  body.calendar-print-day .week-agenda-timed-item--event {
+    border-left-color: #9b83c2 !important;
+    background: #f4f1fa !important;
+    color: #59477f !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item--birthday,
+  body.calendar-print-week .week-agenda-outside-item--birthday,
+  body.calendar-print-week .week-agenda-timed-item--birthday,
+  body.calendar-print-day .week-agenda-all-day-item--birthday,
+  body.calendar-print-day .week-agenda-outside-item--birthday,
+  body.calendar-print-day .week-agenda-timed-item--birthday {
+    border-left-color: #e39a2d !important;
+    background: #fff8ea !important;
+    color: #80520d !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item--deadline,
+  body.calendar-print-week .week-agenda-outside-item--deadline,
+  body.calendar-print-week .week-agenda-timed-item--deadline,
+  body.calendar-print-day .week-agenda-all-day-item--deadline,
+  body.calendar-print-day .week-agenda-outside-item--deadline,
+  body.calendar-print-day .week-agenda-timed-item--deadline {
+    border-left-color: #6d9bc4 !important;
+    background: #f1f6fb !important;
+    color: #365979 !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item--completed,
+  body.calendar-print-week .week-agenda-outside-item--completed,
+  body.calendar-print-week .week-agenda-timed-item--completed,
+  body.calendar-print-day .week-agenda-all-day-item--completed,
+  body.calendar-print-day .week-agenda-outside-item--completed,
+  body.calendar-print-day .week-agenda-timed-item--completed {
+    border-left-color: #9aaab7 !important;
+    background: #f3f5f6 !important;
+    color: #627589 !important;
+  }
+
+  body.calendar-print-week .week-agenda-all-day-item-title,
+  body.calendar-print-week .week-agenda-outside-item-title,
+  body.calendar-print-week .week-agenda-outside-item-time,
+  body.calendar-print-week .week-agenda-timed-item-title,
+  body.calendar-print-week .week-agenda-timed-item-time,
+  body.calendar-print-day .week-agenda-all-day-item-title,
+  body.calendar-print-day .week-agenda-outside-item-title,
+  body.calendar-print-day .week-agenda-outside-item-time,
+  body.calendar-print-day .week-agenda-timed-item-title,
+  body.calendar-print-day .week-agenda-timed-item-time {
+    color: currentColor !important;
+  }
+
+  body.calendar-print-week .week-agenda-hour,
+  body.calendar-print-day .week-agenda-hour {
+    color: #647b8e !important;
+    font-size: 5.4pt !important;
+  }
+
+  body.calendar-print-day .week-agenda-day-column {
+    background-image: repeating-linear-gradient(to bottom,transparent 0,transparent calc((151mm / 24) - .25mm),#e9eef1 calc(151mm / 24)) !important;
+  }
+}
+
 @media (max-width: 980px) {
   :root { --fa-layout-gutter: 16px; }
 
