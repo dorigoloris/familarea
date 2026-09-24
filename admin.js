@@ -10,9 +10,12 @@
   const detail = document.getElementById('admin-account-detail');
   const detailTitle = document.getElementById('admin-account-detail-title');
   const detailSummary = document.getElementById('admin-account-summary');
+  const accountEditor = document.getElementById('admin-account-editor');
   const accountDelete = document.getElementById('admin-account-delete');
   const dependencies = document.getElementById('admin-account-dependencies');
   const closeDetail = document.getElementById('admin-detail-close');
+  let currentAccountId = null;
+  let currentAdminUserId = null;
 
   if (!client) {
     message.textContent = 'Impossibile inizializzare l’area amministrativa.';
@@ -169,27 +172,155 @@
       return;
     }
 
-    const blockers = getDeleteBlockers(plan);
     if (!plan?.can_delete) {
       accountDelete.append(
         makeText('h3', 'Eliminazione non disponibile'),
-        makeText('p', blockers.length
-          ? `L’account non può essere eliminato finché ${blockers.join(', ')}.`
-          : 'Non è possibile preparare la cancellazione in sicurezza.')
+        makeText('p', 'Non è possibile preparare la cancellazione in sicurezza.')
       );
       return;
     }
+    const deleteCounts = plan.delete || {};
+    const planText = [['areas', 'Aree'], ['activities', 'Attività'], ['events', 'Eventi'], ['lists', 'Liste'], ['contacts', 'Contatti'], ['attachments', 'Allegati'], ['storage_objects', 'File Storage']]
+      .map(([key, label]) => `${label}: ${deleteCounts[key] ?? 0}`).join(' · ');
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'area-delete-button';
-    button.textContent = 'Elimina account';
+    button.textContent = 'Elimina account e dati';
     button.addEventListener('click', () => deleteAccount(account.account_id, name, account.email, button));
     accountDelete.append(
       makeText('h3', 'Eliminazione account'),
-      makeText('p', `Elimina definitivamente ${name}${account.email ? ` (${account.email})` : ''} e le sue sole relazioni personali. Questa operazione è irreversibile.`),
+      makeText('p', `Purge definitiva di ${name}${account.email ? ` (${account.email})` : ''}. ${planText}.`),
       button
     );
+  }
+
+  async function saveAccountDetails(accountId, values, button) {
+    button.disabled = true;
+    try {
+      const { error } = await client.rpc('admin_update_account_details', {
+        p_account_id: accountId,
+        p_first_name: values.firstName ?? null,
+        p_last_name: values.lastName ?? null,
+        p_organization_name: values.organizationName ?? null
+      });
+      if (error) throw error;
+      await Promise.all([loadDetail(accountId), loadAccounts(searchInput.value.trim())]);
+      setMessage('Dati account aggiornati.');
+    } catch (error) {
+      setMessage(getRpcErrorMessage(error, 'Non è stato possibile aggiornare i dati account'), true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function changeAccountEmail(accountId, currentEmail, button) {
+    if (!window.FamilAreaConfirm || !currentEmail) {
+      setMessage('Non è possibile avviare la modifica email.', true);
+      return;
+    }
+    const newEmail = await window.FamilAreaConfirm.prompt({
+      title: 'Modifica email di accesso',
+      message: `L’email attuale è ${currentEmail}. Inserisci il nuovo indirizzo di accesso.`,
+      warning: 'L’email verrà aggiornata direttamente nell’identità di accesso dell’account.',
+      confirmText: 'Aggiorna email',
+      input: { label: 'Nuova email di accesso', type: 'email', required: true, autocomplete: 'email' }
+    });
+    if (newEmail === null) return;
+
+    button.disabled = true;
+    try {
+      const { error } = await client.rpc('admin_update_account_email', {
+        p_account_id: accountId,
+        p_email: String(newEmail).trim().toLowerCase()
+      });
+      if (error) throw error;
+      await Promise.all([loadDetail(accountId), loadAccounts(searchInput.value.trim())]);
+      setMessage('Email di accesso aggiornata.');
+    } catch (error) {
+      setMessage(getRpcErrorMessage(error, 'Non è stato possibile aggiornare l’email di accesso'), true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function renderAccountEditor(summary, editing = false) {
+    const account = summary.account || {};
+    const isOrganization = account.account_type === 'organization';
+    const subject = isOrganization ? (summary.organization || {}) : (summary.profile || {});
+    accountEditor.replaceChildren();
+    accountEditor.hidden = false;
+
+    const heading = document.createElement('div');
+    heading.className = 'admin-editor-heading';
+    heading.append(makeText('h3', isOrganization ? 'Dati organizzazione' : 'Dati account'));
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'fa-button fa-button-secondary';
+    editButton.textContent = 'Modifica';
+    editButton.addEventListener('click', () => renderAccountEditor(summary, true));
+    if (!editing) heading.appendChild(editButton);
+
+    let detailsContent;
+    if (editing) {
+      const form = document.createElement('form');
+      form.className = 'admin-account-form';
+      const fields = [];
+      const addField = (labelText, value, name, required = false) => {
+        const field = document.createElement('div');
+        const label = document.createElement('label'); label.textContent = labelText;
+        const input = document.createElement('input'); input.name = name; input.value = value || ''; input.required = required;
+        label.htmlFor = `admin-${name}`; input.id = label.htmlFor;
+        field.append(label, input); form.appendChild(field); fields.push(input);
+      };
+      if (isOrganization) addField('Nome organizzazione', subject.name, 'organization-name', true);
+      else {
+        addField('Nome', subject.first_name, 'first-name', true);
+        addField('Cognome', subject.last_name, 'last-name');
+      }
+      const actions = document.createElement('div');
+      actions.className = 'admin-account-form-actions';
+      const save = document.createElement('button'); save.type = 'submit'; save.className = 'fa-button fa-button-primary'; save.textContent = 'Salva';
+      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'fa-button fa-button-secondary'; cancel.textContent = 'Annulla';
+      cancel.addEventListener('click', () => renderAccountEditor(summary));
+      actions.append(save, cancel); form.appendChild(actions);
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        void saveAccountDetails(account.id, isOrganization
+          ? { organizationName: fields[0].value.trim() }
+          : { firstName: fields[0].value.trim(), lastName: fields[1].value.trim() }, save);
+      });
+      detailsContent = form;
+    } else {
+      const data = document.createElement('div');
+      data.className = 'admin-account-data';
+      const appendValue = (label, value) => {
+        const row = document.createElement('p');
+        row.className = 'admin-account-data-row';
+        row.append(makeText('strong', `${label}:`), makeText('span', value || '—'));
+        data.appendChild(row);
+      };
+      if (isOrganization) appendValue('Nome organizzazione', subject.name);
+      else {
+        appendValue('Nome', subject.first_name);
+        appendValue('Cognome', subject.last_name);
+      }
+      detailsContent = data;
+    }
+
+    const emailSection = document.createElement('section');
+    emailSection.className = 'admin-account-email';
+    emailSection.append(makeText('h3', 'Email di accesso'), makeText('p', account.email || 'Email non disponibile.'));
+    const emailButton = document.createElement('button'); emailButton.type = 'button'; emailButton.className = 'fa-button fa-button-secondary'; emailButton.textContent = 'Modifica email';
+    const isCurrentAdminAccount = account.id === currentAccountId;
+    emailButton.disabled = !account.email || isCurrentAdminAccount;
+    emailButton.addEventListener('click', () => void changeAccountEmail(account.id, account.email, emailButton));
+    emailSection.appendChild(emailButton);
+    if (isCurrentAdminAccount) {
+      emailSection.append(makeText('p', 'Non puoi modificare l’email del tuo account System Admin da questa pagina.'));
+    }
+    accountEditor.append(heading, detailsContent, emailSection);
   }
 
   function renderDetail(summary, data, plan) {
@@ -201,6 +332,7 @@
       makeText('p', `Email: ${account.email || 'Non disponibile'}`),
       makeText('p', `Creato il: ${formatDate(account.created_at)}`)
     );
+    renderAccountEditor(summary);
     renderDeleteControl(summary, plan);
     dependencies.replaceChildren();
     appendDependencySection('Aree possedute', data.owned_areas, (item) => `${item.name} · ${item.area_type}`);
@@ -268,7 +400,7 @@
       variant: 'danger',
       title: 'Elimina definitivamente account',
       message: `Stai per eliminare ${name} (${email}). L’operazione elimina anche l’utente di autenticazione e non è reversibile.`,
-      warning: 'Le Aree, gli Eventi e gli altri dati posseduti non vengono eliminati automaticamente: la cancellazione è disponibile solo quando non esistono tali dipendenze.',
+      warning: 'Questa operazione elimina definitivamente l’account e tutti i dati di sua proprietà, incluse Aree, Eventi, Contatti, allegati e file. I dati appartenenti ad altri account non verranno eliminati: saranno rimossi soltanto gli eventuali collegamenti con questo account.',
       confirmText: 'Elimina definitivamente',
       input: {
         label: 'Per confermare, digita l’indirizzo email dell’account:',
@@ -281,6 +413,39 @@
 
     button.disabled = true;
     try {
+      const { data: sessionData, error: sessionError } = await client.auth.getSession();
+      const session = sessionData?.session;
+      if (sessionError || !session?.access_token || !session.user?.id) {
+        throw new Error('Sessione autenticata non disponibile per la rimozione dei file Storage.');
+      }
+      if (!currentAdminUserId || session.user.id !== currentAdminUserId) {
+        throw new Error('La sessione Storage non corrisponde al System Admin autenticato. Ricarica la pagina e riprova.');
+      }
+      const { data: prepared, error: prepareError } = await client.rpc('admin_prepare_account_purge', {
+        p_account_id: accountId,
+        p_confirmation: confirmation
+      });
+      if (prepareError) throw prepareError;
+      const byBucket = new Map();
+      (prepared?.storage_objects || []).forEach(({ bucket_id: bucketId, name: path }) => {
+        if (!byBucket.has(bucketId)) byBucket.set(bucketId, []);
+        byBucket.get(bucketId).push(path);
+      });
+      for (const [bucketId, paths] of byBucket) {
+        for (let index = 0; index < paths.length; index += 100) {
+          const { data: storageData, error: storageError } = await client.storage.from(bucketId).remove(paths.slice(index, index + 100));
+          if (storageError) throw new Error(`Storage ${bucketId}/${paths.slice(index, index + 100).join(', ')}: ${storageError.message || storageError}`);
+          if (storageData?.error) throw new Error(`Storage ${bucketId}/${paths.slice(index, index + 100).join(', ')}: ${storageData.error.message || storageData.error}`);
+        }
+      }
+      const { data: verification, error: verificationError } = await client.rpc('admin_verify_account_purge_storage', {
+        p_account_id: accountId, p_confirmation: confirmation
+      });
+      if (verificationError) throw verificationError;
+      if (!verification?.complete) {
+        const remaining = (verification?.remaining || []).map(({ bucket_id: bucketId, name: path }) => `${bucketId}/${path}`).join(', ');
+        throw new Error(`Storage API non ha rimosso: ${remaining || 'file del manifest non identificato'}`);
+      }
       const { error } = await client.rpc('admin_delete_account', {
         p_account_id: accountId,
         p_confirmation: confirmation
@@ -298,11 +463,19 @@
   }
 
   async function initialize() {
-    const { data: access, error: accessError } = await client.rpc('get_my_system_admin_access');
+    const [{ data: access, error: accessError }, { data: currentAccount, error: currentAccountError }, { data: adminUser, error: adminUserError }] = await Promise.all([
+      client.rpc('get_my_system_admin_access'),
+      client.rpc('get_current_account'),
+      client.auth.getUser()
+    ]);
     if (accessError || !access?.is_system_admin) {
       setMessage('Non sei autorizzato ad accedere all’amministrazione.', true);
       return;
     }
+    if (currentAccountError || !currentAccount?.account_id) throw currentAccountError || new Error('Account corrente non disponibile.');
+    if (adminUserError || !adminUser?.user?.id) throw adminUserError || new Error('Utente autenticato non disponibile.');
+    currentAccountId = currentAccount.account_id;
+    currentAdminUserId = adminUser.user.id;
     await loadDashboard();
     content.hidden = false;
     setMessage('');
