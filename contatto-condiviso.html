@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contatto condiviso - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page-card">
+    <h1>Contatto condiviso</h1>
+    <p id="message" aria-live="polite">Caricamento…</p>
+    <section id="anonymous" hidden>
+      <p>Ti è stato condiviso un contatto tramite FamilArea.</p>
+      <a id="login-link" class="btn" href="login.html">Accedi</a>
+      <a id="signup-link" class="secondary-button" href="registrati.html">Registrati</a>
+    </section>
+    <section id="share" hidden>
+      <h2 id="name"></h2>
+      <p id="email"></p>
+      <button id="accept" type="button">Aggiungi ai miei Contatti</button>
+    </section>
+    <section id="accepted" hidden>
+      <a id="contacts-link" class="btn" href="contatti.html">Vai ai miei Contatti</a>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="contatto-condiviso.js"></script>
+</body>
+</html>

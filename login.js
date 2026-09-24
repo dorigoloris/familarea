@@ -1,45 +1,7 @@
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const form = document.getElementById('login-form');
-const message = document.getElementById('message');
-const googleSignInButton = document.getElementById('google-sign-in');
-
-googleSignInButton.addEventListener('click', async () => {
-  googleSignInButton.disabled = true;
-  message.textContent = 'Reindirizzamento a Google...';
-
-  const { error } = await supabaseClient.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: new URL('dashboard.html', window.location.origin).toString()
-    }
-  });
-
-  if (error) {
-    message.textContent = 'Non è stato possibile avviare l’accesso con Google. Riprova.';
-    googleSignInButton.disabled = false;
-  }
-});
-
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-
-  message.textContent = 'Accesso in corso...';
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    message.textContent = `Errore: ${error.message}`;
-    return;
-  }
-
-  message.textContent = 'Accesso effettuato correttamente.';
-
-  window.location.href = 'dashboard.html';
-});
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),form=document.getElementById('login-form'),message=document.getElementById('message'),googleSignInButton=document.getElementById('google-sign-in');
+function safeReturnTo(value){if(!value||value.includes('\\')||value.startsWith('//'))return'dashboard.html';try{const u=new URL(value,location.origin),name=u.pathname.split('/').pop();if(u.origin!==location.origin||!['contatto-condiviso.html','invito-evento.html','inviti-area.html'].includes(name))return'dashboard.html';return `${name}${u.search}${u.hash}`;}catch{return'dashboard.html';}}
+const returnTo=safeReturnTo(new URLSearchParams(location.search).get('return_to'));
+document.querySelector('.login-register a').href=`registrati.html?return_to=${encodeURIComponent(returnTo)}`;
+(async()=>{const{data:{session}}=await supabaseClient.auth.getSession();if(session)location.replace(returnTo);})();
+googleSignInButton.onclick=async()=>{googleSignInButton.disabled=true;message.textContent='Reindirizzamento a Google…';const redirectTo=new URL(`login.html?return_to=${encodeURIComponent(returnTo)}`,location.origin).toString();const{error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo}});if(error){message.textContent='Non è stato possibile avviare l’accesso con Google. Riprova.';googleSignInButton.disabled=false;}};
+form.onsubmit=async e=>{e.preventDefault();message.textContent='Accesso in corso...';const{error}=await supabaseClient.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error){message.textContent=`Errore: ${error.message}`;return;}location.replace(returnTo);};
