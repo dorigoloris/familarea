@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amministrazione - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="admin-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="admin-page fa-page fa-page--wide">
+    <header class="admin-page-header">
+      <div>
+        <p class="eyebrow">AMMINISTRAZIONE DI SISTEMA</p>
+        <h1>Dashboard Admin</h1>
+        <p>Panoramica read-only degli account e delle dipendenze FamilArea.</p>
+      </div>
+    </header>
+
+    <p id="admin-message" class="admin-message" aria-live="polite">Verifica autorizzazione…</p>
+
+    <div id="admin-content" hidden>
+      <section class="admin-section" aria-labelledby="admin-dashboard-title">
+        <div class="section-heading"><div><p class="eyebrow">PANORAMICA</p><h2 id="admin-dashboard-title">Dati FamilArea</h2></div></div>
+        <div id="admin-metrics" class="admin-metrics" aria-live="polite"></div>
+      </section>
+
+      <section class="admin-section" aria-labelledby="admin-accounts-title">
+        <div class="admin-section-heading">
+          <div><p class="eyebrow">UTENTI</p><h2 id="admin-accounts-title">Account</h2></div>
+          <form id="admin-search-form" class="admin-search-form">
+            <label class="sr-only" for="admin-search">Cerca utente</label>
+            <input id="admin-search" type="search" autocomplete="off" placeholder="Cerca nome, email o organizzazione">
+            <button class="fa-button fa-button-secondary" type="submit">Cerca</button>
+          </form>
+        </div>
+        <p id="admin-accounts-summary" class="admin-subtle"></p>
+        <div id="admin-accounts-list" class="admin-accounts-list"></div>
+      </section>
+
+      <section id="admin-account-detail" class="admin-section" aria-labelledby="admin-account-detail-title" hidden>
+        <div class="admin-section-heading">
+          <div><p class="eyebrow">DIAGNOSTICA DIPENDENZE</p><h2 id="admin-account-detail-title">Dettaglio utente</h2></div>
+          <button id="admin-detail-close" class="fa-button fa-button-secondary" type="button">Chiudi dettaglio</button>
+        </div>
+        <div id="admin-account-summary" class="admin-detail-summary"></div>
+        <section id="admin-account-delete" class="admin-account-delete" hidden></section>
+        <div id="admin-account-dependencies" class="admin-dependencies"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -32,7 +32,8 @@
     'contatti.html': 'contacts',
     'nuovo-contatto.html': 'contacts',
     'contatto.html': 'contacts',
-    'inviti.html': 'invites'
+    'inviti.html': 'invites',
+    'admin.html': 'admin'
   };
   const primarySection = primarySectionByPage[path] || null;
   const isPrimaryNavActive = (section) => primarySection === section ? ' is-active' : '';
@@ -102,6 +103,18 @@
       }
       topNav.appendChild(link);
     });
+  }
+
+  async function renderSystemAdministrationLink() {
+    topNav.querySelector('.top-nav-admin-link')?.remove();
+    const { data, error } = await client.rpc('get_my_system_admin_access');
+    if (error || !data?.is_system_admin) return;
+    const link = document.createElement('a');
+    link.className = `top-nav-link top-nav-admin-link${isPrimaryNavActive('admin')}`;
+    link.href = 'admin.html';
+    link.textContent = 'Amministrazione';
+    if (isPrimaryNavActive('admin')) link.setAttribute('aria-current', 'page');
+    topNav.appendChild(link);
   }
 
   /* Legacy static navigation kept below only until the account-specific menu is rendered. */
@@ -282,6 +295,7 @@
     const account = await accountPromise;
     if (!account) return;
     renderNavigation(account.account_type);
+    renderSystemAdministrationLink().catch(() => {});
 
     if (account.account_type !== 'personal') {
       profileLink.remove();
