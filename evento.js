@@ -375,7 +375,7 @@ async function renderParticipantControls() {
     const row = document.createElement('div');
     row.className = 'event-participant-row';
     row.textContent = `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Partecipante';
-    if (canManage) {
+    if (canManage && person.contact_id) {
       const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Rimuovi';
       remove.addEventListener('click', async () => {
         if (!await FamilAreaConfirm.confirm({ variant: 'standard', title: 'Rimuovere il partecipante?', message: 'La persona resterà nei Contatti e negli altri elementi del Programma.', confirmText: 'Rimuovi' })) return;
