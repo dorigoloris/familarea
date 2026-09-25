@@ -148,6 +148,33 @@
 
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window.FamilAreaSupabaseClient = client;
+  let observedAuthUserId = null;
+  let authIdentityInitialized = false;
+  let authNavigationPending = false;
+
+  // Tutte le pagine che caricano questa navigazione sono protette. Se un'altra
+  // scheda sostituisce o rimuove la sessione condivisa, ricarichiamo l'intera
+  // pagina per non lasciare visibili dati o comandi del precedente account.
+  client.auth.onAuthStateChange((event, session) => {
+    const nextUserId = session?.user?.id || null;
+
+    if (!authIdentityInitialized || event === 'INITIAL_SESSION') {
+      observedAuthUserId = nextUserId;
+      authIdentityInitialized = true;
+      return;
+    }
+
+    if (authNavigationPending || observedAuthUserId === nextUserId) return;
+
+    observedAuthUserId = nextUserId;
+    authNavigationPending = true;
+    if (!nextUserId) {
+      window.location.replace('login.html');
+      return;
+    }
+    window.location.reload();
+  });
+
   actions.querySelector('.header-user-name')?.remove();
   const logoutButton = actions.querySelector('[data-logout]');
 
