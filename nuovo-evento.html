@@ -36,6 +36,13 @@
       <br><br>
       <label for="location">Luogo</label><input id="location">
       <br><br>
+      <fieldset id="family-visibility-fieldset" class="event-family-visibility" hidden>
+        <legend>Visibilità</legend>
+        <label><input id="family-visibility-family" name="family-visibility" type="radio" value="family"> Famiglia</label>
+        <label><input id="family-visibility-private" name="family-visibility" type="radio" value="private"> Privato</label>
+        <p id="family-sharing-suspended" class="event-family-visibility-note" hidden>La condivisione del Calendario con la Famiglia è sospesa.</p>
+      </fieldset>
+      <br id="family-visibility-spacing">
       <fieldset id="participants-fieldset"><legend>Partecipanti</legend><div id="participants"></div></fieldset>
       <br>
       <button type="submit">Crea evento</button>

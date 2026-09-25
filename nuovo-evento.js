@@ -15,6 +15,8 @@ const endTimeField = document.getElementById('end-time-field');
 const normalEndTimeSlot = document.getElementById('end-time-normal-slot');
 const multiDayEndTimeSlot = document.getElementById('end-time-multi-day-slot');
 const multiDayEndRow = document.getElementById('multi-day-end-row');
+let isPersonalAccount = false;
+let familyCalendarShares = [];
 
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
 function participantIds() { return [...participants.querySelectorAll('input:checked')].map((input) => input.value); }
@@ -92,6 +94,21 @@ async function load() {
   if (!data.session) { location.href = 'login.html'; return; }
   document.getElementById('back-link').href = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
   document.getElementById('participants-fieldset').hidden = !areaId;
+  const { data: account } = await supabaseClient.rpc('get_current_account');
+  isPersonalAccount = account?.account_type === 'personal';
+  if (isPersonalAccount && !areaId) {
+    const { data: shares, error } = await supabaseClient.rpc('get_my_family_calendar_controls');
+    if (!error) familyCalendarShares = shares || [];
+  }
+  const visibilityFieldset = document.getElementById('family-visibility-fieldset');
+  const canChooseVisibility = isPersonalAccount && !areaId && familyCalendarShares.length > 0;
+  visibilityFieldset.hidden = !canChooseVisibility;
+  document.getElementById('family-visibility-spacing').hidden = !canChooseVisibility;
+  if (canChooseVisibility) {
+    document.getElementById('family-visibility-family').checked = true;
+    const configuredShares = familyCalendarShares.filter((share) => share.sharing_configured);
+    document.getElementById('family-sharing-suspended').hidden = !(configuredShares.length > 0 && !configuredShares.some((share) => share.sharing_enabled));
+  }
   if (areaId) {
     try { await loadParticipants(); }
     catch (_) { message.textContent = 'Impossibile caricare i partecipanti dell’Area.'; return; }
@@ -135,6 +152,9 @@ form.addEventListener('submit', async (event) => {
     p_location: document.getElementById('location').value.trim() || null,
     p_recurrence: recurrencePayload
   };
+  if (isPersonalAccount && !areaId) {
+    payload.p_family_visibility = document.querySelector('input[name="family-visibility"]:checked')?.value || 'private';
+  }
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
   const { data, error } = await supabaseClient.rpc('create_event', payload);

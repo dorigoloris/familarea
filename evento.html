@@ -18,15 +18,17 @@
         <button id="delete-button" class="area-delete-button" type="button">Elimina evento</button>
       </div>
     </header>
+    <p id="family-shared-notice" class="event-family-shared-notice" hidden>Condiviso con la Famiglia</p>
     <p id="message" aria-live="polite">Caricamento...</p>
     <section id="event-view" class="event-detail-card" hidden>
       <dl class="event-detail-list">
         <dt>Data e ora</dt><dd id="when"></dd>
         <dt>Luogo</dt><dd id="location"></dd>
         <dt>Stato</dt><dd class="event-status-value"><span id="status"></span><span id="status-editor" class="event-status-editor"><label for="status-select">Cambia stato</label><select id="status-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-button fa-button-secondary fa-button-compact" type="button">Salva stato</button></span></dd>
+        <dt id="event-visibility-label" hidden>Visibilità</dt><dd id="event-visibility" hidden></dd>
         <dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="event-participant-list"></dd>
         <dt id="recurrence-label" hidden>Ripetizione</dt><dd id="recurrence" hidden></dd>
-        <dt>Note</dt><dd id="notes" class="event-detail-notes"></dd>
+        <dt id="notes-label">Note</dt><dd id="notes" class="event-detail-notes"></dd>
       </dl>
     </section>
     <form id="edit-form" class="event-edit-form" hidden>
@@ -53,6 +55,13 @@
       <br><br>
       <label for="edit-location">Luogo</label><input id="edit-location">
       <br><br>
+      <fieldset id="edit-family-visibility-fieldset" class="event-family-visibility" hidden>
+        <legend>Visibilità</legend>
+        <label><input id="edit-family-visibility-family" name="edit-family-visibility" type="radio" value="family"> Famiglia</label>
+        <label><input id="edit-family-visibility-private" name="edit-family-visibility" type="radio" value="private"> Privato</label>
+        <p id="edit-family-sharing-suspended" class="event-family-visibility-note" hidden>La condivisione del Calendario con la Famiglia è sospesa.</p>
+      </fieldset>
+      <br id="edit-family-visibility-spacing">
       <fieldset id="edit-participants-fieldset"><legend>Partecipanti</legend><div id="edit-participants"></div></fieldset>
       <br>
       <div class="form-actions"><button type="submit">Salva modifiche</button><button id="close-edit" class="secondary-button" type="button">Annulla</button></div>

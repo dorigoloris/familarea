@@ -50,6 +50,10 @@
     return end ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
   }
 
+  function familyLabel(item) {
+    return item.shared_by_display_name ? `${item.shared_by_display_name} · Famiglia` : 'Famiglia';
+  }
+
   function createCalendarItem(item) {
     const type = itemType(item);
     const link = document.createElement('a');
@@ -61,7 +65,15 @@
     title.className = 'calendar-activity-title';
     title.textContent = item.title;
     link.appendChild(title);
-    if (type === 'event') return link;
+    if (type === 'event') {
+      if (item.visibility_source === 'family') {
+        const family = document.createElement('span');
+        family.className = 'calendar-item-kind calendar-item-kind-family';
+        family.textContent = familyLabel(item);
+        link.appendChild(family);
+      }
+      return link;
+    }
 
     const area = document.createElement('span');
     area.className = 'calendar-activity-area';
@@ -244,6 +256,12 @@
     title.className = `${className}-title`;
     title.textContent = item.title;
     link.appendChild(title);
+    if (type === 'event' && item.visibility_source === 'family') {
+      const family = document.createElement('span');
+      family.className = `${className}-family`;
+      family.textContent = familyLabel(item);
+      link.appendChild(family);
+    }
     if (showTime && type !== 'event') {
       const time = document.createElement('span');
       time.className = `${className}-time`;
