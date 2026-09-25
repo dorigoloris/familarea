@@ -35,7 +35,7 @@
       <form id="family-member-form" class="family-member-form">
         <div><label for="family-member-type">Tipo di membro *</label><select id="family-member-type" required><option value="person">Persona</option><option value="pet">Animale domestico</option></select></div>
         <fieldset id="family-member-source-field" class="family-member-source-field"><legend>Come vuoi aggiungere questa persona?</legend><label><input type="radio" name="family-member-source" value="manual" checked> Inserisci manualmente</label><label><input type="radio" name="family-member-source" value="contact"> Scegli dai miei Contatti</label></fieldset>
-        <div id="family-member-contact-field" class="family-member-contact-field" hidden><label for="family-member-contact">Contatto *</label><select id="family-member-contact"></select><p id="family-member-contact-help" class="family-member-contact-help" hidden></p></div>
+        <div id="family-member-contact-field" class="family-member-contact-field" hidden><label for="family-member-contact">Seleziona un contatto *</label><select id="family-member-contact"></select><p id="family-member-contact-help" class="family-member-contact-help" hidden></p></div>
         <div><label for="family-member-first-name">Nome *</label><input id="family-member-first-name" type="text" required autocomplete="off"></div>
         <div id="family-member-last-name-field"><label for="family-member-last-name">Cognome</label><input id="family-member-last-name" type="text" autocomplete="off"></div>
         <div id="family-member-relationship-field"><label for="family-member-relationship">Relazione *</label><select id="family-member-relationship" required><option value="partner">Partner</option><option value="child">Figlio/a</option><option value="parent">Genitore</option><option value="grandparent">Nonno/a</option><option value="sibling">Fratello/Sorella</option><option value="other">Altro</option></select></div>
@@ -53,6 +53,32 @@
       <form id="family-contact-link-form" class="family-member-form">
         <div class="family-contact-link-select"><label for="family-contact-link-select">Contatto *</label><select id="family-contact-link-select" required></select><p id="family-contact-link-help" class="family-member-contact-help" hidden></p></div>
         <div class="family-member-form-actions"><button id="family-contact-link-submit" type="submit">Collega</button><button id="family-contact-link-cancel" class="secondary-button" type="button">Annulla</button></div>
+      </form>
+    </section>
+  </div>
+  <div id="family-member-edit-modal" class="family-member-modal" hidden>
+    <section id="family-member-edit-dialog" class="family-member-dialog" role="dialog" aria-modal="true" aria-labelledby="family-member-edit-title" tabindex="-1">
+      <button id="family-member-edit-close" class="family-member-modal-close" type="button" aria-label="Chiudi modifica membro">×</button>
+      <p class="eyebrow">La mia Famiglia</p><h2 id="family-member-edit-title">Modifica membro</h2><p id="family-member-edit-intro">Aggiorna le informazioni del membro.</p><p id="family-member-edit-message" class="family-member-form-message" aria-live="polite"></p>
+      <div id="family-member-linked-contact" class="family-member-linked-contact" hidden><strong id="family-member-linked-name"></strong><span>Contatto collegato</span><p>Nome e cognome provengono dai tuoi Contatti.</p></div>
+      <form id="family-member-edit-form" class="family-member-form">
+        <div id="family-member-edit-first-name-field"><label for="family-member-edit-first-name">Nome *</label><input id="family-member-edit-first-name" type="text" required autocomplete="off"></div>
+        <div id="family-member-edit-last-name-field"><label for="family-member-edit-last-name">Cognome</label><input id="family-member-edit-last-name" type="text" autocomplete="off"></div>
+        <div><label for="family-member-edit-relationship">Relazione *</label><select id="family-member-edit-relationship" required></select></div>
+        <div><label for="family-member-edit-birth-date">Data di nascita</label><input id="family-member-edit-birth-date" type="date"></div>
+        <div class="family-member-form-actions"><button id="family-member-edit-save" type="submit">Salva modifiche</button><button id="family-member-edit-cancel" class="secondary-button" type="button">Annulla</button></div>
+      </form>
+    </section>
+  </div>
+  <div id="family-invite-modal" class="family-member-modal" hidden>
+    <section id="family-invite-dialog" class="family-member-dialog" role="dialog" aria-modal="true" aria-labelledby="family-invite-title" tabindex="-1">
+      <button id="family-invite-close" class="family-member-modal-close" type="button" aria-label="Chiudi invito Famiglia">×</button>
+      <p class="eyebrow">La mia Famiglia</p><h2 id="family-invite-title">Invita in Famiglia</h2><p id="family-invite-description">Invia un invito personale via email.</p><p id="family-invite-message" class="family-member-form-message" aria-live="polite"></p>
+      <form id="family-invite-form" class="family-member-form">
+        <div><label>Nome</label><p id="family-invite-member-name" class="family-member-detail-row"></p></div>
+        <div><label>Relazione</label><p id="family-invite-member-relationship" class="family-member-detail-row"></p></div>
+        <div class="family-contact-link-select"><label for="family-invite-email">Email destinatario *</label><input id="family-invite-email" type="email" autocomplete="email" required></div>
+        <div class="family-member-form-actions"><button id="family-invite-submit" type="submit">Invia invito</button><button id="family-invite-cancel" class="secondary-button" type="button">Annulla</button></div>
       </form>
     </section>
   </div>

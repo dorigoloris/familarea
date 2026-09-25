@@ -328,11 +328,27 @@
   async function refreshInvitesBadge() {
     if (!personalInvitesLink) return;
     const requestVersion = ++invitesBadgeRequestVersion;
-    const { data, error } = await client.rpc('get_my_area_invites');
-    if (error || requestVersion !== invitesBadgeRequestVersion) return;
+    const [areaResult, familyResult] = await Promise.all([
+      client.rpc('get_my_area_invites'),
+      client.rpc('get_my_family_invites')
+    ]);
+    if (requestVersion !== invitesBadgeRequestVersion) return;
+
+    if (areaResult.error) console.error('get_my_area_invites badge failed', areaResult.error);
+    if (familyResult.error) console.error('get_my_family_invites badge failed', familyResult.error);
+
+    const areaAvailable = !areaResult.error;
+    const familyAvailable = !familyResult.error;
+    if (!areaAvailable && !familyAvailable) return;
+
+    const pendingCount = (areaAvailable ? (areaResult.data || []).filter((invite) => invite.status === 'pending').length : 0)
+      + (familyAvailable ? (familyResult.data || []).filter((invite) => invite.status === 'pending').length : 0);
+
+    // Con una sorgente non disponibile non azzeriamo un badge gia' mostrato:
+    // l'assenza del segnale non deve simulare l'assenza di inviti.
+    if (pendingCount === 0 && (!areaAvailable || !familyAvailable)) return;
 
     personalInvitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
-    const pendingCount = (data || []).filter((invite) => invite.status === 'pending').length;
     if (pendingCount === 0) {
       personalInvitesLink.removeAttribute('aria-label');
       return;

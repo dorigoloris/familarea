@@ -489,3 +489,80 @@
   closeDetail.addEventListener('click', () => { detail.hidden = true; });
   initialize().catch((error) => setMessage(getRpcErrorMessage(error, 'Impossibile caricare l’amministrazione'), true));
 }());
+
+(() => {
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const categories = document.getElementById('admin-interest-categories');
+  const interests = document.getElementById('admin-interests-list');
+  const proposals = document.getElementById('admin-interest-proposals');
+  const message = document.getElementById('admin-message');
+
+  const button = (label, action, variant = 'secondary') => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = `fa-button fa-button-${variant} fa-button-compact`; b.textContent = label;
+    b.addEventListener('click', action); return b;
+  };
+  const status = (value) => {
+    const s = document.createElement('span');
+    s.className = `admin-status is-${String(value || '').toLowerCase()}`; s.textContent = value || '—'; return s;
+  };
+  const empty = (target, text) => { target.replaceChildren(Object.assign(document.createElement('p'), { className: 'admin-empty', textContent: text })); };
+  const row = (title, details, state, actions) => {
+    const item = document.createElement('article'); item.className = 'admin-catalog-row';
+    const body = document.createElement('div'); const h = document.createElement('strong'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = details; body.append(h, p);
+    const controls = document.createElement('div'); controls.className = 'admin-catalog-actions'; controls.append(...actions);
+    item.append(body, status(state), controls); return item;
+  };
+  const fail = (error, fallback) => { message.textContent = error?.message || fallback; message.classList.add('is-error'); };
+  const refresh = async () => {
+    const [categoryResult, interestResult, proposalResult] = await Promise.all([
+      client.rpc('admin_list_interest_categories'), client.rpc('admin_list_interests'), client.rpc('admin_list_interest_category_proposals')
+    ]);
+    if (categoryResult.error || interestResult.error || proposalResult.error) throw categoryResult.error || interestResult.error || proposalResult.error;
+    renderCategories(categoryResult.data || []); renderInterests(interestResult.data || []); renderProposals(proposalResult.data || []);
+  };
+  const run = async (task) => { try { await task(); message.textContent = ''; message.classList.remove('is-error'); await refresh(); } catch (error) { fail(error, 'Operazione non riuscita.'); } };
+
+  function renderCategories(items) {
+    if (!items.length) return empty(categories, 'Nessuna categoria.');
+    categories.replaceChildren(...items.map((item) => row(item.name, `${item.interest_count} interessi · ${item.active_interest_count} attivi`, item.status, [
+      button('Modifica', () => run(async () => { const name = window.prompt('Nome categoria', item.name); if (name === null) return; const { error } = await client.rpc('admin_update_interest_category', { p_category_id: item.id, p_name: name.trim(), p_status: item.status }); if (error) throw error; })),
+      button(item.status === 'active' ? 'Disattiva' : 'Riattiva', () => run(async () => { if (!window.confirm(`${item.status === 'active' ? 'Disattivare' : 'Riattivare'} la categoria “${item.name}”?`)) return; const { error } = await client.rpc('admin_update_interest_category', { p_category_id: item.id, p_name: item.name, p_status: item.status === 'active' ? 'inactive' : 'active' }); if (error) throw error; }), item.status === 'active' ? 'secondary' : 'primary')
+    ])));
+  }
+
+  function renderInterests(items) {
+    if (!items.length) return empty(interests, 'Nessun interesse.');
+    interests.replaceChildren(...items.map((item) => row(item.display_name, `${item.category_name} · ${item.user_count} utilizzatori · ${item.origin}${item.created_by_name ? ` · ${item.created_by_name}` : ''}`, item.status, [
+      button('Modifica', () => run(async () => { const name = window.prompt('Nome interesse', item.display_name); if (name === null) return; const { error } = await client.rpc('admin_update_interest', { p_interest_id: item.id, p_display_name: name.trim(), p_status: item.status }); if (error) throw error; })),
+      button(item.status === 'active' ? 'Ritira' : 'Riattiva', () => run(async () => { if (!window.confirm(`${item.status === 'active' ? 'Ritirare' : 'Riattivare'} l’interesse “${item.display_name}”?`)) return; const { error } = await client.rpc('admin_update_interest', { p_interest_id: item.id, p_display_name: item.display_name, p_status: item.status === 'active' ? 'inactive' : 'active' }); if (error) throw error; }), item.status === 'active' ? 'secondary' : 'primary')
+    ])));
+  }
+
+  function review(item, action, suggestedName = null) {
+    return run(async () => {
+      const categoryName = action === 'approved' ? (suggestedName === null ? item.proposed_name : window.prompt('Nome categoria', suggestedName)) : null;
+      if (action === 'approved' && categoryName === null) return;
+      const note = window.prompt(action === 'approved' ? 'Nota revisione (facoltativa)' : 'Motivazione rifiuto (facoltativa)', '') ;
+      if (note === null) return;
+      const { error } = await client.rpc('admin_review_interest_category_proposal', { p_proposal_id: item.id, p_action: action, p_category_name: categoryName ? categoryName.trim() : null, p_review_note: note.trim() || null });
+      if (error) throw error;
+    });
+  }
+
+  function renderProposals(items) {
+    if (!items.length) return empty(proposals, 'Nessuna proposta.');
+    proposals.replaceChildren(...items.map((item) => {
+      const details = `${item.proposer_name || 'Profile'} · ${new Date(item.created_at).toLocaleDateString('it-IT')}${item.note ? ` · ${item.note}` : ''}${item.reviewed_at ? ` · revisionata ${new Date(item.reviewed_at).toLocaleDateString('it-IT')}` : ''}`;
+      const actions = item.status === 'pending' ? [button('Approva', () => review(item, 'approved'), 'primary'), button('Modifica e approva', () => review(item, 'approved', item.proposed_name)), button('Rifiuta', () => review(item, 'rejected'))] : [];
+      return row(item.proposed_name, details, item.status, actions);
+    }));
+  }
+
+  (async () => {
+    const { data, error } = await client.rpc('get_my_system_admin_access');
+    if (error || !data?.is_system_admin) return;
+    await refresh();
+  })().catch((error) => fail(error, 'Impossibile caricare interessi e categorie.'));
+})();

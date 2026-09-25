@@ -27,12 +27,12 @@ function inviteErrorMessage(error) {
 
 function setCardBusy(card, busy) { card.querySelectorAll('button').forEach((button) => { button.disabled = busy; }); }
 
-async function respondToInvite(invite, rpcName, card) {
+async function respondToInvite(invite, rpcName, card, kind = 'area') {
   setCardBusy(card, true);
-  pageMessage.textContent = rpcName === 'accept_my_area_invite' ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
+  pageMessage.textContent = rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
   const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
-  if (await loadInvites()) pageMessage.textContent = '';
+  if (await loadInvites()) pageMessage.textContent = kind === 'family' && rpcName.startsWith('accept_') ? 'Invito Famiglia accettato.' : '';
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
 
@@ -86,16 +86,51 @@ function createInviteCard(invite) {
   return article;
 }
 
+function createFamilyInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row family-invite-card';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker'; type.textContent = 'Famiglia';
+  const title = document.createElement('h3');
+  const inviter = fullName(invite.inviter_first_name, invite.inviter_last_name, 'Un membro FamilArea');
+  title.textContent = `${inviter} ti invita a entrare nella ${invite.family_name || 'sua Famiglia'}`;
+  const relation = document.createElement('p');
+  relation.textContent = `Relazione: ${({ partner: 'Partner', child: 'Figlio/a', parent: 'Genitore', grandparent: 'Nonno/a', sibling: 'Fratello/Sorella', other: 'Altro' })[invite.relationship] || 'Membro della Famiglia'}`;
+  const status = document.createElement('span');
+  status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
+  status.textContent = statusLabel(invite.status);
+  details.append(type, title, relation, status);
+  article.append(details);
+  if (invite.status === 'pending') {
+    const actions = document.createElement('div'); actions.className = 'invite-actions';
+    const decline = document.createElement('button');
+    decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
+    decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_family_invite', article, 'family'));
+    const accept = document.createElement('button');
+    accept.type = 'button'; accept.textContent = 'Accetta';
+    accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_family_invite', article, 'family'));
+    actions.append(decline, accept); article.append(actions);
+  }
+  return article;
+}
+
 async function loadInvites() {
-  const { data, error } = await supabaseClient.rpc('get_my_area_invites');
-  if (error) { pageMessage.textContent = inviteErrorMessage(error); return false; }
+  const [areaResult, familyResult] = await Promise.all([
+    supabaseClient.rpc('get_my_area_invites'),
+    supabaseClient.rpc('get_my_family_invites')
+  ]);
+  if (areaResult.error) { pageMessage.textContent = inviteErrorMessage(areaResult.error); return false; }
+  if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
-  const visibleInvites = (data || [])
+  const visibleAreaInvites = (areaResult.data || [])
     .filter((invite) => invite.status === 'pending' || invite.status === 'accepted')
     .sort((left, right) => (left.status === 'pending' ? 0 : 1) - (right.status === 'pending' ? 0 : 1));
-  invitesEmpty.hidden = visibleInvites.length > 0;
-  visibleInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
+  const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length > 0;
+  visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
+  visibleAreaInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
   return true;
 }
 

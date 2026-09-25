@@ -40,7 +40,7 @@ function categoryGroups() {
   };
   catalog.forEach(addCategory);
   selectedInterests.forEach(addCategory);
-  catalog.forEach((interest) => groups.get(interest.category_id)?.catalog.push(interest));
+  catalog.filter((interest) => interest.interest_id).forEach((interest) => groups.get(interest.category_id)?.catalog.push(interest));
   selectedInterests.forEach((interest) => groups.get(interest.category_id)?.selected.push(interest));
   return [...groups.values()]
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'it'))
@@ -54,15 +54,30 @@ function categoryGroups() {
 function isSelected(interestId) { return selectedInterests.some((interest) => interest.interest_id === interestId); }
 
 function createInterestChip(interest) {
-  const chip = document.createElement('button');
   const selected = isSelected(interest.interest_id);
+  if (selected) {
+    const selectedChip = document.createElement('span');
+    selectedChip.className = 'interest-chip is-selected';
+    selectedChip.textContent = interest.display_name;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'interest-chip-remove';
+    remove.textContent = '×';
+    remove.disabled = pendingInterestIds.has(interest.interest_id);
+    remove.setAttribute('aria-label', `Rimuovi ${interest.display_name} dai miei interessi`);
+    remove.addEventListener('click', () => removeInterest(interest));
+    const wrapper = document.createElement('span');
+    wrapper.className = 'interest-chip-selected';
+    wrapper.append(selectedChip, remove);
+    return wrapper;
+  }
+  const chip = document.createElement('button');
   chip.type = 'button';
-  chip.className = `interest-chip${selected ? ' is-selected' : ''}`;
+  chip.className = 'interest-chip';
   chip.textContent = interest.display_name;
   chip.disabled = pendingInterestIds.has(interest.interest_id);
-  chip.setAttribute('aria-pressed', String(selected));
-  chip.setAttribute('aria-label', `${selected ? 'Rimuovi' : 'Aggiungi'} interesse ${interest.display_name}`);
-  chip.addEventListener('click', () => toggleInterest(interest));
+  chip.setAttribute('aria-label', `Aggiungi interesse ${interest.display_name}`);
+  chip.addEventListener('click', () => addInterest(interest));
   return chip;
 }
 
@@ -158,22 +173,34 @@ async function refreshInterests(successText = '') {
   return true;
 }
 
-async function toggleInterest(interest) {
+async function addInterest(interest) {
   if (pendingInterestIds.has(interest.interest_id)) return;
-  const selected = isSelected(interest.interest_id);
   pendingInterestIds.add(interest.interest_id);
   render();
-  showMessage(selected ? 'Rimozione interesse in corso...' : 'Aggiunta interesse in corso...');
-  const { error } = selected
-    ? await supabaseClient.rpc('remove_my_interest', { p_interest_id: interest.interest_id })
-    : await supabaseClient.rpc('add_my_interest', { p_category_id: interest.category_id, p_display_name: interest.display_name });
+  showMessage('Aggiunta interesse in corso...');
+  const { error } = await supabaseClient.rpc('add_my_interest', { p_category_id: interest.category_id, p_display_name: interest.display_name });
   pendingInterestIds.delete(interest.interest_id);
   if (error) {
     render();
     showMessage('Non è stato possibile aggiornare i tuoi interessi. Riprova.', true);
     return;
   }
-  await refreshInterests(selected ? 'Interesse rimosso.' : 'Interesse aggiunto.');
+  await refreshInterests('Interesse aggiunto.');
+}
+
+async function removeInterest(interest) {
+  if (pendingInterestIds.has(interest.interest_id)) return;
+  pendingInterestIds.add(interest.interest_id);
+  render();
+  showMessage('Rimozione interesse in corso...');
+  const { error } = await supabaseClient.rpc('remove_my_interest', { p_interest_id: interest.interest_id });
+  pendingInterestIds.delete(interest.interest_id);
+  if (error) {
+    render();
+    showMessage('Non è stato possibile aggiornare i tuoi interessi. Riprova.', true);
+    return;
+  }
+  await refreshInterests('Interesse rimosso.');
 }
 
 async function loadPage() {

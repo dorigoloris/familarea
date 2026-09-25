@@ -18,6 +18,16 @@
     <section id="share" hidden>
       <h2 id="name"></h2>
       <p id="email"></p>
+      <fieldset id="contact-choice">
+        <legend>Dove vuoi aggiungere questo contatto?</legend>
+        <label><input type="radio" name="contact-target" value="new" checked> Aggiungi come nuovo contatto</label>
+        <label><input type="radio" name="contact-target" value="existing"> Collega a un contatto esistente</label>
+      </fieldset>
+      <div id="existing-contact-field" hidden>
+        <label for="existing-contact">Contatto esistente</label>
+        <select id="existing-contact"></select>
+        <p id="existing-contact-help" aria-live="polite" hidden></p>
+      </div>
       <button id="accept" type="button">Aggiungi ai miei Contatti</button>
     </section>
     <section id="accepted" hidden>
