@@ -141,7 +141,6 @@ function compactControlRow(control) {
   const identity = document.createElement('div'); identity.className = 'calendar-family-control-identity';
   const avatar = document.createElement('span'); avatar.className = 'calendar-family-control-avatar'; avatar.textContent = initials(control.display_name); identity.appendChild(avatar); void renderCalendarControlAvatar(avatar, control.avatar_path);
   const name = document.createElement('span'); name.textContent = `${control.display_name || 'Membro'}${control.is_self ? ' (Io)' : ''}`; identity.appendChild(name);
-  if (control.relationship || control.member_type === 'pet') { const detail = document.createElement('small'); detail.textContent = control.member_type === 'pet' ? `${control.relationship ? `${control.relationship} · ` : ''}Animale domestico` : control.relationship; identity.appendChild(detail); }
   const unavailableTitle = control.member_type === 'pet' ? 'Un animale non ha un calendario FamilArea' : `${control.display_name || 'Questa persona'} non è ancora un membro FamilArea della Famiglia`;
   const viewTitle = !calendarCapable ? unavailableTitle : (control.can_view_source ? 'Visualizza questo calendario' : `${control.display_name || 'Questa persona'} non condivide il suo calendario con te`);
   const view = !calendarCapable ? matrixDash(unavailableTitle) : compactToggle(control.view_enabled, !control.can_view_source, viewTitle, async (input) => {
