@@ -21,14 +21,22 @@
     <p id="message" aria-live="polite">Caricamento...</p>
     <section id="event-view" class="event-detail-card" hidden>
       <dl class="event-detail-list">
+        <dt>Organizzato da</dt><dd id="event-organizer"></dd>
+        <dt id="event-area-label" hidden>Area</dt><dd id="event-area" hidden></dd>
         <dt>Data e ora</dt><dd id="when"></dd>
         <dt>Luogo</dt><dd id="location"></dd>
         <dt>Stato</dt><dd class="event-status-value"><span id="status"></span><span id="status-editor" class="event-status-editor"><label for="status-select">Cambia stato</label><select id="status-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-button fa-button-secondary fa-button-compact" type="button">Salva stato</button></span></dd>
         <dt id="event-visibility-label" hidden>Visibilità</dt><dd id="event-visibility" hidden></dd>
         <dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="event-participant-list"></dd>
+        <dt id="event-interests-label" hidden>Interessi</dt><dd id="event-interests" class="event-interests-view" hidden></dd>
         <dt id="recurrence-label" hidden>Ripetizione</dt><dd id="recurrence" hidden></dd>
         <dt id="notes-label">Note</dt><dd id="notes" class="event-detail-notes"></dd>
       </dl>
+      <p id="suggested-event-reason" class="suggested-event-reason" hidden></p>
+      <div id="suggested-event-actions" class="suggested-event-actions" hidden>
+        <button id="join-suggested-event" class="fa-button fa-button-primary" type="button">Partecipa</button>
+        <p id="join-suggested-message" class="join-suggested-message" aria-live="polite" hidden></p>
+      </div>
     </section>
     <form id="edit-form" class="event-edit-form" hidden>
       <h2>Modifica evento</h2>
@@ -36,6 +44,12 @@
       <br><br>
       <label for="edit-notes">Note</label><textarea id="edit-notes"></textarea>
       <br><br>
+      <fieldset class="event-interests-fieldset">
+        <legend>Interessi</legend>
+        <p id="edit-event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
+        <div id="edit-event-interests-selector" class="event-interests-selector"></div>
+      </fieldset>
+      <br>
       <div class="event-time-section" aria-labelledby="edit-start-heading">
         <h3 id="edit-start-heading" class="event-form-section-title">Inizio</h3>
         <div id="edit-start-dates" class="event-dates event-start-dates">
@@ -102,6 +116,7 @@
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
   <script src="confirm-modal.js"></script>
+  <script src="event-interests.js"></script>
   <script src="evento.js"></script>
 </body>
 </html>

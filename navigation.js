@@ -20,6 +20,7 @@
     'attivita.html': 'activities',
     'nuova-attivita.html': 'activities',
     'eventi.html': 'events',
+    'proposte.html': 'suggestions',
     'evento.html': 'events',
     'nuovo-evento.html': 'events',
     'liste.html': 'lists',
@@ -89,7 +90,7 @@
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
     const items = accountType === 'personal'
-      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
+      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2, 4), { label: 'Proposte', href: 'proposte.html', active: isPrimaryNavActive('suggestions') }, ...sharedItems.slice(4), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
       : sharedItems;
     items.forEach((item) => {
       const link = document.createElement('a');
@@ -337,7 +338,7 @@
   }
 
   loadAccountIdentity().catch(() => {});
-  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'interessi.html', 'inviti.html']);
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'interessi.html', 'proposte.html', 'inviti.html']);
   if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;

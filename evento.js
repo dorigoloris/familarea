@@ -2,10 +2,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const areaId = new URLSearchParams(location.search).get('area_id');
 const eventId = new URLSearchParams(location.search).get('event_id');
 const isArea = Boolean(areaId);
+const cameFromSuggestion = new URLSearchParams(location.search).get('source') === 'suggestion';
 const message = document.getElementById('message');
 let eventData;
 let canManage = false;
 let isPersonalAccount = false;
+let editInterestsLoaded = false;
 
 const statusLabels = { active: 'Attivo', cancelled: 'Annullato' };
 
@@ -210,6 +212,12 @@ function renderStatus() {
 
 async function render() {
   document.getElementById('event-title').textContent = eventData.title;
+  document.getElementById('event-organizer').textContent = eventData.organizer_name || 'Organizzatore';
+  const areaLabel = document.getElementById('event-area-label');
+  const areaValue = document.getElementById('event-area');
+  areaLabel.hidden = !eventData.area_name;
+  areaValue.hidden = !eventData.area_name;
+  areaValue.textContent = eventData.area_name || '';
   document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
   document.getElementById('location').textContent = eventData.location || '—';
   document.getElementById('notes').textContent = eventData.description || '—';
@@ -226,14 +234,38 @@ async function render() {
   document.getElementById('recurrence').hidden = !recurrence.frequency;
   document.getElementById('recurrence').textContent = formatRecurrenceSummary(recurrence);
 
-  document.getElementById('participants-label').hidden = !isArea;
-  document.getElementById('participant-list').hidden = !isArea;
-  if (isArea) {
+  document.getElementById('participants-label').hidden = !canManage;
+  document.getElementById('participant-list').hidden = !canManage;
+  if (canManage && isArea) {
     const { data, error } = await supabaseClient.rpc('get_event_participants', { p_event_id: eventId });
     document.getElementById('participant-list').textContent = error
       ? 'Non disponibili.'
       : (data || []).map((person) => `${person.first_name || ''} ${person.last_name || ''}`.trim()).join(', ') || 'Nessuno';
   }
+  const interestLabel = document.getElementById('event-interests-label');
+  const interestValue = document.getElementById('event-interests');
+  const { data: interests, error: interestsError } = await supabaseClient.rpc('get_event_interests', { p_event_id: eventId });
+  const eventInterests = interestsError ? [] : interests || [];
+  interestLabel.hidden = eventInterests.length === 0;
+  interestValue.hidden = eventInterests.length === 0;
+  interestValue.replaceChildren(...eventInterests.map((interest) => {
+    const tag = document.createElement('span');
+    tag.className = 'event-interest-tag';
+    tag.textContent = interest.display_name;
+    return tag;
+  }));
+  const suggestionReason = document.getElementById('suggested-event-reason');
+  suggestionReason.hidden = eventData.is_suggested !== true;
+  suggestionReason.textContent = '';
+  if (eventData.is_suggested === true) {
+    const { data: myInterests, error: myInterestsError } = await supabaseClient.rpc('get_my_interests');
+    const myInterestIds = new Set((myInterestsError ? [] : myInterests || []).map((interest) => String(interest.interest_id)));
+    const matchingNames = eventInterests.filter((interest) => myInterestIds.has(String(interest.interest_id))).map((interest) => interest.display_name);
+    if (matchingNames.length) suggestionReason.textContent = `Ti è stato proposto perché ti interessa: ${matchingNames.join(' · ')}`;
+    else suggestionReason.hidden = true;
+  }
+  const suggestedActions = document.getElementById('suggested-event-actions');
+  suggestedActions.hidden = eventData.is_suggested !== true;
 
   document.getElementById('event-view').hidden = false;
   document.getElementById('creator-actions').hidden = !canManage;
@@ -253,7 +285,7 @@ async function load() {
 
   document.getElementById('back-link').href = isArea
     ? `eventi.html?area_id=${encodeURIComponent(areaId)}`
-    : 'eventi.html';
+    : cameFromSuggestion ? 'proposte.html' : 'eventi.html';
   document.getElementById('back-link').textContent = isArea ? 'Torna al programma' : 'Torna agli eventi';
   const [{ data: event, error }, { data: account }] = await Promise.all([
     supabaseClient.rpc('get_event', { p_event_id: eventId }),
@@ -271,6 +303,7 @@ async function load() {
 
 async function openEdit() {
   if (!canManage) return;
+  editInterestsLoaded = false;
   const form = document.getElementById('edit-form');
   const recurrence = recurrenceOf(eventData);
   document.getElementById('edit-title').value = eventData.title || '';
@@ -283,6 +316,22 @@ async function openEdit() {
   document.getElementById('edit-end-date').value = eventData.ends_at ? localDate(eventData.ends_at) : localDate(eventData.starts_at);
   syncEditMultiDayLayout();
   document.getElementById('edit-location').value = eventData.location || '';
+  const interestMessage = document.getElementById('edit-event-interests-message');
+  try {
+    const [categories, selectedInterests] = await Promise.all([
+      window.FamilAreaEventInterests.loadCatalog(),
+      window.FamilAreaEventInterests.loadEventTags(eventId)
+    ]);
+    window.FamilAreaEventInterests.renderSelector(
+      document.getElementById('edit-event-interests-selector'),
+      categories,
+      selectedInterests.map((interest) => interest.interest_id)
+    );
+    editInterestsLoaded = true;
+    interestMessage.hidden = true;
+  } catch (_) {
+    interestMessage.textContent = 'Non è stato possibile caricare gli Interessi dell’Evento.';
+  }
   document.getElementById('edit-recurrence-enabled').checked = Boolean(recurrence.frequency);
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
   document.getElementById('edit-recurrence-interval').value = recurrence.interval;
@@ -363,6 +412,11 @@ document.getElementById('edit-end').addEventListener('keydown', focusOnEnter(() 
 
 document.getElementById('edit-form').addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (!editInterestsLoaded) {
+    document.getElementById('edit-event-interests-message').textContent = 'Carica gli Interessi prima di salvare le modifiche.';
+    document.getElementById('edit-event-interests-message').hidden = false;
+    return;
+  }
   let interval;
   try {
     interval = buildEditInterval();
@@ -387,12 +441,13 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
     p_description: document.getElementById('edit-notes').value.trim() || null,
     p_is_all_day: interval.allDay,
     p_location: document.getElementById('edit-location').value.trim() || null,
-    p_recurrence: recurrence
+    p_recurrence: recurrence,
+    p_interest_ids: window.FamilAreaEventInterests.selectedIds(document.getElementById('edit-event-interests-selector'))
   };
   if (isPersonalOwnerEvent()) {
     payload.p_calendar_private = document.getElementById('edit-calendar-private').checked;
   }
-  const { error } = await supabaseClient.rpc('update_event', payload);
+  const { error } = await supabaseClient.rpc('update_event_with_interests', payload);
   if (error) {
     message.textContent = 'Impossibile salvare le modifiche.';
     return;
@@ -401,6 +456,24 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
   document.getElementById('edit-form').hidden = true;
   document.getElementById('event-view').hidden = false;
   await load();
+});
+
+document.getElementById('join-suggested-event').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  const joinMessage = document.getElementById('join-suggested-message');
+  joinMessage.hidden = false;
+  joinMessage.textContent = 'Registrazione della partecipazione...';
+  const { error } = await supabaseClient.rpc('join_suggested_event', { p_event_id: eventId });
+  if (error) {
+    joinMessage.textContent = error.message?.includes('Contact')
+      ? 'Non è presente un Contatto collegato dall’organizzatore. Chiedi un invito diretto all’Evento.'
+      : 'La proposta non è più disponibile. Aggiorna la pagina e riprova.';
+    button.disabled = false;
+    return;
+  }
+  await load();
+  message.textContent = 'Ora partecipi a questo Evento.';
 });
 
 document.getElementById('delete-button').addEventListener('click', async () => {

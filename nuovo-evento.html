@@ -18,6 +18,12 @@
       <br><br>
       <label for="notes">Note</label><textarea id="notes"></textarea>
       <br><br>
+      <fieldset class="event-interests-fieldset">
+        <legend>Interessi</legend>
+        <p id="event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
+        <div id="event-interests-selector" class="event-interests-selector"></div>
+      </fieldset>
+      <br>
       <div class="event-time-section" aria-labelledby="event-start-heading">
         <h2 id="event-start-heading" class="event-form-section-title">Inizio</h2>
         <div id="event-start-dates" class="event-dates event-start-dates">
@@ -81,6 +87,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="event-interests.js"></script>
   <script src="nuovo-evento.js"></script>
 </body>
 </html>

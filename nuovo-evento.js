@@ -2,6 +2,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const areaId = new URLSearchParams(location.search).get('area_id');
 const form = document.getElementById('event-form');
 const message = document.getElementById('message');
+const eventInterestsSelector = document.getElementById('event-interests-selector');
+const eventInterestsMessage = document.getElementById('event-interests-message');
 const startDateInput = document.getElementById('start-date');
 const startTimeInput = document.getElementById('start-time');
 const endDateInput = document.getElementById('end-date');
@@ -110,6 +112,13 @@ async function load() {
   document.getElementById('back-link').href = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
   const { data: account } = await supabaseClient.rpc('get_current_account');
   isPersonalAccount = account?.account_type === 'personal';
+  try {
+    const categories = await window.FamilAreaEventInterests.loadCatalog();
+    window.FamilAreaEventInterests.renderSelector(eventInterestsSelector, categories);
+    eventInterestsMessage.hidden = true;
+  } catch (_) {
+    eventInterestsMessage.textContent = 'Il catalogo degli Interessi non è disponibile.';
+  }
   const privateFieldset = document.getElementById('calendar-private-fieldset');
   privateFieldset.hidden = !isPersonalAccount || Boolean(areaId);
   document.getElementById('calendar-private-spacing').hidden = privateFieldset.hidden;
@@ -175,7 +184,8 @@ form.addEventListener('submit', async (event) => {
   }
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
-  const { data, error } = await supabaseClient.rpc('create_event', payload);
+  payload.p_interest_ids = window.FamilAreaEventInterests.selectedIds(eventInterestsSelector);
+  const { data, error } = await supabaseClient.rpc('create_event_with_interests', payload);
   submit.disabled = false;
   if (error || !data) { message.textContent = 'Impossibile creare l’evento.'; return; }
   location.href = `evento.html${areaId ? `?area_id=${encodeURIComponent(areaId)}&` : '?'}event_id=${encodeURIComponent(data)}`;
