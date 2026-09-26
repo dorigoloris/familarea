@@ -110,9 +110,9 @@
     const { data, error } = await client.rpc('get_my_system_admin_access');
     if (error || !data?.is_system_admin) return;
     const link = document.createElement('a');
-    link.className = `top-nav-link top-nav-admin-link${isPrimaryNavActive('admin')}`;
+    link.className = `top-nav-link top-nav-admin-link fa-nav-admin${isPrimaryNavActive('admin')}`;
     link.href = 'admin.html';
-    link.textContent = 'Amministrazione';
+    link.textContent = 'Admin';
     if (isPrimaryNavActive('admin')) link.setAttribute('aria-current', 'page');
     topNav.appendChild(link);
   }

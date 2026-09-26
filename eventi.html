@@ -9,7 +9,7 @@
 <body>
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page--standard">
+  <main class="page-card fa-page fa-page--standard fa-section-page">
     <div id="contextual-events-content">
       <p id="back-container" hidden><a id="back-link" href="#">Torna all'Area</a></p>
       <div class="section-heading"><div><p id="section-kicker" class="section-kicker" hidden>Area</p><h1>Programma</h1><p id="page-intro" class="page-intro">Gli eventi visibili nelle tue Aree.</p></div><a id="new-event-link" class="btn" href="#" hidden>Aggiungi al programma</a></div>
@@ -17,9 +17,16 @@
       <div id="contextual-events-list" class="dashboard-list"></div>
     </div>
 
-    <div id="global-events-content" class="fa-page" hidden>
-      <header class="global-activities-page-header" aria-labelledby="global-events-title">
-        <div class="global-activities-page-heading"><p class="eyebrow">Eventi</p><h1 id="global-events-title">Eventi</h1><p>Gli eventi delle tue Aree, tutti in un unico posto.</p></div><a class="fa-button fa-button-primary" href="nuovo-evento.html">+ Nuovo evento</a>
+    <div id="global-events-content" class="fa-section-page" hidden>
+      <header class="fa-section-hero" aria-labelledby="global-events-title">
+        <div class="fa-section-hero-content">
+          <p class="eyebrow">EVENTI</p>
+          <div class="fa-section-hero-title-row">
+            <h1 id="global-events-title">Eventi</h1>
+            <a class="btn fa-section-hero-action fa-action-primary" href="nuovo-evento.html">+ Nuovo evento</a>
+          </div>
+          <p>Gli eventi delle tue Aree, tutti in un unico posto.</p>
+        </div>
       </header>
       <p id="global-message" class="global-view-message" aria-live="polite">Caricamento eventi...</p>
       <section id="global-events-section" class="global-activities-surface fa-surface" hidden aria-label="Elenco eventi">

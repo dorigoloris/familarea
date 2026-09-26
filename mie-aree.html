@@ -13,20 +13,31 @@
     <p id="logout-message" aria-live="polite"></p>
   </header>
   <div class="dashboard-shell">
-    <main class="dashboard-content">
-      <div class="dashboard-intro area-page-intro"><div><p class="eyebrow">Aree</p><h1>Le mie Aree</h1><p>Gli spazi che gestisci e quelli a cui partecipi.</p></div><a class="btn create-area-button" href="crea-area.html">+ Crea nuova Area</a></div>
-      <div class="areas-section" aria-label="Elenco delle Aree">
-        <p id="message" aria-live="polite">Caricamento...</p>
-        <section id="managed-areas-group" class="area-role-group" aria-labelledby="managed-areas-title" hidden>
-          <h2 id="managed-areas-title">Aree che gestisco</h2>
-          <p id="managed-areas-empty" class="area-role-empty" hidden>Nessuna Area da gestire.</p>
-          <div id="managed-areas-list" class="dashboard-list areas-grid"></div>
-        </section>
-        <section id="member-areas-group" class="area-role-group" aria-labelledby="member-areas-title" hidden>
-          <h2 id="member-areas-title">Aree a cui partecipo</h2>
-          <p id="member-areas-empty" class="area-role-empty" hidden>Nessuna Area a cui partecipare.</p>
-          <div id="member-areas-list" class="dashboard-list areas-grid"></div>
-        </section>
+    <main class="dashboard-content fa-page fa-section-page">
+      <div class="fa-section-page">
+        <header class="fa-section-hero" aria-labelledby="areas-page-title">
+          <div class="fa-section-hero-content">
+            <p class="eyebrow">AREE</p>
+            <div class="fa-section-hero-title-row">
+              <h1 id="areas-page-title">Le mie Aree</h1>
+              <a class="btn fa-section-hero-action fa-action-primary" href="crea-area.html">+ Crea nuova Area</a>
+            </div>
+            <p>Gli spazi che gestisci e quelli a cui partecipi.</p>
+          </div>
+        </header>
+        <div class="areas-section" aria-label="Elenco delle Aree">
+          <p id="message" aria-live="polite">Caricamento...</p>
+          <section id="managed-areas-group" class="area-role-group" aria-labelledby="managed-areas-title" hidden>
+            <h2 id="managed-areas-title">Aree che gestisco</h2>
+            <p id="managed-areas-empty" class="area-role-empty" hidden>Nessuna Area da gestire.</p>
+            <div id="managed-areas-list" class="dashboard-list areas-grid"></div>
+          </section>
+          <section id="member-areas-group" class="area-role-group" aria-labelledby="member-areas-title" hidden>
+            <h2 id="member-areas-title">Aree a cui partecipo</h2>
+            <p id="member-areas-empty" class="area-role-empty" hidden>Nessuna Area a cui partecipare.</p>
+            <div id="member-areas-list" class="dashboard-list areas-grid"></div>
+          </section>
+        </div>
       </div>
     </main>
   </div>

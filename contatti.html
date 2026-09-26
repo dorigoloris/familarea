@@ -10,25 +10,25 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card contacts-page fa-page fa-page--wide">
+  <main class="page-card contacts-page fa-page fa-page--wide fa-section-page">
     <div class="contacts-page-decoration contacts-page-decoration-one" aria-hidden="true"></div>
-    <header class="contacts-page-header" aria-labelledby="contacts-page-title">
-      <div class="contacts-page-heading">
+    <header class="fa-section-hero" aria-labelledby="contacts-page-title">
+      <div class="fa-section-hero-content">
         <p class="eyebrow">RUBRICA CONTATTI</p>
-        <div class="contacts-page-title-row">
+        <div class="fa-section-hero-title-row">
           <h1 id="contacts-page-title">I miei Contatti</h1>
-          <a class="btn contacts-primary-action" href="nuovo-contatto.html">Aggiungi contatto</a>
+          <a class="btn fa-section-hero-action fa-action-primary" href="nuovo-contatto.html">Aggiungi contatto</a>
         </div>
         <p>I contatti che vuoi tenere a portata di mano.</p>
       </div>
     </header>
 
     <p id="message" aria-live="polite">Caricamento contatti...</p>
-    <section class="contacts-directory-surface fa-surface" aria-label="Elenco contatti">
-      <div class="contacts-directory-header" aria-hidden="true">
+    <section class="contacts-directory-surface fa-surface fa-data-card" aria-label="Elenco contatti">
+      <div class="contacts-directory-header fa-data-header" aria-hidden="true">
         <span>NOME E COGNOME</span><span>EMAIL</span><span>CELLULARE</span><span>DATA DI NASCITA</span>
       </div>
-      <div id="contacts-list" class="contacts-list"></div>
+      <div id="contacts-list" class="contacts-list fa-data-list"></div>
       <div id="empty-state" class="contacts-empty-state fa-empty-state" hidden>
         <span class="fa-icon-badge contacts-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M17 10h4M19 8v4"/></svg></span>
         <div><strong>Non hai ancora contatti.</strong><span>Inizia creando la tua rubrica contatti.</span></div>
