@@ -70,7 +70,7 @@ async function load() {
   const [{ data: area, error }, { data: areas }, { data: events }] = await Promise.all([
     supabaseClient.rpc('get_area', { p_area_id: areaId }),
     supabaseClient.rpc('get_my_areas'),
-    supabaseClient.rpc('get_visible_events')
+    supabaseClient.rpc('get_area_program', { p_area_id: areaId })
   ]);
   if (error || !area) { message.textContent = "Impossibile caricare l'Area."; return; }
   const role = (areas || []).find((item) => item.id === areaId)?.role || 'member';
@@ -83,7 +83,7 @@ async function load() {
     $('edit-area-link').hidden = !['owner', 'admin'].includes(role);
   }
   void renderAreaCover(area);
-  const areaEvents = (events || []).filter((item) => item.area_id === areaId);
+  const areaEvents = events || [];
   if (participantsView) await renderParticipants(areaEvents);
   else showProgram(areaEvents);
   message.textContent = '';

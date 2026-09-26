@@ -118,14 +118,14 @@ async function load() {
     create.href = `nuovo-evento.html?area_id=${encodeURIComponent(areaId)}`;
   }
 
-  const { data: visibleEvents, error } = await supabaseClient.rpc('get_visible_events');
+  const { data, error } = isGlobal
+    ? await supabaseClient.rpc('get_visible_events')
+    : await supabaseClient.rpc('get_area_program', { p_area_id: areaId });
   if (error) {
     message.textContent = isGlobal ? 'Impossibile caricare gli eventi visibili.' : 'Impossibile caricare il programma.';
     return;
   }
-  const events = isGlobal
-    ? (visibleEvents || [])
-    : (visibleEvents || []).filter((event) => event.area_id === areaId);
+  const events = data || [];
 
   list.replaceChildren();
   if (isGlobal) {

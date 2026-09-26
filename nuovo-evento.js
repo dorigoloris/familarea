@@ -2,7 +2,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const areaId = new URLSearchParams(location.search).get('area_id');
 const form = document.getElementById('event-form');
 const message = document.getElementById('message');
-const participants = document.getElementById('participants');
 const startDateInput = document.getElementById('start-date');
 const startTimeInput = document.getElementById('start-time');
 const endDateInput = document.getElementById('end-date');
@@ -17,7 +16,6 @@ const endDates = document.getElementById('event-end-dates');
 let isPersonalAccount = false;
 
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
-function participantIds() { return [...participants.querySelectorAll('input:checked')].map((input) => input.value); }
 function localIsoWeekday(dateValue) {
   const [year, month, day] = dateValue.split('-').map(Number);
   const weekday = new Date(year, month - 1, day).getDay();
@@ -106,34 +104,16 @@ function focusOnEnter(next) {
   };
 }
 
-async function loadParticipants() {
-  const { data, error } = await supabaseClient.rpc('get_area_members', { p_area_id: areaId });
-  if (error) throw error;
-  (data || []).forEach((member) => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = member.profile_id;
-    label.append(input, ` ${member.first_name || ''} ${member.last_name || ''}`.trim());
-    participants.append(label, document.createElement('br'));
-  });
-}
-
 async function load() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data.session) { location.href = 'login.html'; return; }
   document.getElementById('back-link').href = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
-  document.getElementById('participants-fieldset').hidden = !areaId;
   const { data: account } = await supabaseClient.rpc('get_current_account');
   isPersonalAccount = account?.account_type === 'personal';
   const privateFieldset = document.getElementById('calendar-private-fieldset');
   privateFieldset.hidden = !isPersonalAccount || Boolean(areaId);
   document.getElementById('calendar-private-spacing').hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
-  if (areaId) {
-    try { await loadParticipants(); }
-    catch (_) { message.textContent = 'Impossibile caricare i partecipanti dell’Area.'; return; }
-  }
   syncMultiDayLayout();
   syncRecurrenceEndMode();
   form.hidden = false;
@@ -198,10 +178,6 @@ form.addEventListener('submit', async (event) => {
   const { data, error } = await supabaseClient.rpc('create_event', payload);
   submit.disabled = false;
   if (error || !data) { message.textContent = 'Impossibile creare l’evento.'; return; }
-  if (areaId && participantIds().length) {
-    const result = await supabaseClient.rpc('set_event_participants', { p_event_id: data, p_profile_ids: participantIds() });
-    if (result.error) { message.textContent = 'Evento creato, ma non è stato possibile salvare i partecipanti.'; return; }
-  }
   location.href = `evento.html${areaId ? `?area_id=${encodeURIComponent(areaId)}&` : '?'}event_id=${encodeURIComponent(data)}`;
 });
 
