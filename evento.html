@@ -18,7 +18,6 @@
         <button id="delete-button" class="area-delete-button" type="button">Elimina evento</button>
       </div>
     </header>
-    <p id="family-shared-notice" class="event-family-shared-notice" hidden>Condiviso con la Famiglia</p>
     <p id="message" aria-live="polite">Caricamento...</p>
     <section id="event-view" class="event-detail-card" hidden>
       <dl class="event-detail-list">
@@ -55,13 +54,12 @@
       <br><br>
       <label for="edit-location">Luogo</label><input id="edit-location">
       <br><br>
-      <fieldset id="edit-family-visibility-fieldset" class="event-family-visibility" hidden>
-        <legend>Visibilità</legend>
-        <label><input id="edit-family-visibility-family" name="edit-family-visibility" type="radio" value="family"> Famiglia</label>
-        <label><input id="edit-family-visibility-private" name="edit-family-visibility" type="radio" value="private"> Privato</label>
-        <p id="edit-family-sharing-suspended" class="event-family-visibility-note" hidden>La condivisione del Calendario con la Famiglia è sospesa.</p>
+      <fieldset id="edit-calendar-private-fieldset" class="event-family-visibility" hidden>
+        <legend>Calendario condiviso</legend>
+        <label><input id="edit-calendar-private" type="checkbox"> Privato</label>
+        <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
       </fieldset>
-      <br id="edit-family-visibility-spacing">
+      <br id="edit-calendar-private-spacing">
       <fieldset id="edit-participants-fieldset"><legend>Partecipanti</legend><div id="edit-participants"></div></fieldset>
       <br>
       <div class="form-actions"><button type="submit">Salva modifiche</button><button id="close-edit" class="secondary-button" type="button">Annulla</button></div>

@@ -6,7 +6,6 @@ const message = document.getElementById('message');
 let eventData;
 let canManage = false;
 let isPersonalAccount = false;
-let familyCalendarShares = [];
 
 const statusLabels = { active: 'Attivo', cancelled: 'Annullato' };
 
@@ -158,21 +157,15 @@ function renderStatus() {
 
 async function render() {
   document.getElementById('event-title').textContent = eventData.title;
-  const sharedNotice = document.getElementById('family-shared-notice');
-  const isFamilyShared = eventData.visibility_source === 'family';
-  sharedNotice.hidden = !isFamilyShared;
-  sharedNotice.textContent = isFamilyShared ? `Condiviso da ${eventData.shared_by_display_name || 'un membro'} · Famiglia` : '';
   document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
   document.getElementById('location').textContent = eventData.location || '—';
   document.getElementById('notes').textContent = eventData.description || '—';
-  document.getElementById('notes-label').hidden = isFamilyShared && !eventData.description;
-  document.getElementById('notes').hidden = isFamilyShared && !eventData.description;
   const visibilityLabel = document.getElementById('event-visibility-label');
   const visibility = document.getElementById('event-visibility');
   const personalOwner = isPersonalOwnerEvent();
   visibilityLabel.hidden = !personalOwner;
   visibility.hidden = !personalOwner;
-  visibility.textContent = eventData.family_visibility === 'family' ? 'Famiglia' : 'Privato';
+  visibility.textContent = eventData.calendar_private ? 'Privato' : 'Condivisibile';
   renderStatus();
 
   const recurrence = recurrenceOf(eventData);
@@ -222,7 +215,6 @@ async function load() {
   eventData = event;
   canManage = event.can_manage === true;
   isPersonalAccount = account?.account_type === 'personal';
-  await loadFamilyCalendarShares();
   await render();
 }
 
@@ -244,15 +236,10 @@ async function openEdit() {
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
   document.getElementById('edit-recurrence-until').value = recurrence.until || '';
   document.getElementById('edit-participants-fieldset').hidden = true;
-  const visibilityFieldset = document.getElementById('edit-family-visibility-fieldset');
-  const canChooseVisibility = isPersonalOwnerEvent() && familyCalendarShares.length > 0;
-  visibilityFieldset.hidden = !canChooseVisibility;
-  document.getElementById('edit-family-visibility-spacing').hidden = !canChooseVisibility;
-  if (canChooseVisibility) {
-    document.getElementById(eventData.family_visibility === 'family' ? 'edit-family-visibility-family' : 'edit-family-visibility-private').checked = true;
-    const configuredShares = familyCalendarShares.filter((share) => share.sharing_configured);
-    document.getElementById('edit-family-sharing-suspended').hidden = !(eventData.family_visibility === 'family' && configuredShares.length > 0 && !configuredShares.some((share) => share.sharing_enabled));
-  }
+  const privateFieldset = document.getElementById('edit-calendar-private-fieldset');
+  privateFieldset.hidden = !isPersonalOwnerEvent();
+  document.getElementById('edit-calendar-private-spacing').hidden = privateFieldset.hidden;
+  document.getElementById('edit-calendar-private').checked = eventData.calendar_private === true;
 
   document.getElementById('event-view').hidden = true;
   form.hidden = false;
@@ -328,8 +315,7 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
     p_recurrence: recurrence
   };
   if (isPersonalOwnerEvent()) {
-    payload.p_family_visibility = document.querySelector('input[name="edit-family-visibility"]:checked')?.value
-      || (eventData.family_visibility === 'family' ? 'family' : 'private');
+    payload.p_calendar_private = document.getElementById('edit-calendar-private').checked;
   }
   const { error } = await supabaseClient.rpc('update_event', payload);
   if (error) {
@@ -527,17 +513,6 @@ async function renderParticipantControls() {
 }
 function isPersonalOwnerEvent() {
   return isPersonalAccount && canManage && !eventData.area_id && eventData.visibility_source === 'owner';
-}
-
-async function loadFamilyCalendarShares() {
-  familyCalendarShares = [];
-  if (!eventData || !isPersonalOwnerEvent()) return;
-  const { data, error } = await supabaseClient.rpc('get_my_family_calendar_controls');
-  if (error) {
-    console.error('get_my_family_calendar_controls failed', error);
-    return;
-  }
-  familyCalendarShares = data || [];
 }
 
 const renderEventView = render;

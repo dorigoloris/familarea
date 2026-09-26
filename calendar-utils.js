@@ -50,28 +50,28 @@
     return end ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
   }
 
-  function familyLabel(item) {
-    return item.shared_by_display_name ? `${item.shared_by_display_name} · Famiglia` : 'Famiglia';
+  function appendCalendarOwner(item, element) {
+    if (!item.calendar_is_shared) return;
+    const owner = document.createElement('span');
+    owner.className = 'calendar-item-kind calendar-item-kind-calendar';
+    owner.textContent = `${item.calendar_owner_display_name || 'Calendario condiviso'} · Calendario`;
+    element.appendChild(owner);
   }
 
   function createCalendarItem(item) {
     const type = itemType(item);
-    const link = document.createElement('a');
+    const canOpenDetails = item.can_open_details !== false;
+    const link = document.createElement(canOpenDetails ? 'a' : 'span');
     link.className = `calendar-activity${type === 'event' ? ' calendar-event' : ''}${type === 'birthday' ? ' calendar-birthday' : ''}${type === 'deadline' ? ' calendar-deadline' : ''}${item.status === 'completed' ? ' calendar-activity-completed' : ''}${type === 'deadline' && item.is_completed ? ' calendar-deadline-completed' : ''}`;
-    link.href = itemLink(item);
+    if (canOpenDetails) link.href = itemLink(item);
     link.title = (type === 'birthday' || type === 'deadline') ? item.title : `${item.title} — ${item.area_name}`;
 
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
     title.textContent = item.title;
     link.appendChild(title);
+    appendCalendarOwner(item, link);
     if (type === 'event') {
-      if (item.visibility_source === 'family') {
-        const family = document.createElement('span');
-        family.className = 'calendar-item-kind calendar-item-kind-family';
-        family.textContent = familyLabel(item);
-        link.appendChild(family);
-      }
       return link;
     }
 
@@ -247,21 +247,17 @@
   }
 
   function agendaItem(item, className, showTime) {
-    const link = document.createElement('a');
     const type = itemType(item);
+    const canOpenDetails = item.can_open_details !== false;
+    const link = document.createElement(canOpenDetails ? 'a' : 'span');
     link.className = `${className} ${className}--${type}${item.status === 'completed' || (type === 'deadline' && item.is_completed) ? ` ${className}--completed` : ''}`;
-    link.href = itemLink(item);
+    if (canOpenDetails) link.href = itemLink(item);
     link.title = (type === 'birthday' || type === 'deadline') ? item.title : `${item.title} — ${item.area_name || ''}`.trim();
     const title = document.createElement('span');
     title.className = `${className}-title`;
     title.textContent = item.title;
     link.appendChild(title);
-    if (type === 'event' && item.visibility_source === 'family') {
-      const family = document.createElement('span');
-      family.className = `${className}-family`;
-      family.textContent = familyLabel(item);
-      link.appendChild(family);
-    }
+    appendCalendarOwner(item, link);
     if (showTime && type !== 'event') {
       const time = document.createElement('span');
       time.className = `${className}-time`;

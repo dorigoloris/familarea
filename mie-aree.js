@@ -62,7 +62,7 @@ function normaliseItem(item, kind) {
     starts_at: kind === 'event' ? occurrenceStart : item.starts_at,
     ends_at: kind === 'event' ? occurrenceEnd : item.ends_at,
     is_all_day: Boolean(item.is_all_day ?? item.all_day),
-    area_name: item.area_name || (item.visibility_source === 'family' ? `${item.shared_by_display_name || 'Famiglia'} · Famiglia` : (item.area_id ? 'Area condivisa' : 'Personale'))
+    area_name: item.area_name || (item.area_id ? 'Area condivisa' : 'Personale')
   };
 }
 function formatActivityDate(activity) {
@@ -89,7 +89,6 @@ function createEventCard(event) {
   const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = event.title;
   const area = document.createElement('p'); area.className = 'activity-card-area'; area.textContent = event.area_name;
   const meta = document.createElement('div'); meta.className = 'activity-card-meta'; meta.appendChild(createBadge('Evento', 'event-badge'));
-  if (event.visibility_source === 'family') meta.appendChild(createBadge(event.shared_by_display_name ? `${event.shared_by_display_name} · Famiglia` : 'Famiglia', 'family-event-badge'));
   const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = formatActivityDate(event);
   const location = document.createElement('p'); location.className = 'activity-card-location'; location.textContent = event.location ? `Luogo: ${event.location}` : ''; location.hidden = !event.location;
   const link = document.createElement('a'); link.className = 'btn activity-open-link'; link.textContent = 'Apri'; link.href = calendarUtils.itemLink(event);

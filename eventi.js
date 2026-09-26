@@ -27,10 +27,6 @@ function eventHref(event, areaId = event.area_id) {
   return `evento.html?${query}`;
 }
 
-function familyLabel(event) {
-  return event.shared_by_display_name ? `${event.shared_by_display_name} · Famiglia` : 'Famiglia';
-}
-
 function createContextualCard(event, areaId) {
   const article = document.createElement('article');
   article.className = 'activity-card event-card';
@@ -40,12 +36,6 @@ function createContextualCard(event, areaId) {
 
   const metadata = document.createElement('div');
   metadata.className = 'activity-card-meta';
-  if (event.visibility_source === 'family') {
-    const family = document.createElement('span');
-    family.className = 'family-event-badge';
-    family.textContent = familyLabel(event);
-    metadata.appendChild(family);
-  }
   if (event.status && event.status !== 'active') {
     const status = document.createElement('span');
     status.className = 'activity-status-badge';
@@ -76,7 +66,7 @@ function createGlobalRow(event) {
   title.textContent = event.title;
   const context = document.createElement('p');
   context.className = 'global-activity-area';
-  context.textContent = event.visibility_source === 'family' ? familyLabel(event) : (event.area_id ? 'Area condivisa' : 'Personale');
+  context.textContent = event.area_id ? 'Area condivisa' : 'Personale';
   main.append(title, context);
 
   const details = document.createElement('div');

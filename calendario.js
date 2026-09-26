@@ -16,8 +16,9 @@ let day = new Date();
 let items = [];
 let areas = new Map();
 let isPersonalAccount = false;
-let familyCalendarShares = [];
 let familyCalendarControls = [];
+let calendarPeople = new Map();
+let currentAccountId = null;
 
 function bounds() {
   if (view === 'week') { const start = calendarUtils.startOfWeek(week); const end = new Date(start); end.setDate(end.getDate() + 7); return { start, end }; }
@@ -28,7 +29,9 @@ function bounds() {
 function normalise(item) {
   return {
     ...item,
-    area_name: item.area_name || (item.visibility_source === 'family' ? `${item.shared_by_display_name || 'Famiglia'} · Famiglia` : (item.area_id ? areas.get(item.area_id) : null)),
+    calendar_owner_display_name: item.calendar_owner_display_name || calendarPeople.get(item.calendar_owner_account_id) || '',
+    area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
+    can_open_details: item.calendar_owner_account_id === currentAccountId,
     is_all_day: Boolean(item.all_day),
     occurrence_starts_at: item.starts_at,
     occurrence_ends_at: item.ends_at,
@@ -57,63 +60,11 @@ async function load() {
   ]);
   if (error) { message.textContent = 'Impossibile caricare il calendario.'; return; }
   areas = new Map((myAreas || []).map((area) => [area.id, area.name]));
-  items = (data || []).map(normalise);
   isPersonalAccount = account?.account_type === 'personal';
+  currentAccountId = account?.account_id || null;
   await loadFamilyCalendarControls();
+  items = (data || []).map(normalise);
   content.hidden = false; message.textContent = ''; render();
-}
-
-function calendarShareRow(share) {
-  const active = share.sharing_enabled === true;
-  const configured = share.sharing_configured === true;
-  const row = document.createElement('article');
-  row.className = 'calendar-family-sharing-row';
-  const copy = document.createElement('div');
-  const name = document.createElement('h3'); name.textContent = share.family_name || 'Famiglia';
-  const state = document.createElement('span');
-  state.className = `calendar-family-share-state${active ? ' is-active' : ' is-suspended'}`;
-  state.textContent = active ? 'Attiva' : (configured ? 'Sospesa' : 'Non attiva');
-  const description = document.createElement('p');
-  description.textContent = active
-    ? 'Gli eventi impostati su Famiglia sono visibili ai membri confermati.'
-    : (configured ? 'La condivisione del Calendario è temporaneamente sospesa.' : 'Attiva la condivisione per gli eventi impostati su Famiglia.');
-  copy.append(name, state, description);
-  const action = document.createElement('button');
-  action.type = 'button'; action.className = active ? 'secondary-button' : 'fa-button fa-button-primary';
-  action.textContent = active ? 'Sospendi' : (configured ? 'Riattiva' : 'Attiva');
-  action.addEventListener('click', () => void setFamilyCalendarShare(share.family_id, !active, action));
-  row.append(copy, action);
-  return row;
-}
-
-function renderFamilyCalendarShares() {
-  const section = document.getElementById('calendar-family-sharing');
-  const list = document.getElementById('calendar-family-sharing-list');
-  list.replaceChildren();
-  if (!isPersonalAccount || !familyCalendarShares.length) { section.hidden = true; return; }
-  familyCalendarShares.forEach((share) => list.appendChild(calendarShareRow(share)));
-  section.hidden = false;
-}
-
-async function loadFamilyCalendarShares() {
-  familyCalendarShares = [];
-  if (!isPersonalAccount) { renderFamilyCalendarShares(); return; }
-  const { data, error } = await supabaseClient.rpc('get_my_family_calendar_controls');
-  if (error) { console.error('get_my_family_calendar_controls failed', error); renderFamilyCalendarShares(); return; }
-  familyCalendarShares = data || [];
-  renderFamilyCalendarShares();
-}
-
-async function setFamilyCalendarShare(familyId, sharingEnabled, button) {
-  button.disabled = true;
-  const { error } = await supabaseClient.rpc('set_my_family_calendar_share_permission', { p_family_id: familyId, p_recipient_account_id: null, p_sharing_enabled: sharingEnabled });
-  if (error) {
-    console.error('set_my_family_calendar_share_permission failed', error);
-    message.textContent = 'Non è stato possibile aggiornare la condivisione del Calendario.';
-    button.disabled = false;
-    return;
-  }
-  await load();
 }
 
 function initials(name) { return (name || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase(); }
@@ -145,13 +96,13 @@ function compactControlRow(control) {
   const viewTitle = !calendarCapable ? unavailableTitle : (control.can_view_source ? 'Visualizza questo calendario' : `${control.display_name || 'Questa persona'} non condivide il suo calendario con te`);
   const view = !calendarCapable ? matrixDash(unavailableTitle) : compactToggle(control.view_enabled, !control.can_view_source, viewTitle, async (input) => {
     input.disabled = true;
-    const { error } = await supabaseClient.rpc('set_my_calendar_view_preference', { p_source_account_id: control.member_account_id, p_family_id: control.is_self ? null : control.family_id, p_visible: input.checked });
+    const { error } = await supabaseClient.rpc('set_my_calendar_view', { p_source_account_id: control.member_account_id, p_visible: input.checked });
     if (error) { message.textContent = 'Impossibile aggiornare il filtro calendario.'; input.disabled = false; return; }
     await load();
   });
   const share = !calendarCapable || control.is_self ? matrixDash(unavailableTitle) : compactToggle(control.share_enabled, false, `Condividi il mio calendario con ${control.display_name || 'questa persona'}`, async (input) => {
     input.disabled = true;
-    const { error } = await supabaseClient.rpc('set_my_family_calendar_share_permission', { p_family_id: control.family_id, p_recipient_account_id: control.member_account_id, p_sharing_enabled: input.checked });
+    const { error } = await supabaseClient.rpc('set_my_calendar_share', { p_viewer_account_id: control.member_account_id, p_sharing_enabled: input.checked });
     if (error) { message.textContent = 'Impossibile aggiornare il permesso di condivisione.'; input.disabled = false; return; }
     await load();
   });
@@ -177,7 +128,17 @@ async function loadFamilyCalendarControls() {
   if (!isPersonalAccount) { renderFamilyCalendarControls(); return; }
   const { data, error } = await supabaseClient.rpc('get_my_family_calendar_controls');
   if (error) { console.error('get_my_family_calendar_controls failed', error); renderFamilyCalendarControls(); return; }
-  familyCalendarControls = data || []; renderFamilyCalendarControls();
+  const seenAccounts = new Set();
+  familyCalendarControls = (data || []).filter((control) => {
+    if (!control.member_account_id) return true;
+    if (seenAccounts.has(control.member_account_id)) return false;
+    seenAccounts.add(control.member_account_id);
+    return true;
+  });
+  calendarPeople = new Map(familyCalendarControls
+    .filter((control) => control.member_account_id)
+    .map((control) => [control.member_account_id, control.display_name || 'Calendario condiviso']));
+  renderFamilyCalendarControls();
 }
 
 function change(offset) {
