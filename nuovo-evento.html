@@ -18,21 +18,53 @@
       <br><br>
       <label for="notes">Note</label><textarea id="notes"></textarea>
       <br><br>
-      <div id="event-start-dates" class="event-dates">
-        <div><label for="start-date">Data</label><input id="start-date" type="date" required></div>
-        <div id="start-time-field"><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
-        <div id="end-time-normal-slot"><div id="end-time-field"><label for="end-time">Ora fine</label><input id="end-time" type="time"></div></div>
+      <div class="event-time-section" aria-labelledby="event-start-heading">
+        <h2 id="event-start-heading" class="event-form-section-title">Inizio</h2>
+        <div id="event-start-dates" class="event-dates event-start-dates">
+          <div><label for="start-date">Data inizio</label><input id="start-date" type="date" required></div>
+          <div id="start-time-field"><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
+        </div>
       </div>
       <div class="event-form-options">
         <label class="event-form-option"><input id="all-day" type="checkbox"><span>Tutto il giorno</span></label>
         <label class="event-form-option"><input id="multi-day" type="checkbox"><span>Più giorni</span></label>
-        <div id="multi-day-end-row" class="event-dates event-multi-day-end" hidden>
-          <div><label for="end-date">Data fine</label><input id="end-date" type="date"></div>
-          <div id="end-time-multi-day-slot"></div>
-        </div>
-        <label class="event-form-option"><input id="recurrence-enabled" type="checkbox"><span>Ripeti ogni settimana</span></label>
       </div>
-      <div id="recurrence-fields" class="event-recurrence-fields" hidden><label for="recurrence-until">Fine ripetizione</label><input id="recurrence-until" type="date"></div>
+      <div id="event-end-section" class="event-time-section" aria-labelledby="event-end-heading">
+        <h2 id="event-end-heading" class="event-form-section-title">Fine</h2>
+        <div id="event-end-dates" class="event-dates event-end-dates">
+          <div id="end-date-field" hidden><label for="end-date">Data fine</label><input id="end-date" type="date"></div>
+          <div id="end-time-field"><label for="end-time">Ora fine</label><input id="end-time" type="time"></div>
+        </div>
+      </div>
+      <div class="event-form-options">
+        <label class="event-form-option"><input id="recurrence-enabled" type="checkbox"><span>Ripeti</span></label>
+      </div>
+      <div id="recurrence-fields" class="event-recurrence-fields" hidden>
+        <div class="event-recurrence-interval">
+          <label for="recurrence-interval">Ogni</label>
+          <input id="recurrence-interval" type="number" min="1" max="32767" step="1" value="1">
+          <span>settimana/e</span>
+        </div>
+        <fieldset class="event-recurrence-weekdays">
+          <legend>Giorni</legend>
+          <div class="event-recurrence-weekday-list">
+            <label><input type="checkbox" name="recurrence-weekday" value="1"><span>Lun</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="2"><span>Mar</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="3"><span>Mer</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="4"><span>Gio</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="5"><span>Ven</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="6"><span>Sab</span></label>
+            <label><input type="checkbox" name="recurrence-weekday" value="7"><span>Dom</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="event-recurrence-end-mode">
+          <legend>Fine ripetizione</legend>
+          <label><input type="radio" name="recurrence-end-mode" value="date" checked> Il</label>
+          <input id="recurrence-until" type="date">
+          <label><input type="radio" name="recurrence-end-mode" value="never"> Senza scadenza</label>
+        </fieldset>
+        <p id="recurrence-error" class="event-recurrence-error" role="alert" hidden></p>
+      </div>
       <br><br>
       <label for="location">Luogo</label><input id="location">
       <br><br>

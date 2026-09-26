@@ -63,9 +63,18 @@ function statusLabel(status) {
 }
 
 function recurrenceOf(event) {
+  const timezone = event.recurrence_timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome';
+  const weekdayNumbers = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+  const startWeekday = weekdayNumbers[new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: timezone }).format(new Date(event.starts_at))];
   return {
     frequency: event.recurrence_frequency || '',
-    until: event.recurrence_until || ''
+    interval: Number(event.recurrence_interval) || 1,
+    weekdays: Array.isArray(event.recurrence_weekdays) && event.recurrence_weekdays.length
+      ? event.recurrence_weekdays.map(Number)
+      : [startWeekday],
+    until: event.recurrence_until || '',
+    hasEndDate: Boolean(event.recurrence_until),
+    timezone
   };
 }
 
@@ -74,12 +83,43 @@ function formatRecurrenceDate(value) {
   return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
 }
 
+function formatRecurrenceSummary(recurrence) {
+  if (recurrence.frequency !== 'weekly') return recurrence.frequency;
+  const interval = recurrence.interval === 1 ? 'Ogni settimana' : `Ogni ${recurrence.interval} settimane`;
+  const weekdays = recurrence.weekdays.map((weekday) => new Intl.DateTimeFormat('it-IT', {
+    weekday: 'long', timeZone: 'UTC'
+  }).format(new Date(Date.UTC(2024, 0, weekday))));
+  const days = weekdays.length > 1 ? `${weekdays.slice(0, -1).join(', ')} e ${weekdays.at(-1)}` : weekdays[0];
+  const end = recurrence.until ? ` fino al ${formatRecurrenceDate(recurrence.until)}` : ' senza scadenza';
+  return `${interval}${days ? `, ${days}` : ''}${end}`;
+}
+
+function setEditRecurrenceError(text = '') {
+  const error = document.getElementById('edit-recurrence-error');
+  error.textContent = text;
+  error.hidden = !text;
+}
+
+function syncEditRecurrenceEndMode() {
+  const hasEndDate = document.querySelector('input[name="edit-recurrence-end-mode"]:checked')?.value !== 'never';
+  const until = document.getElementById('edit-recurrence-until');
+  until.disabled = !hasEndDate;
+  until.hidden = !hasEndDate;
+}
+
 function formRecurrence(startDate) {
   if (!document.getElementById('edit-recurrence-enabled').checked) return {};
-  const until = document.getElementById('edit-recurrence-until').value;
-  if (!until) throw new Error('Indica la fine della ripetizione.');
-  if (until < startDate) throw new Error('La fine della ripetizione non può precedere la data iniziale.');
-  return { frequency: 'weekly', until, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || eventData.recurrence_timezone || 'UTC' };
+  const hasEndDate = document.querySelector('input[name="edit-recurrence-end-mode"]:checked')?.value !== 'never';
+  const until = hasEndDate ? document.getElementById('edit-recurrence-until').value : null;
+  const interval = Number(document.getElementById('edit-recurrence-interval').value);
+  const weekdays = [...document.querySelectorAll('input[name="edit-recurrence-weekday"]:checked')]
+    .map((input) => Number(input.value)).sort((first, second) => first - second);
+  if (!Number.isInteger(interval) || interval < 1) throw new Error('Inserisci un intervallo di almeno 1 settimana.');
+  if (interval > 32767) throw new Error('L’intervallo massimo è 32767 settimane.');
+  if (!weekdays.length) throw new Error('Seleziona almeno un giorno della settimana.');
+  if (hasEndDate && !until) throw new Error('Inserisci una data di fine ripetizione.');
+  if (until && until < startDate) throw new Error('La fine della ripetizione non può precedere la data di inizio.');
+  return { frequency: 'weekly', interval, weekdays, until, timezone: eventData.recurrence_timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome' };
 }
 
 function editElements() {
@@ -90,12 +130,11 @@ function editElements() {
     end: document.getElementById('edit-end'),
     allDay: document.getElementById('edit-all-day'),
     multiDay: document.getElementById('edit-multi-day'),
-    startDates: document.getElementById('edit-start-dates'),
     startTimeField: document.getElementById('edit-start-time-field'),
     endTimeField: document.getElementById('edit-end-time-field'),
-    normalEndSlot: document.getElementById('edit-end-time-normal-slot'),
-    multiDayEndSlot: document.getElementById('edit-end-time-multi-day-slot'),
-    multiDayEndRow: document.getElementById('edit-multi-day-end-row')
+    endDateField: document.getElementById('edit-end-date-field'),
+    endSection: document.getElementById('edit-end-section'),
+    endDates: document.getElementById('edit-end-dates')
   };
 }
 
@@ -104,14 +143,25 @@ function syncEditMultiDayLayout() {
   const multiDay = fields.multiDay.checked;
   const allDay = fields.allDay.checked;
   if (multiDay && !fields.endDate.value) fields.endDate.value = fields.date.value;
-  (multiDay ? fields.multiDayEndSlot : fields.normalEndSlot).appendChild(fields.endTimeField);
-  fields.normalEndSlot.hidden = multiDay || allDay;
-  fields.multiDayEndRow.hidden = !multiDay;
-  fields.startDates.classList.toggle('is-multi-day', multiDay);
-  fields.startDates.classList.toggle('is-all-day', allDay);
-  fields.multiDayEndRow.classList.toggle('is-all-day', allDay);
   fields.startTimeField.hidden = allDay;
   fields.endTimeField.hidden = allDay;
+  fields.endDateField.hidden = !multiDay;
+  fields.endSection.hidden = allDay && !multiDay;
+  fields.endDates.classList.toggle('is-multi-day', multiDay);
+  fields.endDates.classList.toggle('is-all-day', allDay);
+}
+
+function selectInitialEditWeekday() {
+  const fields = editElements();
+  if (!fields.date.value) return;
+  const selectedDays = [...document.querySelectorAll('input[name="edit-recurrence-weekday"]:checked')];
+  if (!selectedDays.length) {
+    const [year, month, day] = fields.date.value.split('-').map(Number);
+    const weekday = new Date(year, month - 1, day).getDay();
+    const initialDay = weekday === 0 ? 7 : weekday;
+    const checkbox = document.querySelector(`input[name="edit-recurrence-weekday"][value="${initialDay}"]`);
+    if (checkbox) checkbox.checked = true;
+  }
 }
 
 function buildEditInterval() {
@@ -134,7 +184,10 @@ function buildEditInterval() {
   const endsAt = allDay
     ? (fields.multiDay.checked ? localIso(endDate, '00:00') : startsAt)
     : endTime ? localIso(endDate, endTime) : null;
-  if (endsAt && new Date(endsAt) <= new Date(startsAt)) throw new Error('La fine deve essere successiva all’inizio.');
+  if (endsAt && (new Date(endsAt) < new Date(startsAt)
+    || (new Date(endsAt).getTime() === new Date(startsAt).getTime() && !(allDay && !fields.multiDay.checked)))) {
+    throw new Error('La fine deve essere successiva all’inizio.');
+  }
   return { startsAt, endsAt, allDay };
 }
 
@@ -171,9 +224,7 @@ async function render() {
   const recurrence = recurrenceOf(eventData);
   document.getElementById('recurrence-label').hidden = !recurrence.frequency;
   document.getElementById('recurrence').hidden = !recurrence.frequency;
-  document.getElementById('recurrence').textContent = recurrence.frequency === 'weekly'
-    ? `Ogni settimana fino al ${formatRecurrenceDate(recurrence.until)}`
-    : recurrence.frequency;
+  document.getElementById('recurrence').textContent = formatRecurrenceSummary(recurrence);
 
   document.getElementById('participants-label').hidden = !isArea;
   document.getElementById('participant-list').hidden = !isArea;
@@ -234,7 +285,15 @@ async function openEdit() {
   document.getElementById('edit-location').value = eventData.location || '';
   document.getElementById('edit-recurrence-enabled').checked = Boolean(recurrence.frequency);
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
+  document.getElementById('edit-recurrence-interval').value = recurrence.interval;
+  document.querySelectorAll('input[name="edit-recurrence-weekday"]').forEach((input) => {
+    input.checked = recurrence.weekdays.includes(Number(input.value));
+  });
   document.getElementById('edit-recurrence-until').value = recurrence.until || '';
+  const recurrenceEndMode = recurrence.frequency && !recurrence.hasEndDate ? 'never' : 'date';
+  document.querySelector(`input[name="edit-recurrence-end-mode"][value="${recurrenceEndMode}"]`).checked = true;
+  syncEditRecurrenceEndMode();
+  setEditRecurrenceError();
   document.getElementById('edit-participants-fieldset').hidden = true;
   const privateFieldset = document.getElementById('edit-calendar-private-fieldset');
   privateFieldset.hidden = !isPersonalOwnerEvent();
@@ -277,12 +336,22 @@ document.getElementById('status-select').addEventListener('change', (event) => {
 document.getElementById('save-status').addEventListener('click', () => void saveStatus());
 document.getElementById('edit-recurrence-enabled').addEventListener('change', (event) => {
   document.getElementById('edit-recurrence-fields').hidden = !event.target.checked;
+  if (event.target.checked) selectInitialEditWeekday();
+  setEditRecurrenceError();
 });
+document.querySelectorAll('input[name="edit-recurrence-end-mode"]').forEach((input) => input.addEventListener('change', () => {
+  syncEditRecurrenceEndMode();
+  setEditRecurrenceError();
+}));
+document.getElementById('edit-recurrence-interval').addEventListener('input', () => setEditRecurrenceError());
+document.getElementById('edit-recurrence-until').addEventListener('input', () => setEditRecurrenceError());
+document.querySelectorAll('input[name="edit-recurrence-weekday"]').forEach((input) => input.addEventListener('change', () => setEditRecurrenceError()));
 document.getElementById('edit-multi-day').addEventListener('change', syncEditMultiDayLayout);
 document.getElementById('edit-all-day').addEventListener('change', syncEditMultiDayLayout);
 document.getElementById('edit-date').addEventListener('change', () => {
   const fields = editElements();
   if (fields.multiDay.checked && !fields.endDate.value) fields.endDate.value = fields.date.value;
+  if (document.getElementById('edit-recurrence-enabled').checked) selectInitialEditWeekday();
 });
 document.getElementById('edit-date').addEventListener('keydown', focusOnEnter(() => {
   const fields = editElements();
@@ -295,12 +364,18 @@ document.getElementById('edit-end').addEventListener('keydown', focusOnEnter(() 
 document.getElementById('edit-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   let interval;
-  let recurrence;
   try {
     interval = buildEditInterval();
-    recurrence = formRecurrence(document.getElementById('edit-date').value);
   } catch (error) {
     message.textContent = error.message;
+    return;
+  }
+  let recurrence;
+  try {
+    recurrence = formRecurrence(document.getElementById('edit-date').value);
+    setEditRecurrenceError();
+  } catch (error) {
+    setEditRecurrenceError(error.message);
     return;
   }
 
