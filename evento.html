@@ -10,12 +10,12 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="page-card event-detail-page">
-    <p class="event-detail-back"><a id="back-link" href="#">Torna agli eventi</a></p>
+    <p class="event-detail-back"><a id="back-link" class="fa-button fa-button-secondary fa-button-compact" href="#">Torna agli eventi</a></p>
     <header class="event-detail-heading">
       <div class="event-detail-title-block"><p class="eyebrow">PROGRAMMA</p><h1 id="event-title">Evento</h1></div>
       <div id="creator-actions" class="event-detail-actions" hidden>
         <button id="edit-button" class="fa-button fa-button-primary" type="button">Modifica</button>
-        <button id="delete-button" class="area-delete-button" type="button">Elimina evento</button>
+        <button id="delete-button" class="fa-button fa-button-danger" type="button">Elimina evento</button>
       </div>
     </header>
     <p id="message" aria-live="polite">Caricamento...</p>
@@ -25,7 +25,7 @@
         <dt id="event-area-label" hidden>Area</dt><dd id="event-area" hidden></dd>
         <dt>Data e ora</dt><dd id="when"></dd>
         <dt>Luogo</dt><dd id="location"></dd>
-        <dt>Stato</dt><dd class="event-status-value"><span id="status"></span><span id="status-editor" class="event-status-editor"><label for="status-select">Cambia stato</label><select id="status-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-button fa-button-secondary fa-button-compact" type="button">Salva stato</button></span></dd>
+        <dt>Stato</dt><dd class="event-status-value"><span id="status"></span><span id="status-editor" class="event-status-editor"><label for="status-select">Cambia stato:</label><select id="status-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-button fa-button-primary fa-button-compact" type="button">Salva</button></span></dd>
         <dt id="event-visibility-label" hidden>Visibilità</dt><dd id="event-visibility" hidden></dd>
         <dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="event-participant-list"></dd>
         <dt id="event-interests-label" hidden>Interessi</dt><dd id="event-interests" class="event-interests-view" hidden></dd>
@@ -108,7 +108,7 @@
       <br id="edit-calendar-private-spacing">
       <fieldset id="edit-participants-fieldset"><legend>Partecipanti</legend><div id="edit-participants"></div></fieldset>
       <br>
-      <div class="form-actions"><button type="submit">Salva modifiche</button><button id="close-edit" class="secondary-button" type="button">Annulla</button></div>
+      <div class="form-actions"><button class="fa-button fa-button-primary" type="submit">Salva modifiche</button><button id="close-edit" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
     </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

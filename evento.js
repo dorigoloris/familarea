@@ -571,19 +571,19 @@ async function renderParticipantControls() {
     addControls.className = 'event-participant-add-controls';
     const select = document.createElement('select');
     select.id = 'event-participant-select';
-    select.setAttribute('aria-label', 'Seleziona un contatto');
-    select.append(new Option('Seleziona un contatto', ''));
+    select.setAttribute('aria-label', 'Aggiungi un contatto');
+    select.append(new Option('Aggiungi un contatto', ''));
     available.forEach((contact) => select.append(new Option(`${contact.first_name || ''} ${contact.last_name || ''}`.trim(), contact.contact_id)));
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'fa-button fa-button-primary fa-button-compact';
-    add.textContent = 'Aggiungi';
+    add.textContent = 'Invita';
     add.disabled = true;
     select.addEventListener('change', () => { add.disabled = !select.value; });
     add.addEventListener('click', async () => {
       if (!select.value) return;
-      const { error } = await supabaseClient.rpc('add_event_participant', { p_event_id: eventId, p_contact_id: select.value });
-      if (error) { message.textContent = 'Impossibile aggiungere il partecipante.'; return; }
+      const { error } = await supabaseClient.rpc('create_event_invite_for_contact', { p_event_id: eventId, p_contact_id: select.value });
+      if (error) { message.textContent = 'Impossibile creare l’invito per il Contatto selezionato.'; return; }
       await renderParticipantControls();
     });
     addControls.append(select, add);
@@ -605,16 +605,20 @@ async function renderParticipantControls() {
       const row = document.createElement('div');
       row.className = 'event-pending-invite-row';
       const details = document.createElement('div');
+      details.className = 'event-pending-invite-details';
       const fullName = `${pendingInvite.first_name || ''} ${pendingInvite.last_name || ''}`.trim() || 'Contatto';
       const name = document.createElement('strong'); name.textContent = fullName;
       const email = document.createElement('span'); email.textContent = pendingInvite.recipient_email;
       const state = document.createElement('span'); state.className = 'event-pending-invite-state'; state.textContent = 'In attesa';
-      details.append(name, email, state);
+      const person = document.createElement('span');
+      person.className = 'event-pending-invite-person';
+      person.append(name, document.createTextNode(' · '), email);
+      details.append(state, person);
       const rowActions = document.createElement('div');
       rowActions.className = 'event-pending-invite-actions';
       const linkAction = document.createElement('button');
       linkAction.type = 'button';
-      linkAction.className = 'secondary-button';
+      linkAction.className = 'fa-button fa-button-secondary fa-button-compact';
       linkAction.textContent = 'Genera nuovo link';
       linkAction.addEventListener('click', async () => {
         try {
@@ -629,7 +633,7 @@ async function renderParticipantControls() {
       });
       const cancelAction = document.createElement('button');
       cancelAction.type = 'button';
-      cancelAction.className = 'area-delete-button event-pending-invite-cancel';
+      cancelAction.className = 'fa-button fa-button-danger fa-button-compact event-pending-invite-cancel';
       cancelAction.textContent = 'Annulla invito';
       cancelAction.addEventListener('click', async () => {
         const confirmed = await FamilAreaConfirm.confirm({

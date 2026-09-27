@@ -25,6 +25,18 @@ function inviteErrorMessage(error) {
   return 'Non è stato possibile completare l’operazione. Riprova.';
 }
 
+function eventDateLabel(invite) {
+  const startsAt = new Date(invite.starts_at);
+  if (Number.isNaN(startsAt.getTime())) return 'Data da definire';
+  const dateFormat = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' });
+  if (invite.is_all_day) return dateFormat.format(startsAt);
+  const dateTimeFormat = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' });
+  const startLabel = dateTimeFormat.format(startsAt);
+  const endsAt = invite.ends_at ? new Date(invite.ends_at) : null;
+  if (!endsAt || Number.isNaN(endsAt.getTime())) return startLabel;
+  return `${startLabel} – ${new Intl.DateTimeFormat('it-IT', { timeStyle: 'short' }).format(endsAt)}`;
+}
+
 function setCardBusy(card, busy) { card.querySelectorAll('button').forEach((button) => { button.disabled = busy; }); }
 
 async function respondToInvite(invite, rpcName, card, kind = 'area') {
@@ -32,7 +44,13 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
   pageMessage.textContent = rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
   const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
-  if (await loadInvites()) pageMessage.textContent = kind === 'family' && rpcName.startsWith('accept_') ? 'Invito Famiglia accettato.' : '';
+  if (await loadInvites()) {
+    pageMessage.textContent = kind === 'family' && rpcName.startsWith('accept_')
+      ? 'Invito Famiglia accettato.'
+      : kind === 'event' && rpcName.startsWith('accept_')
+        ? 'Invito Evento accettato.'
+        : '';
+  }
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
 
@@ -115,21 +133,61 @@ function createFamilyInviteCard(invite) {
   return article;
 }
 
+function createEventInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row event-invite-card';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker'; type.textContent = 'Evento';
+  const title = document.createElement('h3');
+  title.textContent = invite.event_title || 'Evento FamilArea';
+  const organizer = document.createElement('p');
+  organizer.textContent = `Organizzato da: ${invite.organizer_name || 'Organizzatore FamilArea'}`;
+  const date = document.createElement('p');
+  date.textContent = `Data e ora: ${eventDateLabel(invite)}`;
+  const status = document.createElement('span');
+  status.className = `invite-status fa-status-badge invite-status-${invite.status}`;
+  status.textContent = statusLabel(invite.status);
+  details.append(type, title, organizer, date);
+  if (invite.area_name) {
+    const area = document.createElement('p');
+    area.textContent = `Area: ${invite.area_name}`;
+    details.append(area);
+  }
+  details.append(status);
+  article.append(details);
+  if (invite.status === 'pending') {
+    const actions = document.createElement('div'); actions.className = 'invite-actions';
+    const decline = document.createElement('button');
+    decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
+    decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_event_invite', article, 'event'));
+    const accept = document.createElement('button');
+    accept.type = 'button'; accept.textContent = 'Accetta';
+    accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_event_invite', article, 'event'));
+    actions.append(decline, accept); article.append(actions);
+  }
+  return article;
+}
+
 async function loadInvites() {
-  const [areaResult, familyResult] = await Promise.all([
+  const [areaResult, familyResult, eventResult] = await Promise.all([
     supabaseClient.rpc('get_my_area_invites'),
-    supabaseClient.rpc('get_my_family_invites')
+    supabaseClient.rpc('get_my_family_invites'),
+    supabaseClient.rpc('get_my_event_invites')
   ]);
   if (areaResult.error) { pageMessage.textContent = inviteErrorMessage(areaResult.error); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
+  if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleAreaInvites = (areaResult.data || [])
     .filter((invite) => invite.status === 'pending' || invite.status === 'accepted')
     .sort((left, right) => (left.status === 'pending' ? 0 : 1) - (right.status === 'pending' ? 0 : 1));
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
-  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length > 0;
+  const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length > 0;
   visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
+  visibleEventInvites.forEach((invite) => invitesList.appendChild(createEventInviteCard(invite)));
   visibleAreaInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
   return true;
 }
