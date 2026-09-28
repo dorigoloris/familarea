@@ -42,8 +42,10 @@ async function load() {
 
   document.getElementById('active-deadlines-section').hidden = !rows.length;
   list.replaceChildren(...rows.map((deadline) => {
-    const item = document.createElement(isManaged ? 'span' : 'a');
-    if (!isManaged) item.href = `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
+    const item = document.createElement('a');
+    item.href = isManaged
+      ? window.FamilAreaManagedContext.withMember(`scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`, context.member.id)
+      : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
     item.className = 'deadline-card';
     item.textContent = `${deadline.title} — ${formatDateDisplay(deadline.first_due_on)}`;
     return item;
