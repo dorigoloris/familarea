@@ -55,10 +55,13 @@ async function renderAreaCover(area) {
   const { data, error } = await supabaseClient.storage.from('area-images').createSignedUrl(area.image_path, 3600);
   if (error || !data?.signedUrl) return;
   const image = document.createElement('img');
+  image.className = 'fa-cover-media';
+  image.crossOrigin = 'anonymous';
   image.src = data.signedUrl;
   image.alt = '';
   illustration.replaceChildren(image);
-  illustration.classList.add('has-area-cover');
+  illustration.classList.add('fa-cover');
+  void FamilAreaCoverUtils.applyContrast(illustration, image);
 }
 
 async function load() {

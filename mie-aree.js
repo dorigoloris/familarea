@@ -154,9 +154,15 @@ async function loadOrganizationDashboardCover(account) {
   if (organizationError || !organization?.dashboard_cover_path) return;
   const { data, error } = await supabaseClient.storage.from('organization-dashboard-covers').createSignedUrl(organization.dashboard_cover_path, 60 * 60);
   if (error || !data?.signedUrl) return;
-  const safeUrl = data.signedUrl.replace(/["\\]/g, '\\$&');
-  dashboardHero.style.setProperty('--organization-dashboard-cover', `url("${safeUrl}")`);
-  dashboardHero.classList.add('has-organization-dashboard-cover');
+  const image = document.createElement('img');
+  image.className = 'fa-cover-media';
+  image.alt = '';
+  image.crossOrigin = 'anonymous';
+  image.src = data.signedUrl;
+  dashboardHero.querySelector('.fa-cover-media')?.remove();
+  dashboardHero.prepend(image);
+  dashboardHero.classList.add('fa-cover');
+  void FamilAreaCoverUtils.applyContrast(dashboardHero, image);
 }
 async function initialiseDashboard() {
   const { data } = await supabaseClient.auth.getSession();

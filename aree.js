@@ -28,9 +28,14 @@ async function renderAreaCardImage(area, card) {
   if (!area.image_path) return;
   const { data, error } = await supabaseClient.storage.from('area-images').createSignedUrl(area.image_path, 3600);
   if (error || !data?.signedUrl || !card.isConnected) return;
-  const safeUrl = data.signedUrl.replace(/["\\]/g, '\\$&');
-  card.style.setProperty('--area-card-cover', `url("${safeUrl}")`);
-  card.classList.add('has-area-cover');
+  const image = document.createElement('img');
+  image.className = 'fa-cover-media';
+  image.alt = '';
+  image.crossOrigin = 'anonymous';
+  image.src = data.signedUrl;
+  card.prepend(image);
+  card.classList.add('fa-cover');
+  void FamilAreaCoverUtils.applyContrast(card, image);
 }
 
 function renderGroup(group, memberships) {
