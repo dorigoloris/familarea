@@ -20,12 +20,13 @@
         <p>Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p>
       </div>
     </header>
+    <div id="managed-context" hidden></div>
     <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
     <section id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong></section>
     <section id="active-deadlines-section" hidden aria-labelledby="active-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Da tenere d'occhio</p><h2 id="active-deadlines-title">Scadenze attive</h2></div></div><div id="active-deadlines-list" class="deadlines-grid"></div></section>
     <section id="terminated-deadlines-section" hidden aria-labelledby="terminated-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Storico</p><h2 id="terminated-deadlines-title">Scadenze terminate</h2></div></div><div id="terminated-deadlines-list" class="deadlines-terminated-list"></div></section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="scadenze.js"></script>
+  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="date-utils.js"></script><script src="managed-context.js"></script><script src="scadenze.js"></script>
 </body>
 </html>

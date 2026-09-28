@@ -934,3 +934,16 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 
 /* Preserve the semantic hidden state against component display rules. */
 [hidden]{display:none!important}
+
+/* Identità del soggetto della occurrence: account personale, calendario condiviso o membro Famiglia. */
+.calendar-item-title-with-avatar{display:flex!important;align-items:center;gap:5px;min-width:0}
+.calendar-item-avatar{display:grid;width:17px;height:17px;flex:0 0 17px;place-items:center;overflow:hidden;border-radius:50%;background:#dcefe0;color:#244563;font-size:7px;font-weight:800;line-height:1}
+.calendar-item-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.calendar-item-title-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Contesto temporaneo per la gestione di un membro Famiglia senza account. */
+.managed-context-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-8px 0 20px;padding:10px 12px;border:1px solid #d8e6eb;border-radius:12px;background:#f7fbf6;color:var(--navy)}
+.managed-context-identity{display:flex;align-items:center;gap:9px;min-width:0;font-size:14px;font-weight:700}
+.managed-context-avatar{display:grid;width:28px;height:28px;flex:0 0 28px;place-items:center;border-radius:50%;background:#dcefe0;color:#315f38;font-size:12px;font-weight:800}
+.managed-context-back{flex:0 0 auto;width:auto!important;white-space:nowrap}
+@media(max-width:560px){.managed-context-bar{align-items:stretch;flex-direction:column;gap:10px}.managed-context-back{width:100%!important}}

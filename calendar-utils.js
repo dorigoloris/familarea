@@ -50,12 +50,33 @@
     return end ? `${formatter.format(start)} – ${formatter.format(end)}` : formatter.format(start);
   }
 
-  function appendCalendarOwner(item, element) {
-    if (!item.calendar_is_shared) return;
-    const owner = document.createElement('span');
-    owner.className = 'calendar-item-kind calendar-item-kind-calendar';
-    owner.textContent = `${item.calendar_owner_display_name || 'Calendario condiviso'} · Calendario`;
-    element.appendChild(owner);
+  function initials(name) {
+    return (name || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  function setItemTitle(item, title) {
+    if (!item.calendar_show_owner_avatar) {
+      title.textContent = item.title;
+      return;
+    }
+    const subjectName = item.calendar_avatar_display_name || item.calendar_owner_display_name || 'Calendario condiviso';
+    const subjectAvatar = document.createElement('span');
+    subjectAvatar.className = 'calendar-item-avatar';
+    subjectAvatar.title = item.calendar_avatar_title || `Calendario di ${subjectName}`;
+    subjectAvatar.setAttribute('role', 'img');
+    subjectAvatar.setAttribute('aria-label', subjectAvatar.title);
+    subjectAvatar.textContent = initials(subjectName);
+    if (item.calendar_owner_avatar_url) {
+      const image = document.createElement('img');
+      image.alt = '';
+      image.src = item.calendar_owner_avatar_url;
+      subjectAvatar.replaceChildren(image);
+    }
+    const label = document.createElement('span');
+    label.className = 'calendar-item-title-label';
+    label.textContent = item.title;
+    title.classList.add('calendar-item-title-with-avatar');
+    title.append(subjectAvatar, label);
   }
 
   function createCalendarItem(item) {
@@ -68,17 +89,15 @@
 
     const title = document.createElement('span');
     title.className = 'calendar-activity-title';
-    title.textContent = item.title;
+    setItemTitle(item, title);
     link.appendChild(title);
-    appendCalendarOwner(item, link);
-    if (type === 'event') {
-      return link;
-    }
 
-    const area = document.createElement('span');
-    area.className = 'calendar-activity-area';
-    area.textContent = type === 'birthday' ? 'Contatto' : (type === 'deadline' ? 'Scadenza' : item.area_name);
-    link.appendChild(area);
+    if (type !== 'deadline' && type !== 'event') {
+      const area = document.createElement('span');
+      area.className = 'calendar-activity-area';
+      area.textContent = type === 'birthday' ? 'Contatto' : item.area_name;
+      link.appendChild(area);
+    }
 
     if (type === 'event' || type === 'birthday' || type === 'deadline') {
       const badge = document.createElement('span');
@@ -86,6 +105,8 @@
       badge.textContent = type === 'birthday' ? 'Compleanno' : (type === 'deadline' ? 'Scadenza' : 'Evento');
       link.appendChild(badge);
     }
+
+    if (type === 'event') return link;
 
     const time = formatTime(item);
     if (time || item.status === 'completed') {
@@ -255,9 +276,8 @@
     link.title = (type === 'birthday' || type === 'deadline') ? item.title : `${item.title} — ${item.area_name || ''}`.trim();
     const title = document.createElement('span');
     title.className = `${className}-title`;
-    title.textContent = item.title;
+    setItemTitle(item, title);
     link.appendChild(title);
-    appendCalendarOwner(item, link);
     if (showTime && type !== 'event') {
       const time = document.createElement('span');
       time.className = `${className}-time`;

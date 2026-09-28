@@ -177,6 +177,16 @@ function createMemberCard(member, options = {}) {
       actions.append(inviteButton);
     }
   }
+  if (member.member_type === 'pet') {
+    const manageButton = document.createElement('button');
+    manageButton.className = 'fa-button fa-button-secondary';
+    manageButton.type = 'button';
+    manageButton.textContent = 'Gestisci';
+    manageButton.onclick = () => {
+      location.href = `scadenze.html?managed_member_id=${encodeURIComponent(member.id)}`;
+    };
+    actions.append(manageButton);
+  }
   const editButton = document.createElement('button');
   editButton.className = 'secondary-button family-member-edit';
   editButton.type = 'button';

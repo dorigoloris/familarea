@@ -18,6 +18,7 @@ let areas = new Map();
 let isPersonalAccount = false;
 let familyCalendarControls = [];
 let calendarPeople = new Map();
+let calendarOwnerAvatarUrls = new Map();
 let currentAccountId = null;
 
 function bounds() {
@@ -27,9 +28,16 @@ function bounds() {
 }
 
 function normalise(item) {
+  const hasFamilyMemberSubject = Boolean(item.family_member_id);
+  const familyMemberName = item.family_member_name || 'Membro della Famiglia';
+  const ownerName = item.calendar_owner_display_name || calendarPeople.get(item.calendar_owner_account_id) || '';
   return {
     ...item,
-    calendar_owner_display_name: item.calendar_owner_display_name || calendarPeople.get(item.calendar_owner_account_id) || '',
+    calendar_owner_display_name: ownerName,
+    calendar_show_owner_avatar: hasFamilyMemberSubject || Boolean(item.calendar_is_shared || (isPersonalAccount && item.calendar_owner_account_id === currentAccountId)),
+    calendar_avatar_display_name: hasFamilyMemberSubject ? familyMemberName : ownerName,
+    calendar_avatar_title: hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`,
+    calendar_owner_avatar_url: hasFamilyMemberSubject ? '' : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || ''),
     area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
     can_open_details: item.calendar_owner_account_id === currentAccountId,
     is_all_day: Boolean(item.all_day),
@@ -63,6 +71,13 @@ async function load() {
   isPersonalAccount = account?.account_type === 'personal';
   currentAccountId = account?.account_id || null;
   await loadFamilyCalendarControls();
+  if (isPersonalAccount && currentAccountId) {
+    const { data: profile } = await supabaseClient.rpc('get_my_profile');
+    const displayName = account?.display_name || '';
+    if (displayName) calendarPeople.set(currentAccountId, displayName);
+    const avatarUrl = await getCalendarOwnerAvatarUrl(profile?.avatar_path);
+    if (avatarUrl) calendarOwnerAvatarUrls.set(currentAccountId, avatarUrl);
+  }
   items = (data || []).map(normalise);
   content.hidden = false; message.textContent = ''; render();
 }
@@ -76,6 +91,12 @@ async function renderCalendarControlAvatar(avatar, avatarPath) {
   const image = document.createElement('img'); image.alt = '';
   image.onload = () => { if (avatar.isConnected) avatar.replaceChildren(image); };
   image.src = data.signedUrl;
+}
+
+async function getCalendarOwnerAvatarUrl(avatarPath) {
+  if (!avatarPath) return '';
+  const { data, error } = await supabaseClient.storage.from('profile-avatars').createSignedUrl(avatarPath, 3600);
+  return error || !data?.signedUrl ? '' : data.signedUrl;
 }
 
 function compactToggle(checked, disabled, title, onChange) {
@@ -138,6 +159,12 @@ async function loadFamilyCalendarControls() {
   calendarPeople = new Map(familyCalendarControls
     .filter((control) => control.member_account_id)
     .map((control) => [control.member_account_id, control.display_name || 'Calendario condiviso']));
+  const controlsWithAvatar = familyCalendarControls.filter((control) => control.member_account_id && control.avatar_path);
+  calendarOwnerAvatarUrls = new Map();
+  await Promise.all(controlsWithAvatar.map(async (control) => {
+    const avatarUrl = await getCalendarOwnerAvatarUrl(control.avatar_path);
+    if (avatarUrl) calendarOwnerAvatarUrls.set(control.member_account_id, avatarUrl);
+  }));
   renderFamilyCalendarControls();
 }
 
