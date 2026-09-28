@@ -132,7 +132,8 @@ function createMemberCard(member, options = {}) {
   avatar.className = `family-member-avatar${member.member_type === 'pet' ? ' is-pet' : ''}`;
   avatar.setAttribute('aria-hidden', 'true');
   avatar.textContent = memberInitials(member);
-  void renderProfileAvatar(avatar, member.profile_avatar_path);
+  if (member.avatar_path) void window.FamilAreaFamilyMemberAvatar.render(avatar, member.avatar_path);
+  else void renderProfileAvatar(avatar, member.profile_avatar_path);
   const identity = document.createElement('div');
   identity.className = 'family-member-identity';
   const name = document.createElement('h3');
@@ -183,7 +184,7 @@ function createMemberCard(member, options = {}) {
     manageButton.type = 'button';
     manageButton.textContent = 'Gestisci';
     manageButton.onclick = () => {
-      location.href = `scadenze.html?managed_member_id=${encodeURIComponent(member.id)}`;
+      location.href = `familiare.html?managed_member_id=${encodeURIComponent(member.id)}`;
     };
     actions.append(manageButton);
   }

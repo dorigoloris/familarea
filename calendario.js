@@ -9,6 +9,11 @@ const monthView = document.getElementById('month-calendar');
 const weekView = document.getElementById('week-calendar');
 const dayView = document.getElementById('day-calendar');
 const buttons = { month: document.getElementById('month-view'), week: document.getElementById('week-view'), day: document.getElementById('day-view') };
+const managedContextContainer = document.getElementById('managed-context');
+const managedMemberHomeLink = document.getElementById('managed-member-home-link');
+const calendarHero = document.getElementById('calendar-hero');
+const familySharingSection = document.getElementById('calendar-family-sharing');
+const undatedSection = document.getElementById('undated-section');
 let view = 'month';
 let month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let week = calendarUtils.startOfWeek(new Date());
@@ -19,7 +24,35 @@ let isPersonalAccount = false;
 let familyCalendarControls = [];
 let calendarPeople = new Map();
 let calendarOwnerAvatarUrls = new Map();
+let familyMemberAvatarUrls = new Map();
 let currentAccountId = null;
+let managedMember = null;
+let managedContextUnavailable = false;
+
+async function initialiseManagedContext() {
+  const context = await window.FamilAreaManagedContext.load();
+  if (!context.requested) return;
+  if (!context.member) {
+    managedContextUnavailable = true;
+    message.textContent = 'Il membro selezionato non è gestibile dalla tua Famiglia.';
+    return;
+  }
+
+  managedMember = context.member;
+  managedContextContainer.hidden = false;
+  window.FamilAreaManagedContext.renderBar(managedContextContainer, managedMember, {
+    backHref: 'calendario.html'
+  });
+  managedMemberHomeLink.hidden = false;
+  managedMemberHomeLink.querySelector('a').href = window.FamilAreaManagedContext.withMember('familiare.html', managedMember.id);
+  document.getElementById('calendar-page-title').textContent = `Calendario di ${window.FamilAreaManagedContext.memberName(managedMember)}`;
+  calendarHero.querySelector('.fa-section-hero-content > p:not(.eyebrow)').textContent = 'Impegni e scadenze riferiti a questo famigliare.';
+  familySharingSection.hidden = true;
+  undatedSection.hidden = true;
+  document.querySelectorAll('.calendar-legend-item:not(.calendar-legend-deadline)').forEach((item) => { item.hidden = true; });
+}
+
+const managedContextReady = initialiseManagedContext();
 
 function bounds() {
   if (view === 'week') { const start = calendarUtils.startOfWeek(week); const end = new Date(start); end.setDate(end.getDate() + 7); return { start, end }; }
@@ -37,14 +70,27 @@ function normalise(item) {
     calendar_show_owner_avatar: hasFamilyMemberSubject || Boolean(item.calendar_is_shared || (isPersonalAccount && item.calendar_owner_account_id === currentAccountId)),
     calendar_avatar_display_name: hasFamilyMemberSubject ? familyMemberName : ownerName,
     calendar_avatar_title: hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`,
-    calendar_owner_avatar_url: hasFamilyMemberSubject ? '' : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || ''),
+    calendar_owner_avatar_url: hasFamilyMemberSubject ? (familyMemberAvatarUrls.get(item.family_member_id) || '') : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || ''),
     area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
     can_open_details: item.calendar_owner_account_id === currentAccountId,
+    managed_member_id: managedMember?.id || null,
     is_all_day: Boolean(item.all_day),
     occurrence_starts_at: item.starts_at,
     occurrence_ends_at: item.ends_at,
     occurs_on: item.occurs_on || item.due_on
   };
+}
+
+async function loadFamilyMemberAvatarUrls(occurrences) {
+  familyMemberAvatarUrls = new Map();
+  const paths = new Map();
+  (occurrences || []).forEach((item) => {
+    if (item.family_member_id && item.family_member_avatar_path) paths.set(item.family_member_id, item.family_member_avatar_path);
+  });
+  await Promise.all([...paths.entries()].map(async ([memberId, path]) => {
+    const url = await window.FamilAreaFamilyMemberAvatar.resolve(path);
+    if (url) familyMemberAvatarUrls.set(memberId, url);
+  }));
 }
 
 function syncViewControls() {
@@ -60,24 +106,53 @@ function render() {
 }
 
 async function load() {
+  await managedContextReady;
+  if (managedContextUnavailable) return;
+
   const { start, end } = bounds();
-  const [{ data, error }, { data: myAreas }, { data: account }] = await Promise.all([
-    supabaseClient.rpc('get_calendar_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
-    supabaseClient.rpc('get_my_areas'),
-    supabaseClient.rpc('get_current_account')
-  ]);
-  if (error) { message.textContent = 'Impossibile caricare il calendario.'; return; }
-  areas = new Map((myAreas || []).map((area) => [area.id, area.name]));
-  isPersonalAccount = account?.account_type === 'personal';
-  currentAccountId = account?.account_id || null;
-  await loadFamilyCalendarControls();
-  if (isPersonalAccount && currentAccountId) {
-    const { data: profile } = await supabaseClient.rpc('get_my_profile');
-    const displayName = account?.display_name || '';
-    if (displayName) calendarPeople.set(currentAccountId, displayName);
-    const avatarUrl = await getCalendarOwnerAvatarUrl(profile?.avatar_path);
-    if (avatarUrl) calendarOwnerAvatarUrls.set(currentAccountId, avatarUrl);
+  let data;
+  let error;
+  let account;
+
+  if (managedMember) {
+    const [occurrences, currentAccount] = await Promise.all([
+      supabaseClient.rpc('get_my_managed_family_member_calendar', {
+        p_member_id: managedMember.id,
+        p_from: start.toISOString(),
+        p_to: end.toISOString()
+      }),
+      supabaseClient.rpc('get_current_account')
+    ]);
+    ({ data, error } = occurrences);
+    account = currentAccount.data;
+    areas = new Map();
+    isPersonalAccount = account?.account_type === 'personal';
+    currentAccountId = account?.account_id || null;
+    familyCalendarControls = [];
+    renderFamilyCalendarControls();
+  } else {
+    const [occurrences, myAreasResult, currentAccount] = await Promise.all([
+      supabaseClient.rpc('get_calendar_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
+      supabaseClient.rpc('get_my_areas'),
+      supabaseClient.rpc('get_current_account')
+    ]);
+    ({ data, error } = occurrences);
+    account = currentAccount.data;
+    areas = new Map((myAreasResult.data || []).map((area) => [area.id, area.name]));
+    isPersonalAccount = account?.account_type === 'personal';
+    currentAccountId = account?.account_id || null;
+    await loadFamilyCalendarControls();
+    if (isPersonalAccount && currentAccountId) {
+      const { data: profile } = await supabaseClient.rpc('get_my_profile');
+      const displayName = account?.display_name || '';
+      if (displayName) calendarPeople.set(currentAccountId, displayName);
+      const avatarUrl = await getCalendarOwnerAvatarUrl(profile?.avatar_path);
+      if (avatarUrl) calendarOwnerAvatarUrls.set(currentAccountId, avatarUrl);
+    }
   }
+
+  if (error) { message.textContent = 'Impossibile caricare il calendario.'; return; }
+  await loadFamilyMemberAvatarUrls(data);
   items = (data || []).map(normalise);
   content.hidden = false; message.textContent = ''; render();
 }

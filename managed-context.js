@@ -28,6 +28,11 @@
       return { requested: true, member: null, error: error || new Error('family member unavailable') };
     }
 
+    const { data: avatarPath } = await client().rpc('get_my_managed_family_member_avatar_path', {
+      p_member_id: memberId
+    });
+    member.avatar_path = avatarPath || null;
+
     return { requested: true, member };
   }
 
@@ -37,7 +42,7 @@
     return `${url.pathname.split('/').pop()}${url.search}${url.hash}`;
   }
 
-  function renderBar(container, member) {
+  function renderBar(container, member, options = {}) {
     if (!container || !member) return;
     const bar = document.createElement('section');
     bar.className = 'managed-context-bar';
@@ -49,6 +54,9 @@
     avatar.className = 'managed-context-avatar';
     avatar.setAttribute('aria-hidden', 'true');
     avatar.textContent = memberName(member).trim().charAt(0).toLocaleUpperCase('it-IT') || '?';
+    if (member.avatar_path && window.FamilAreaFamilyMemberAvatar) {
+      void window.FamilAreaFamilyMemberAvatar.render(avatar, member.avatar_path);
+    }
     const text = document.createElement('span');
     text.textContent = 'Stai gestendo: ';
     const name = document.createElement('strong');
@@ -58,7 +66,7 @@
 
     const back = document.createElement('a');
     back.className = 'fa-button fa-button-secondary fa-button-compact managed-context-back';
-    back.href = 'scadenze.html';
+    back.href = options.backHref || 'scadenze.html';
     back.textContent = 'Torna a Loris';
     bar.append(identity, back);
     container.replaceChildren(bar);

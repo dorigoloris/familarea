@@ -30,7 +30,10 @@
 
   function itemLink(item) {
     if (itemType(item) === 'deadline') {
-      return `scadenza.html?deadline_id=${encodeURIComponent(item.deadline_id)}`;
+      const link = new URL('scadenza.html', window.location.href);
+      link.searchParams.set('deadline_id', item.deadline_id);
+      if (item.managed_member_id) link.searchParams.set('managed_member_id', item.managed_member_id);
+      return `${link.pathname.split('/').pop()}${link.search}`;
     }
     if (itemType(item) === 'birthday') {
       return `contatto.html?contact_id=${encodeURIComponent(item.birthday_contact_id)}`;

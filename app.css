@@ -947,3 +947,6 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 .managed-context-avatar{display:grid;width:28px;height:28px;flex:0 0 28px;place-items:center;border-radius:50%;background:#dcefe0;color:#315f38;font-size:12px;font-weight:800}
 .managed-context-back{flex:0 0 auto;width:auto!important;white-space:nowrap}
 @media(max-width:560px){.managed-context-bar{align-items:stretch;flex-direction:column;gap:10px}.managed-context-back{width:100%!important}}
+
+/* Avatar dei membri Famiglia gestiti: stessa azione condivisa per ogni membro, non solo per gli animali. */
+.managed-member-avatar-control{display:flex;align-items:center;gap:10px}.managed-member-avatar-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.managed-member-avatar-actions .fa-button{width:auto;margin:0;padding:7px 9px;font-size:12px}.managed-member-avatar-actions .is-disabled{pointer-events:none;opacity:.6}.managed-member-page-view #managed-member-avatar-message{margin:10px 0 0}.managed-member-page-view #managed-member-avatar-message.is-error{color:#a33d34}@media(max-width:560px){.managed-member-avatar-control{align-items:flex-start;flex-direction:column}.managed-member-avatar-actions{width:100%}.managed-member-avatar-actions .fa-button{flex:1 1 auto}}

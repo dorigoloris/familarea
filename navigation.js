@@ -7,6 +7,7 @@
   const primarySectionByPage = {
     'dashboard.html': 'dashboard',
     'famiglia.html': 'family',
+    'familiare.html': 'family',
     'mie-aree.html': 'areas',
     'crea-area.html': 'areas',
     'area.html': 'areas',
@@ -338,7 +339,7 @@
   }
 
   loadAccountIdentity().catch(() => {});
-  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'interessi.html', 'proposte.html', 'inviti.html']);
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html', 'inviti.html']);
   if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;
