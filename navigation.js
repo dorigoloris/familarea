@@ -357,29 +357,33 @@
   async function refreshInvitesBadge() {
     if (!personalInvitesLink) return;
     const requestVersion = ++invitesBadgeRequestVersion;
-    const [areaResult, familyResult, eventResult] = await Promise.all([
+    const [areaResult, familyResult, eventResult, suggestionResult] = await Promise.all([
       client.rpc('get_my_area_invites'),
       client.rpc('get_my_family_invites'),
-      client.rpc('get_my_event_invites')
+      client.rpc('get_my_event_invites'),
+      client.rpc('get_my_contact_suggestions')
     ]);
     if (requestVersion !== invitesBadgeRequestVersion) return;
 
     if (areaResult.error) console.error('get_my_area_invites badge failed', areaResult.error);
     if (familyResult.error) console.error('get_my_family_invites badge failed', familyResult.error);
     if (eventResult.error) console.error('get_my_event_invites badge failed', eventResult.error);
+    if (suggestionResult.error) console.error('get_my_contact_suggestions badge failed', suggestionResult.error);
 
     const areaAvailable = !areaResult.error;
     const familyAvailable = !familyResult.error;
     const eventAvailable = !eventResult.error;
-    if (!areaAvailable && !familyAvailable && !eventAvailable) return;
+    const suggestionAvailable = !suggestionResult.error;
+    if (!areaAvailable && !familyAvailable && !eventAvailable && !suggestionAvailable) return;
 
     const pendingCount = (areaAvailable ? (areaResult.data || []).filter((invite) => invite.status === 'pending').length : 0)
       + (familyAvailable ? (familyResult.data || []).filter((invite) => invite.status === 'pending').length : 0)
-      + (eventAvailable ? (eventResult.data || []).filter((invite) => invite.status === 'pending').length : 0);
+      + (eventAvailable ? (eventResult.data || []).filter((invite) => invite.status === 'pending').length : 0)
+      + (suggestionAvailable ? (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending').length : 0);
 
     // Con una sorgente non disponibile non azzeriamo un badge gia' mostrato:
     // l'assenza del segnale non deve simulare l'assenza di inviti.
-    if (pendingCount === 0 && (!areaAvailable || !familyAvailable || !eventAvailable)) return;
+    if (pendingCount === 0 && (!areaAvailable || !familyAvailable || !eventAvailable || !suggestionAvailable)) return;
 
     personalInvitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
     if (pendingCount === 0) {

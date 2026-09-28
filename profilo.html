@@ -35,30 +35,32 @@
       </section>
 
       <form id="profile-form" class="profile-form">
-        <div>
+        <div class="profile-first-name-field">
           <label for="profile-first-name">Nome *</label><br>
           <input id="profile-first-name" type="text" required autocomplete="given-name">
         </div>
-        <div>
+        <div class="profile-last-name-field">
           <label for="profile-last-name">Cognome</label><br>
           <input id="profile-last-name" type="text" autocomplete="family-name">
         </div>
-        <div>
+        <div class="profile-email-field">
           <label for="profile-email">Email</label><br>
-          <input id="profile-email" type="email" readonly aria-readonly="true" autocomplete="email">
+          <div class="profile-email-control">
+            <input id="profile-email" type="email" readonly aria-readonly="true" autocomplete="email">
+            <a class="fa-button fa-button-primary fa-button-compact" href="condividi-contatto.html">Condividi il mio contatto</a>
+          </div>
           <p class="field-help">L’email è gestita dal tuo account di accesso.</p>
         </div>
         <div hidden>
           <label for="profile-phone">Cellulare</label><br>
           <input id="profile-phone" type="tel" inputmode="tel" autocomplete="tel">
         </div>
-        <div>
+        <div class="profile-birth-date-field">
           <label for="profile-birth-date">Data di nascita</label><br>
           <input id="profile-birth-date" type="date" autocomplete="bday">
         </div>
         <div class="form-actions">
           <button id="profile-save-button" type="submit">Salva modifiche</button>
-          <a class="secondary-button" href="condividi-contatto.html">Condividi il mio contatto</a>
         </div>
       </form>
     </div>

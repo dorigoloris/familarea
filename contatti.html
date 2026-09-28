@@ -24,9 +24,17 @@
     </header>
 
     <p id="message" aria-live="polite">Caricamento contatti...</p>
-    <section class="contacts-directory-surface fa-surface fa-data-card" aria-label="Elenco contatti">
+    <section id="my-contact" class="my-contact-section fa-surface fa-data-card" aria-labelledby="my-contact-title" hidden>
+      <p id="my-contact-title" class="my-contact-label">IL MIO CONTATTO</p>
+      <div class="my-contact-card">
+        <span id="my-contact-avatar" class="contact-directory-avatar" aria-hidden="true"></span>
+        <strong id="my-contact-name"></strong>
+        <a class="fa-button fa-button-primary fa-button-compact" href="condividi-contatto.html">Condividi</a>
+      </div>
+    </section>
+    <section class="contacts-directory-surface fa-surface fa-data-card fa-contacts-grid" aria-label="Elenco contatti">
       <div class="contacts-directory-header fa-data-header" aria-hidden="true">
-        <span>NOME E COGNOME</span><span>EMAIL</span><span>CELLULARE</span><span>DATA DI NASCITA</span>
+        <span>NOME E COGNOME</span><span>EMAIL</span><span>CELLULARE</span><span>DATA DI NASCITA</span><span>AZIONI</span>
       </div>
       <div id="contacts-list" class="contacts-list fa-data-list"></div>
       <div id="empty-state" class="contacts-empty-state fa-empty-state" hidden>
@@ -41,6 +49,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
   <script src="contatti.js"></script>
 </body>
 </html>

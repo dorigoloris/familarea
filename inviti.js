@@ -42,7 +42,10 @@ function setCardBusy(card, busy) { card.querySelectorAll('button').forEach((butt
 async function respondToInvite(invite, rpcName, card, kind = 'area') {
   setCardBusy(card, true);
   pageMessage.textContent = rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
-  const { error } = await supabaseClient.rpc(rpcName, { p_invite_id: invite.invite_id });
+  const params = kind === 'suggestion'
+    ? { p_suggestion_id: invite.suggestion_id }
+    : { p_invite_id: invite.invite_id };
+  const { error } = await supabaseClient.rpc(rpcName, params);
   if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
   if (await loadInvites()) {
     pageMessage.textContent = kind === 'family' && rpcName.startsWith('accept_')
@@ -169,15 +172,39 @@ function createEventInviteCard(invite) {
   return article;
 }
 
+function createContactSuggestionCard(suggestion) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row contact-suggestion-card';
+  const details = document.createElement('div');
+  const type = document.createElement('p'); type.className = 'section-kicker'; type.textContent = 'Suggerimento contatto';
+  const title = document.createElement('h3');
+  const suggestedName = fullName(suggestion.suggested_first_name, suggestion.suggested_last_name, 'un contatto');
+  title.textContent = `${suggestion.sender_name || 'Un utente FamilArea'} ti suggerisce ${suggestedName} come contatto.`;
+  const status = document.createElement('span');
+  status.className = 'invite-status fa-status-badge invite-status-pending'; status.textContent = 'In attesa';
+  details.append(type, title, status); article.append(details);
+  const actions = document.createElement('div'); actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Ignora';
+  decline.addEventListener('click', () => respondToInvite(suggestion, 'decline_my_contact_suggestion', article, 'suggestion'));
+  const accept = document.createElement('button');
+  accept.type = 'button'; accept.textContent = 'Aggiungi ai Contatti';
+  accept.addEventListener('click', () => respondToInvite(suggestion, 'accept_my_contact_suggestion', article, 'suggestion'));
+  actions.append(decline, accept); article.append(actions);
+  return article;
+}
+
 async function loadInvites() {
-  const [areaResult, familyResult, eventResult] = await Promise.all([
+  const [areaResult, familyResult, eventResult, suggestionResult] = await Promise.all([
     supabaseClient.rpc('get_my_area_invites'),
     supabaseClient.rpc('get_my_family_invites'),
-    supabaseClient.rpc('get_my_event_invites')
+    supabaseClient.rpc('get_my_event_invites'),
+    supabaseClient.rpc('get_my_contact_suggestions')
   ]);
   if (areaResult.error) { pageMessage.textContent = inviteErrorMessage(areaResult.error); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
+  if (suggestionResult.error) console.error('get_my_contact_suggestions failed', suggestionResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleAreaInvites = (areaResult.data || [])
@@ -185,9 +212,11 @@ async function loadInvites() {
     .sort((left, right) => (left.status === 'pending' ? 0 : 1) - (right.status === 'pending' ? 0 : 1));
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
-  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length > 0;
+  const visibleSuggestions = (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending');
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length > 0;
   visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
   visibleEventInvites.forEach((invite) => invitesList.appendChild(createEventInviteCard(invite)));
+  visibleSuggestions.forEach((suggestion) => invitesList.appendChild(createContactSuggestionCard(suggestion)));
   visibleAreaInvites.forEach((invite) => invitesList.appendChild(createInviteCard(invite)));
   return true;
 }
