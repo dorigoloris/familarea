@@ -17,9 +17,10 @@
         <div class="fa-section-hero-content"><p class="eyebrow">VEICOLO</p><h1 id="deadline-item-title"></h1><p id="deadline-item-type"></p></div>
       </header>
       <section class="deadline-item-deadlines fa-surface" aria-labelledby="deadline-item-deadlines-title">
-        <p class="section-kicker">PROSSIMO STEP</p>
         <h2 id="deadline-item-deadlines-title">Scadenze</h2>
-        <p>Qui compariranno le Scadenze collegate a questo veicolo.</p>
+        <p id="deadline-item-deadlines-empty">Caricamento scadenze...</p>
+        <div id="deadline-item-deadlines-list" class="deadline-management-list" hidden aria-label="Scadenze del veicolo"></div>
+        <p class="deadline-item-deadlines-actions"><a id="deadline-item-add-deadline" class="fa-button fa-button-primary" href="nuova-scadenza.html">+ Aggiungi scadenza</a></p>
       </section>
     </section>
   </main>
@@ -28,6 +29,7 @@
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
   <script src="gestione-scadenze.js"></script>
+  <script src="date-utils.js"></script>
   <script src="gestione-scadenza-item.js"></script>
 </body>
 </html>

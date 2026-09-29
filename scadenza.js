@@ -20,6 +20,28 @@ function managedHref(path) {
     : path;
 }
 
+async function renderDeadlineItemReference() {
+  document.getElementById('deadline-item-reference')?.remove();
+  if (isManaged() || !d.deadline_item_id) return;
+
+  const { data: item, error } = await c.rpc('get_my_deadline_item', {
+    p_item_id: d.deadline_item_id
+  });
+  if (error || !item) return;
+
+  const row = document.createElement('div');
+  row.id = 'deadline-item-reference';
+  const term = document.createElement('dt');
+  const definition = document.createElement('dd');
+  const link = document.createElement('a');
+  term.textContent = 'Veicolo';
+  link.href = `gestione-scadenza-item.html?item_id=${encodeURIComponent(item.id)}`;
+  link.textContent = item.name;
+  definition.append(link);
+  row.append(term, definition);
+  document.getElementById('deadline-details-list').append(row);
+}
+
 async function load() {
   const context = await window.FamilAreaManagedContext.load();
   managedMember = context.member || null;
@@ -51,6 +73,7 @@ async function load() {
   document.getElementById('deadline-status').textContent = d.status;
   document.getElementById('deadline-content').hidden = false;
   m.textContent = contextWarning;
+  await renderDeadlineItemReference();
   await occurrence();
   if (!isManaged()) await attachments();
 }
