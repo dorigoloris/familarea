@@ -5,12 +5,30 @@ const familyMemberField = document.getElementById('deadline-family-member-field'
 const managedMemberField = document.getElementById('deadline-managed-member');
 const deadlineItemField = document.getElementById('deadline-item-context');
 const referenceField = document.getElementById('deadline-reference-field');
+const deadlineItemSelectorField = document.getElementById('deadline-item-selector-field');
+const deadlineItemSelector = document.getElementById('deadline-item-selector');
+const titleField = document.getElementById('deadline-title').closest('div');
+const categoryField = document.getElementById('deadline-category').closest('div');
 const contextContainer = document.getElementById('managed-context');
 const backLink = document.getElementById('deadline-back-link');
 const cancelLink = document.getElementById('deadline-cancel-link');
+const formTitle = document.getElementById('deadline-form-title');
+const formIntro = document.getElementById('deadline-form-intro');
+const submitButton = document.getElementById('deadline-submit');
 let managedMember = null;
 let deadlineItem = null;
-const requestedDeadlineItemId = new URLSearchParams(window.location.search).get('deadline_item_id');
+let editingDeadline = null;
+let availableDeadlineItems = [];
+const query = new URLSearchParams(window.location.search);
+const requestedDeadlineItemId = query.get('deadline_item_id');
+const editingDeadlineId = query.get('deadline_id');
+const presetTitle = query.get('preset_title')?.trim() || '';
+const deadlineItemCategoryLabels = {
+  vehicle: 'Veicolo',
+  home: 'Casa',
+  utilities: 'Utenze e bollette',
+  other: 'Altro'
+};
 
 function managedHref(path) {
   return managedMember
@@ -22,19 +40,107 @@ function deadlineItemHref(itemId) {
   return `gestione-scadenza-item.html?item_id=${encodeURIComponent(itemId)}`;
 }
 
-async function init() {
-  const context = await window.FamilAreaManagedContext.load();
-  if (context.requested && !context.member) {
-    m.textContent = 'Il membro selezionato non è gestibile dalla tua Famiglia. Stai creando una scadenza personale.';
-  }
+function deadlineDetailHref(deadlineId) {
+  return `scadenza.html?deadline_id=${encodeURIComponent(deadlineId)}`;
+}
 
-  const { data: account, error } = await c.rpc('get_current_account');
+function renderVehicleDeadlineContext(item, title = '') {
+  deadlineItemField.replaceChildren();
+  const vehicle = document.createElement('div');
+  vehicle.textContent = `Veicolo: ${item.name}`;
+  deadlineItemField.append(vehicle);
+  if (title) {
+    const deadline = document.createElement('div');
+    deadline.textContent = `Scadenza: ${title}`;
+    deadlineItemField.append(deadline);
+  }
+}
+
+function configureVehicleItemCreateForm(item) {
+  const isTemplate = Boolean(presetTitle);
+  document.getElementById('deadline-category').value = 'vehicle';
+  titleField.hidden = isTemplate;
+  categoryField.hidden = true;
+  if (isTemplate) document.getElementById('deadline-title').value = presetTitle;
+  renderVehicleDeadlineContext(item, isTemplate ? presetTitle : '');
+}
+
+function selectedDeadlineItem() {
+  return availableDeadlineItems.find((item) => item.id === deadlineItemSelector.value) || null;
+}
+
+function updateDeadlineItemAssociationFields() {
+  const item = selectedDeadlineItem();
+  const isAssociated = Boolean(item);
+  referenceField.hidden = Boolean(editingDeadline) || isAssociated;
+  if (!editingDeadline) familyMemberField.hidden = isAssociated;
+  if (item?.category === 'vehicle') {
+    document.getElementById('deadline-title').setAttribute('list', 'vehicle-deadline-suggestions');
+  } else {
+    document.getElementById('deadline-title').removeAttribute('list');
+  }
+}
+
+async function loadDeadlineItemSelector(selectedItemId = '') {
+  const { data, error } = await c.rpc('get_my_deadline_items', { p_category: 'vehicle' });
   if (error) {
-    console.error('get_current_account failed while configuring deadline form', error);
-    m.textContent = 'Impossibile preparare il modulo.';
-    return;
+    console.error('get_my_deadline_items failed while configuring deadline form', error);
+    return false;
   }
 
+  availableDeadlineItems = data || [];
+  deadlineItemSelector.replaceChildren(new Option('Nessun elemento', ''));
+  availableDeadlineItems.forEach((item) => {
+    const category = deadlineItemCategoryLabels[item.category] || 'Elemento';
+    deadlineItemSelector.add(new Option(`${item.name} — ${category}`, item.id));
+  });
+  deadlineItemSelector.value = availableDeadlineItems.some((item) => item.id === selectedItemId)
+    ? selectedItemId
+    : '';
+  deadlineItemSelectorField.hidden = false;
+  deadlineItemSelector.onchange = updateDeadlineItemAssociationFields;
+  updateDeadlineItemAssociationFields();
+  return true;
+}
+
+function populateEditForm(deadline) {
+  document.getElementById('deadline-title').value = deadline.title || '';
+  document.getElementById('deadline-category').value = deadline.category || 'other';
+  document.getElementById('deadline-first-due-on').value = deadline.first_due_on || '';
+  document.getElementById('deadline-recurrence').value = deadline.recurrence_months || '';
+  document.getElementById('deadline-reminder').value = deadline.reminder_days ?? 30;
+  document.getElementById('deadline-notes').value = deadline.notes || '';
+}
+
+async function initialiseEditMode(account) {
+  if (account?.account_type !== 'personal') {
+    m.textContent = 'La modifica completa Ã¨ disponibile per le Scadenze personali.';
+    return false;
+  }
+
+  const { data, error } = await c.rpc('get_deadline', { p_deadline_id: editingDeadlineId });
+  if (error || !data) {
+    m.textContent = 'Scadenza non disponibile.';
+    return false;
+  }
+
+  editingDeadline = data;
+  populateEditForm(editingDeadline);
+  formTitle.textContent = 'Modifica scadenza';
+  formIntro.textContent = 'Aggiorna le informazioni della scadenza.';
+  submitButton.textContent = 'Salva modifiche';
+  referenceField.hidden = true;
+  familyMemberField.hidden = true;
+  backLink.href = deadlineDetailHref(editingDeadline.id);
+  cancelLink.href = backLink.href;
+  if (!await loadDeadlineItemSelector(editingDeadline.deadline_item_id || '')) {
+    m.textContent = 'Impossibile preparare il selettore degli elementi.';
+    return false;
+  }
+  return true;
+}
+
+async function initialiseCreateMode(account, context) {
   if (context.member) {
     managedMember = context.member;
     contextContainer.hidden = false;
@@ -44,30 +150,54 @@ async function init() {
     familyMemberField.hidden = true;
     backLink.href = managedHref('scadenze.html');
     cancelLink.href = managedHref('scadenze.html');
-  } else {
-    familyMemberField.hidden = account?.account_type === 'organization';
-
-    if (requestedDeadlineItemId) {
-      const { data: item, error: itemError } = await c.rpc('get_my_deadline_item', {
-        p_item_id: requestedDeadlineItemId
-      });
-      if (itemError || !item || item.category !== 'vehicle') {
-        m.textContent = 'Veicolo non disponibile. Stai creando una scadenza normale.';
-      } else {
-        deadlineItem = item;
-        deadlineItemField.hidden = false;
-        deadlineItemField.textContent = `Veicolo: ${item.name}`;
-        referenceField.hidden = true;
-        familyMemberField.hidden = true;
-        document.getElementById('deadline-title').setAttribute('list', 'vehicle-deadline-suggestions');
-        backLink.href = deadlineItemHref(item.id);
-        cancelLink.href = backLink.href;
-      }
-    }
+    return true;
   }
 
+  familyMemberField.hidden = account?.account_type === 'organization';
+  if (requestedDeadlineItemId) {
+    const { data: item, error: itemError } = await c.rpc('get_my_deadline_item', {
+      p_item_id: requestedDeadlineItemId
+    });
+    if (itemError || !item || item.category !== 'vehicle') {
+      m.textContent = 'Veicolo non disponibile. Stai creando una scadenza normale.';
+      return true;
+    }
+
+    deadlineItem = item;
+    deadlineItemField.hidden = false;
+    referenceField.hidden = true;
+    familyMemberField.hidden = true;
+    configureVehicleItemCreateForm(item);
+    document.getElementById('deadline-title').setAttribute('list', 'vehicle-deadline-suggestions');
+    backLink.href = deadlineItemHref(item.id);
+    cancelLink.href = backLink.href;
+    return true;
+  }
+
+  if (account?.account_type === 'personal') await loadDeadlineItemSelector();
+  return true;
+}
+
+async function init() {
+  const context = await window.FamilAreaManagedContext.load();
+  if (context.requested && !context.member) {
+    m.textContent = 'Il membro selezionato non Ã¨ gestibile dalla tua Famiglia. Stai creando una scadenza personale.';
+  }
+
+  const { data: account, error } = await c.rpc('get_current_account');
+  if (error) {
+    console.error('get_current_account failed while configuring deadline form', error);
+    m.textContent = 'Impossibile preparare il modulo.';
+    return;
+  }
+
+  const ready = editingDeadlineId && !context.member
+    ? await initialiseEditMode(account)
+    : await initialiseCreateMode(account, context);
+  if (!ready) return;
+
   f.hidden = false;
-  if (context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) m.textContent = '';
+  if (editingDeadline || context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) m.textContent = '';
 }
 
 f.onsubmit = async (event) => {
@@ -80,8 +210,24 @@ f.onsubmit = async (event) => {
     p_reminder_days: Number(document.getElementById('deadline-reminder').value),
     p_notes: document.getElementById('deadline-notes').value.trim() || null
   };
-  const { data, error } = deadlineItem
-    ? await c.rpc('create_deadline_for_item', { p_item_id: deadlineItem.id, ...commonParams })
+
+  if (editingDeadline) {
+    const { error } = await c.rpc('update_my_deadline_with_item', {
+      p_deadline_id: editingDeadline.id,
+      ...commonParams,
+      p_deadline_item_id: selectedDeadlineItem()?.id || null
+    });
+    if (error) {
+      m.textContent = 'Impossibile aggiornare la scadenza.';
+      return;
+    }
+    location.href = deadlineDetailHref(editingDeadline.id);
+    return;
+  }
+
+  const associatedItem = deadlineItem || selectedDeadlineItem();
+  const { data, error } = associatedItem
+    ? await c.rpc('create_deadline_for_item', { p_item_id: associatedItem.id, ...commonParams })
     : await c.rpc('create_deadline', {
       ...commonParams,
       p_family_member_id: managedMember
@@ -97,7 +243,7 @@ f.onsubmit = async (event) => {
     ? deadlineItemHref(deadlineItem.id)
     : (managedMember
       ? managedHref('scadenze.html')
-      : `scadenza.html?deadline_id=${encodeURIComponent(data)}`);
+      : deadlineDetailHref(data));
 };
 
 init();

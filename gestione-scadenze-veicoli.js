@@ -52,7 +52,19 @@ async function removeVehicle(vehicle) {
 
 function vehicleRow(vehicle) {
   const row = document.createElement('article');
-  row.className = 'deadline-management-row fa-surface';
+  row.className = 'deadline-management-row deadline-management-row--clickable fa-surface';
+  row.tabIndex = 0;
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', `Apri veicolo ${vehicle.name}`);
+  const openVehicle = () => {
+    location.href = `gestione-scadenza-item.html?item_id=${encodeURIComponent(vehicle.id)}`;
+  };
+  row.addEventListener('click', openVehicle);
+  row.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openVehicle();
+  });
   const identity = document.createElement('div');
   identity.className = 'deadline-management-row-copy';
   const title = document.createElement('h2');
@@ -63,21 +75,23 @@ function vehicleRow(vehicle) {
 
   const actions = document.createElement('div');
   actions.className = 'deadline-management-row-actions';
-  const open = document.createElement('a');
-  open.className = 'fa-button fa-button-secondary fa-button-compact';
-  open.href = `gestione-scadenza-item.html?item_id=${encodeURIComponent(vehicle.id)}`;
-  open.textContent = 'Apri';
   const edit = document.createElement('button');
   edit.className = 'fa-button fa-button-secondary fa-button-compact';
   edit.type = 'button';
   edit.textContent = 'Modifica';
-  edit.addEventListener('click', () => openForm(vehicle));
+  edit.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openForm(vehicle);
+  });
   const remove = document.createElement('button');
   remove.className = 'fa-button fa-button-danger fa-button-compact';
   remove.type = 'button';
   remove.textContent = 'Elimina';
-  remove.addEventListener('click', () => { void removeVehicle(vehicle); });
-  actions.append(open, edit, remove);
+  remove.addEventListener('click', (event) => {
+    event.stopPropagation();
+    void removeVehicle(vehicle);
+  });
+  actions.append(edit, remove);
   row.append(identity, actions);
   return row;
 }

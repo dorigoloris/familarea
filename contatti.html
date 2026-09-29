@@ -24,13 +24,17 @@
     </header>
 
     <p id="message" aria-live="polite">Caricamento contatti...</p>
-    <section id="my-contact" class="my-contact-section fa-surface fa-data-card" aria-labelledby="my-contact-title" hidden>
+    <section id="my-contact" class="my-contact-section" aria-labelledby="my-contact-title" hidden>
       <p id="my-contact-title" class="my-contact-label">IL MIO CONTATTO</p>
-      <div class="my-contact-card">
-        <span id="my-contact-avatar" class="contact-directory-avatar" aria-hidden="true"></span>
-        <strong id="my-contact-name"></strong>
-        <a class="fa-button fa-button-primary fa-button-compact" href="condividi-contatto.html">Condividi</a>
-      </div>
+      <article class="contact-card contact-directory-row my-contact-card">
+        <div class="contact-directory-field contact-directory-name">
+          <span id="my-contact-avatar" class="contact-directory-avatar" aria-hidden="true"></span>
+          <h2 id="my-contact-name"></h2>
+        </div>
+        <div class="contact-directory-actions">
+          <a class="fa-button fa-button-primary fa-button-compact" href="condividi-contatto.html">Condividi</a>
+        </div>
+      </article>
     </section>
     <section class="contacts-directory-surface fa-surface fa-data-card fa-contacts-grid" aria-label="Elenco contatti">
       <div class="contacts-directory-header fa-data-header" aria-hidden="true">

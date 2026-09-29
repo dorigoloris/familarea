@@ -12,17 +12,19 @@
   <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
     <p class="account-back-link"><a href="gestione-scadenze-veicoli.html">Torna ai Veicoli</a></p>
     <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento veicolo...</p>
-    <section id="deadline-item-content" hidden>
+    <div id="deadline-item-content" hidden>
       <header class="fa-section-hero" aria-labelledby="deadline-item-title">
         <div class="fa-section-hero-content"><p class="eyebrow">VEICOLO</p><h1 id="deadline-item-title"></h1><p id="deadline-item-type"></p></div>
       </header>
       <section class="deadline-item-deadlines fa-surface" aria-labelledby="deadline-item-deadlines-title">
         <h2 id="deadline-item-deadlines-title">Scadenze</h2>
-        <p id="deadline-item-deadlines-empty">Caricamento scadenze...</p>
-        <div id="deadline-item-deadlines-list" class="deadline-management-list" hidden aria-label="Scadenze del veicolo"></div>
-        <p class="deadline-item-deadlines-actions"><a id="deadline-item-add-deadline" class="fa-button fa-button-primary" href="nuova-scadenza.html">+ Aggiungi scadenza</a></p>
+        <div id="deadline-item-predefined-cards" class="fa-item-card-grid" aria-label="Tipologie di scadenza del veicolo"></div>
+        <section id="deadline-item-custom-deadlines" hidden aria-labelledby="deadline-item-custom-deadlines-title">
+          <h3 id="deadline-item-custom-deadlines-title">Altre scadenze</h3>
+          <div id="deadline-item-deadlines-list" class="deadline-management-list" aria-label="Altre scadenze del veicolo"></div>
+        </section>
       </section>
-    </section>
+    </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
