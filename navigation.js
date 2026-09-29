@@ -31,6 +31,9 @@
     'scadenze.html': 'deadlines',
     'nuova-scadenza.html': 'deadlines',
     'scadenza.html': 'deadlines',
+    'gestione-scadenze.html': 'deadline-management',
+    'gestione-scadenze-veicoli.html': 'deadline-management',
+    'gestione-scadenza-item.html': 'deadline-management',
     'contatti.html': 'contacts',
     'nuovo-contatto.html': 'contacts',
     'contatto.html': 'contacts',
@@ -88,6 +91,7 @@
       { label: 'Liste', href: 'liste.html', active: isPrimaryNavActive('lists') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
+      { label: 'Gestione Scadenze', href: 'gestione-scadenze.html', active: isPrimaryNavActive('deadline-management') },
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
     const items = accountType === 'personal'

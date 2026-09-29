@@ -7,19 +7,22 @@ const groups = {
 
 function createAreaCard(area) {
   const card = document.createElement('a');
-  card.className = 'area-card';
+  card.className = 'area-card fa-item-card';
   card.href = `area.html?area_id=${encodeURIComponent(area.id)}`;
   const icon = document.createElement('span');
-  icon.className = 'area-card-icon';
+  icon.className = 'area-card-icon fa-item-card-icon';
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = '⌂';
+  const copy = document.createElement('span');
+  copy.className = 'fa-item-card-copy';
   const title = document.createElement('h3');
   title.textContent = area.name;
   const indicator = document.createElement('span');
-  indicator.className = 'area-card-open-indicator';
+  indicator.className = 'area-card-open-indicator fa-item-card-open-indicator';
   indicator.setAttribute('aria-hidden', 'true');
   indicator.textContent = '→';
-  card.append(icon, title, indicator);
+  copy.appendChild(title);
+  card.append(icon, copy, indicator);
   void renderAreaCardImage(area, card);
   return card;
 }
