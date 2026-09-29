@@ -23,12 +23,20 @@ const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 const editingDeadlineId = query.get('deadline_id');
 const presetTitle = query.get('preset_title')?.trim() || '';
+const presetKind = query.get('preset_kind')?.trim() || '';
 const deadlineItemCategoryLabels = {
   vehicle: 'Veicolo',
   home: 'Casa',
   utilities: 'Utenze e bollette',
   other: 'Altro'
 };
+const vehicleDeadlineTemplates = [
+  { title: 'Assicurazione RCA', kind: 'vehicle_insurance' },
+  { title: 'Bollo', kind: 'vehicle_tax' },
+  { title: 'Collaudo / Revisione', kind: 'vehicle_inspection' },
+  { title: 'Tagliando', kind: 'vehicle_service' }
+];
+let vehicleDeadlineKind = null;
 
 function managedHref(path) {
   return managedMember
@@ -44,6 +52,14 @@ function deadlineDetailHref(deadlineId) {
   return `scadenza.html?deadline_id=${encodeURIComponent(deadlineId)}`;
 }
 
+function vehicleDeadlineTemplateTitle(value) {
+  const normalisedValue = String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it-IT');
+  return vehicleDeadlineTemplates.find((template) => (
+    template.title.toLocaleLowerCase('it-IT') === normalisedValue
+      && template.kind === presetKind
+  )) || null;
+}
+
 function renderVehicleDeadlineContext(item, title = '') {
   deadlineItemField.replaceChildren();
   const vehicle = document.createElement('div');
@@ -57,12 +73,17 @@ function renderVehicleDeadlineContext(item, title = '') {
 }
 
 function configureVehicleItemCreateForm(item) {
-  const isTemplate = Boolean(presetTitle);
+  const template = vehicleDeadlineTemplateTitle(presetTitle);
+  const isTemplate = Boolean(template);
   document.getElementById('deadline-category').value = 'vehicle';
   titleField.hidden = isTemplate;
   categoryField.hidden = true;
-  if (isTemplate) document.getElementById('deadline-title').value = presetTitle;
-  renderVehicleDeadlineContext(item, isTemplate ? presetTitle : '');
+  if (isTemplate) {
+    vehicleDeadlineKind = template.kind;
+    document.getElementById('deadline-title').value = template.title;
+    formTitle.textContent = `Gestione ${template.title}`;
+  }
+  renderVehicleDeadlineContext(item, template?.title || '');
 }
 
 function selectedDeadlineItem() {
@@ -227,7 +248,11 @@ f.onsubmit = async (event) => {
 
   const associatedItem = deadlineItem || selectedDeadlineItem();
   const { data, error } = associatedItem
-    ? await c.rpc('create_deadline_for_item', { p_item_id: associatedItem.id, ...commonParams })
+    ? await c.rpc('create_deadline_for_item', {
+      p_item_id: associatedItem.id,
+      ...commonParams,
+      p_deadline_kind: vehicleDeadlineKind
+    })
     : await c.rpc('create_deadline', {
       ...commonParams,
       p_family_member_id: managedMember

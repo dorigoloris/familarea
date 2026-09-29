@@ -28,7 +28,9 @@
       <div class="deadline-management-form-grid">
         <div><label for="vehicle-name">Nome *</label><input id="vehicle-name" type="text" required placeholder="Es. Fiat 500"></div>
         <div><label for="vehicle-type">Tipo *</label><select id="vehicle-type" required><option value="car">Auto</option><option value="motorcycle">Moto</option><option value="other">Altro</option></select></div>
+        <div><label for="vehicle-plate">Targa</label><input id="vehicle-plate" type="text" placeholder="Es. GB123CD"></div>
       </div>
+      <div class="deadline-management-item-image-field"><label>Foto del veicolo</label><div class="deadline-management-item-image-actions"><span id="vehicle-image-preview" class="deadline-management-item-image" aria-label="Anteprima foto veicolo">V</span><div><input id="vehicle-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><label id="vehicle-image-upload" class="fa-button fa-button-secondary fa-button-compact" for="vehicle-image-input">Carica foto</label><button id="vehicle-image-remove" class="fa-button fa-button-secondary fa-button-compact" type="button" hidden>Rimuovi foto</button><p id="vehicle-image-message" class="deadline-management-item-image-message" aria-live="polite"></p></div></div></div>
       <div class="form-actions"><button class="fa-button fa-button-primary" type="submit">Salva veicolo</button><button id="vehicle-cancel" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
     </form>
 
@@ -41,6 +43,7 @@
   <script src="navigation.js"></script>
   <script src="confirm-modal.js"></script>
   <script src="gestione-scadenze.js"></script>
+  <script src="deadline-item-image.js"></script>
   <script src="gestione-scadenze-veicoli.js"></script>
 </body>
 </html>

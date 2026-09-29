@@ -6,10 +6,10 @@ const deadlineItemPredefinedCards = document.getElementById('deadline-item-prede
 const deadlineItemCustomDeadlines = document.getElementById('deadline-item-custom-deadlines');
 const deadlineItemDeadlinesList = document.getElementById('deadline-item-deadlines-list');
 const predefinedVehicleDeadlines = [
-  { title: 'Assicurazione RCA', aliases: ['assicurazione rca', 'rca'], icon: 'R' },
-  { title: 'Bollo', aliases: ['bollo'], icon: 'B' },
-  { title: 'Collaudo / Revisione', aliases: ['collaudo / revisione', 'collaudo', 'revisione'], icon: 'C' },
-  { title: 'Tagliando', aliases: ['tagliando'], icon: 'T' }
+  { title: 'Assicurazione RCA', kind: 'vehicle_insurance', icon: 'R' },
+  { title: 'Bollo', kind: 'vehicle_tax', icon: 'B' },
+  { title: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' },
+  { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' }
 ];
 
 function itemDeadlineHref(path) {
@@ -18,22 +18,21 @@ function itemDeadlineHref(path) {
   return `${url.pathname.split('/').pop()}${url.search}`;
 }
 
-function itemDeadlineCreateHref(title = '') {
+function itemDeadlineCreateHref(title = '', kind = '') {
   const url = new URL(itemDeadlineHref('nuova-scadenza.html'), window.location.href);
   if (title) url.searchParams.set('preset_title', title);
+  if (kind) url.searchParams.set('preset_kind', kind);
   return `${url.pathname.split('/').pop()}${url.search}`;
 }
 
-function normalisedDeadlineTitle(title) {
-  return String(title || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it-IT');
-}
-
-function createDeadlineCard({ title, icon, deadline, presetTitle = title }) {
+function createDeadlineCard({ title, kind = '', icon, deadline, presetTitle = title }) {
   const card = document.createElement('a');
   card.className = 'area-card fa-item-card';
   card.href = deadline
-    ? `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`
-    : itemDeadlineCreateHref(presetTitle);
+    ? (kind === 'vehicle_service'
+      ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}`
+      : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`)
+    : itemDeadlineCreateHref(presetTitle, kind);
 
   const cardIcon = document.createElement('span');
   cardIcon.className = 'area-card-icon fa-item-card-icon';
@@ -73,7 +72,7 @@ function renderItemDeadlines(rows) {
   const unmatchedRows = new Set(rows);
   const cards = predefinedVehicleDeadlines.map((template) => {
     const deadline = rows.find((row) => (
-      unmatchedRows.has(row) && template.aliases.includes(normalisedDeadlineTitle(row.title))
+      unmatchedRows.has(row) && row.deadline_kind === template.kind
     ));
     if (deadline) unmatchedRows.delete(deadline);
     return createDeadlineCard({ ...template, deadline });
@@ -105,7 +104,14 @@ async function loadDeadlineItem() {
     return;
   }
   document.getElementById('deadline-item-title').textContent = data.name;
-  document.getElementById('deadline-item-type').textContent = deadlineItemTypeLabels[data.item_type] || 'Altro';
+  const typeLabel = deadlineItemTypeLabels[data.item_type] || 'Altro';
+  document.getElementById('deadline-item-type').textContent = data.plate
+    ? `${typeLabel} · ${data.plate}`
+    : typeLabel;
+  const itemImage = document.getElementById('deadline-item-image');
+  itemImage.replaceChildren();
+  itemImage.textContent = (data.name.trim().charAt(0) || 'V').toLocaleUpperCase('it-IT');
+  if (data.image_path) void window.FamilAreaDeadlineItemImage.render(itemImage, data.image_path, `Foto di ${data.name}`);
   document.getElementById('deadline-item-content').hidden = false;
   deadlineItemMessage.textContent = '';
   await loadItemDeadlines();

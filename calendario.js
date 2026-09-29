@@ -25,6 +25,7 @@ let familyCalendarControls = [];
 let calendarPeople = new Map();
 let calendarOwnerAvatarUrls = new Map();
 let familyMemberAvatarUrls = new Map();
+let deadlineItemAvatarUrls = new Map();
 let currentAccountId = null;
 let managedMember = null;
 let managedContextUnavailable = false;
@@ -61,16 +62,18 @@ function bounds() {
 }
 
 function normalise(item) {
+  const hasDeadlineItemSubject = Boolean(item.deadline_item_id && item.deadline_item_category === 'vehicle');
   const hasFamilyMemberSubject = Boolean(item.family_member_id);
   const familyMemberName = item.family_member_name || 'Membro della Famiglia';
+  const deadlineItemName = item.deadline_item_name || 'Veicolo';
   const ownerName = item.calendar_owner_display_name || calendarPeople.get(item.calendar_owner_account_id) || '';
   return {
     ...item,
     calendar_owner_display_name: ownerName,
-    calendar_show_owner_avatar: hasFamilyMemberSubject || Boolean(item.calendar_is_shared || (isPersonalAccount && item.calendar_owner_account_id === currentAccountId)),
-    calendar_avatar_display_name: hasFamilyMemberSubject ? familyMemberName : ownerName,
-    calendar_avatar_title: hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`,
-    calendar_owner_avatar_url: hasFamilyMemberSubject ? (familyMemberAvatarUrls.get(item.family_member_id) || '') : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || ''),
+    calendar_show_owner_avatar: hasDeadlineItemSubject || hasFamilyMemberSubject || Boolean(item.calendar_is_shared || (isPersonalAccount && item.calendar_owner_account_id === currentAccountId)),
+    calendar_avatar_display_name: hasDeadlineItemSubject ? deadlineItemName : (hasFamilyMemberSubject ? familyMemberName : ownerName),
+    calendar_avatar_title: hasDeadlineItemSubject ? deadlineItemName : (hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`),
+    calendar_owner_avatar_url: hasDeadlineItemSubject ? (deadlineItemAvatarUrls.get(item.deadline_item_id) || '') : (hasFamilyMemberSubject ? (familyMemberAvatarUrls.get(item.family_member_id) || '') : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || '')),
     area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
     can_open_details: item.calendar_owner_account_id === currentAccountId,
     managed_member_id: managedMember?.id || null,
@@ -90,6 +93,18 @@ async function loadFamilyMemberAvatarUrls(occurrences) {
   await Promise.all([...paths.entries()].map(async ([memberId, path]) => {
     const url = await window.FamilAreaFamilyMemberAvatar.resolve(path);
     if (url) familyMemberAvatarUrls.set(memberId, url);
+  }));
+}
+
+async function loadDeadlineItemAvatarUrls(occurrences) {
+  deadlineItemAvatarUrls = new Map();
+  const paths = new Map();
+  (occurrences || []).forEach((item) => {
+    if (item.deadline_item_id && item.deadline_item_category === 'vehicle' && item.deadline_item_image_path) paths.set(item.deadline_item_id, item.deadline_item_image_path);
+  });
+  await Promise.all([...paths.entries()].map(async ([itemId, path]) => {
+    const url = await window.FamilAreaDeadlineItemImage.resolve(path);
+    if (url) deadlineItemAvatarUrls.set(itemId, url);
   }));
 }
 
@@ -152,7 +167,7 @@ async function load() {
   }
 
   if (error) { message.textContent = 'Impossibile caricare il calendario.'; return; }
-  await loadFamilyMemberAvatarUrls(data);
+  await Promise.all([loadFamilyMemberAvatarUrls(data), loadDeadlineItemAvatarUrls(data)]);
   items = (data || []).map(normalise);
   content.hidden = false; message.textContent = ''; render();
 }

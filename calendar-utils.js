@@ -102,13 +102,6 @@
       link.appendChild(area);
     }
 
-    if (type === 'event' || type === 'birthday' || type === 'deadline') {
-      const badge = document.createElement('span');
-      badge.className = 'calendar-item-kind';
-      badge.textContent = type === 'birthday' ? 'Compleanno' : (type === 'deadline' ? 'Scadenza' : 'Evento');
-      link.appendChild(badge);
-    }
-
     if (type === 'event') return link;
 
     const time = formatTime(item);
