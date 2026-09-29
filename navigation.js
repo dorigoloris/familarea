@@ -91,11 +91,10 @@
       { label: 'Liste', href: 'liste.html', active: isPrimaryNavActive('lists') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
-      { label: 'Gestione Scadenze', href: 'gestione-scadenze.html', active: isPrimaryNavActive('deadline-management') },
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
     const items = accountType === 'personal'
-      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2, 4), { label: 'Proposte', href: 'proposte.html', active: isPrimaryNavActive('suggestions') }, ...sharedItems.slice(4), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
+      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2, 4), { label: 'Proposte', href: 'proposte.html', active: isPrimaryNavActive('suggestions') }, ...sharedItems.slice(4, 7), { label: 'Gestione Scadenze', href: 'gestione-scadenze.html', active: isPrimaryNavActive('deadline-management') }, ...sharedItems.slice(7), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
       : sharedItems;
     items.forEach((item) => {
       const link = document.createElement('a');
@@ -343,7 +342,7 @@
   }
 
   loadAccountIdentity().catch(() => {});
-  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html', 'inviti.html']);
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html', 'inviti.html', 'gestione-scadenze.html', 'gestione-scadenze-veicoli.html', 'gestione-scadenza-item.html']);
   if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;

@@ -19,4 +19,9 @@ async function loadDeadlineItem() {
   deadlineItemMessage.textContent = '';
 }
 
-void loadDeadlineItem();
+async function initialiseDeadlineItem() {
+  if (!await window.FamilAreaDeadlineManagementReady) return;
+  await loadDeadlineItem();
+}
+
+void initialiseDeadlineItem();

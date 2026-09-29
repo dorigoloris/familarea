@@ -9,7 +9,7 @@
 <body class="deadline-management-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page">
+  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
     <p class="account-back-link"><a href="gestione-scadenze-veicoli.html">Torna ai Veicoli</a></p>
     <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento veicolo...</p>
     <section id="deadline-item-content" hidden>
@@ -27,6 +27,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="gestione-scadenze.js"></script>
   <script src="gestione-scadenza-item.js"></script>
 </body>
 </html>

@@ -117,6 +117,11 @@ vehicleForm.addEventListener('submit', async (event) => {
   await loadVehicles();
 });
 
-document.getElementById('vehicle-create').addEventListener('click', () => openForm());
-document.getElementById('vehicle-cancel').addEventListener('click', resetForm);
-void loadVehicles();
+async function initialiseVehicles() {
+  if (!await window.FamilAreaDeadlineManagementReady) return;
+  document.getElementById('vehicle-create').addEventListener('click', () => openForm());
+  document.getElementById('vehicle-cancel').addEventListener('click', resetForm);
+  await loadVehicles();
+}
+
+void initialiseVehicles();

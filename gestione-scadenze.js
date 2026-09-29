@@ -2,7 +2,14 @@ const deadlineManagementClient = window.FamilAreaSupabaseClient || supabase.crea
 
 async function initialiseDeadlineManagement() {
   const { data: session } = await deadlineManagementClient.auth.getSession();
-  if (!session?.session) window.location.assign('login.html');
+  if (!session?.session) {
+    window.location.assign('login.html');
+    return false;
+  }
+  const account = await window.FamilAreaRequirePersonal?.();
+  if (!account) return false;
+  document.querySelector('[data-deadline-management-content]')?.removeAttribute('hidden');
+  return true;
 }
 
-void initialiseDeadlineManagement();
+window.FamilAreaDeadlineManagementReady = initialiseDeadlineManagement();
