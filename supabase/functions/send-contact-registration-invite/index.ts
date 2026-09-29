@@ -41,16 +41,18 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const siteUrl = Deno.env.get("SITE_URL");
   const from = Deno.env.get("CONTACT_REGISTRATION_INVITE_FROM");
   const deliveryUrl = Deno.env.get("CONTACT_REGISTRATION_INVITE_DELIVERY_URL");
   const deliveryBearerToken = Deno.env.get("CONTACT_REGISTRATION_INVITE_DELIVERY_BEARER_TOKEN");
-  if (!supabaseUrl || !supabaseAnonKey || !siteUrl || !from) return json(500, { error: "invite_service_misconfigured" });
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !siteUrl || !from) return json(500, { error: "invite_service_misconfigured" });
   if (!deliveryUrl || !deliveryBearerToken) return json(503, { error: "email_delivery_not_configured" });
 
   const caller = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authorization } }
   });
+  const service = createClient(supabaseUrl, supabaseServiceRoleKey);
   const { data: userData, error: userError } = await caller.auth.getUser();
   if (userError || !userData.user) return json(401, { error: "authentication_required" });
 
@@ -89,6 +91,14 @@ Deno.serve(async (request) => {
   } catch (error) {
     console.error("contact invitation delivery failed", error);
     return json(502, { error: "email_delivery_failed" });
+  }
+
+  const { error: markError } = await service.rpc("mark_contact_registration_invite_sent", {
+    p_contact_id: contactId
+  });
+  if (markError) {
+    console.error("contact invitation sent but state could not be recorded", markError);
+    return json(500, { error: "invite_state_unavailable" });
   }
 
   return json(200, { status: "sent" });
