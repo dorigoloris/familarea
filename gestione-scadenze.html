@@ -3,45 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestione Scadenze - FamilArea</title>
-  <link rel="stylesheet" href="app.css">
+  <title>Scadenze - FamilArea</title>
+  <script>window.location.replace(`scadenze.html${window.location.search}${window.location.hash}`);</script>
 </head>
-<body class="deadline-management-page-view">
-  <button class="logout-button" type="button" data-logout>Esci</button>
-  <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
-    <header class="fa-section-hero" aria-labelledby="deadline-management-title">
-      <div class="fa-section-hero-content">
-        <p class="eyebrow">GESTIONE SCADENZE</p>
-        <h1 id="deadline-management-title">Gestione Scadenze</h1>
-        <p>Organizza le tue scadenze per gli elementi che vuoi tenere sotto controllo.</p>
-      </div>
-    </header>
-
-    <section class="fa-item-card-grid" aria-label="Categorie di gestione scadenze">
-      <a class="area-card fa-item-card" href="gestione-scadenze-veicoli.html">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">V</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Veicoli</h3><p>Auto, moto e altri veicoli</p></span>
-        <span class="area-card-open-indicator fa-item-card-open-indicator" aria-hidden="true">&rarr;</span>
-      </a>
-      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Casa, prossimamente">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">C</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Casa</h3><p>Prossimamente</p></span>
-      </article>
-      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Utenze e bollette, prossimamente">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">U</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Utenze e bollette</h3><p>Prossimamente</p></span>
-      </article>
-      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Altro, prossimamente">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">+</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Altro</h3><p>Prossimamente</p></span>
-      </article>
-    </section>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-public-config.js"></script>
-  <script src="logout.js"></script>
-  <script src="navigation.js"></script>
-  <script src="gestione-scadenze.js"></script>
+<body>
+  <p>Reindirizzamento a <a href="scadenze.html">Scadenze</a>&hellip;</p>
 </body>
 </html>

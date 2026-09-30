@@ -6,27 +6,50 @@
   <title>Scadenze - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="deadlines-page-view">
+<body class="deadline-management-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page deadlines-page fa-page--wide fa-section-page">
+  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
     <header class="fa-section-hero" aria-labelledby="deadlines-page-title">
       <div class="fa-section-hero-content">
         <p class="eyebrow">SCADENZE</p>
-        <div class="fa-section-hero-title-row">
-          <h1 id="deadlines-page-title">Scadenze</h1>
-          <a class="btn fa-section-hero-action fa-action-primary" href="nuova-scadenza.html">+ Nuova scadenza</a>
-        </div>
-        <p>Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p>
+        <h1 id="deadlines-page-title">Scadenze</h1>
+        <p>Organizza le tue scadenze per gli elementi che vuoi tenere sotto controllo.</p>
       </div>
     </header>
-    <div id="managed-context" hidden></div>
-    <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
-    <section id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong></section>
-    <section id="active-deadlines-section" hidden aria-labelledby="active-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Da tenere d'occhio</p><h2 id="active-deadlines-title">Scadenze attive</h2></div></div><div id="active-deadlines-list" class="deadlines-grid"></div></section>
-    <section id="terminated-deadlines-section" hidden aria-labelledby="terminated-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Storico</p><h2 id="terminated-deadlines-title">Scadenze terminate</h2></div></div><div id="terminated-deadlines-list" class="deadlines-terminated-list"></div></section>
+
+    <section class="fa-item-card-grid" aria-label="Categorie di gestione scadenze">
+      <a class="area-card fa-item-card" href="gestione-scadenze-veicoli.html">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">V</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Veicoli</h3><p>Auto, moto e altri veicoli</p></span>
+        <span class="area-card-open-indicator fa-item-card-open-indicator" aria-hidden="true">&rarr;</span>
+      </a>
+      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Casa, prossimamente">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">C</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Casa</h3><p>Prossimamente</p></span>
+      </article>
+      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Utenze e bollette, prossimamente">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">U</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Utenze e bollette</h3><p>Prossimamente</p></span>
+      </article>
+      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Altro, prossimamente">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">+</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Altro</h3><p>Prossimamente</p></span>
+      </article>
+    </section>
+
+    <section aria-labelledby="deadlines-overview-title">
+      <div class="deadlines-section-header">
+        <div><h2 id="deadlines-overview-title">Elenco scadenze</h2><p class="deadline-page-intro">Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p></div>
+        <a id="new-deadline-link" class="btn fa-action-primary" href="nuova-scadenza.html">+ Nuova scadenza</a>
+      </div>
+      <div id="managed-context" hidden></div>
+      <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
+      <div id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong></div>
+      <div id="active-deadlines-section" class="deadlines-section" hidden aria-labelledby="active-deadlines-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Da tenere d'occhio</p><h2 id="active-deadlines-title">Scadenze attive</h2></div></div><div id="active-deadlines-list" class="deadlines-grid"></div></div>
+    </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="date-utils.js"></script><script src="managed-context.js"></script><script src="scadenze.js"></script>
+  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="gestione-scadenze.js"></script><script src="date-utils.js"></script><script src="managed-context.js"></script><script src="scadenze.js"></script>
 </body>
 </html>

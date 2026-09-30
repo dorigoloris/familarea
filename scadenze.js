@@ -5,6 +5,7 @@ const contextContainer = document.getElementById('managed-context');
 const formatDateDisplay = window.FamilAreaDateUtils.formatDateDisplay;
 
 async function load() {
+  if (window.FamilAreaDeadlineManagementReady && !await window.FamilAreaDeadlineManagementReady) return;
   const context = await window.FamilAreaManagedContext.load();
   const isManaged = Boolean(context.member);
 
@@ -15,7 +16,7 @@ async function load() {
   if (isManaged) {
     contextContainer.hidden = false;
     window.FamilAreaManagedContext.renderBar(contextContainer, context.member);
-    const newDeadline = document.querySelector('.fa-section-hero-action');
+    const newDeadline = document.getElementById('new-deadline-link');
     newDeadline.href = window.FamilAreaManagedContext.withMember('nuova-scadenza.html', context.member.id);
     newDeadline.hidden = false;
   }

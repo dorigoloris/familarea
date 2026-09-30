@@ -6,7 +6,7 @@ async function initialiseDeadlineManagement() {
     window.location.assign('login.html');
     return false;
   }
-  const account = await window.FamilAreaRequirePersonal?.();
+  const account = await window.FamilAreaCurrentAccount;
   if (!account) return false;
   document.querySelector('[data-deadline-management-content]')?.removeAttribute('hidden');
   return true;

@@ -79,7 +79,6 @@ async function load() {
   d = data;
   document.getElementById('deadline-title').textContent = d.title;
   document.getElementById('deadline-subtitle').textContent = formatDateDisplay(d.first_due_on);
-  document.getElementById('deadline-status').textContent = d.status;
   document.getElementById('deadline-content').hidden = false;
   m.textContent = contextWarning;
   await renderDeadlineItemReference();
@@ -124,42 +123,7 @@ async function occurrence() {
 document.getElementById('edit-deadline').onclick = async (event) => {
   event.preventDefault();
   if (!isManaged()) {
-    const { data: account, error } = await c.rpc('get_current_account');
-    if (!error && account?.account_type === 'personal') {
-      location.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(id)}`;
-      return;
-    }
-
-    const title = await FamilAreaConfirm.prompt({
-      title: 'Modifica scadenza',
-      message: 'Aggiorna il titolo della scadenza.',
-      confirmText: 'Continua',
-      input: { label: 'Titolo', value: d.title, required: true }
-    });
-    if (title === null) return;
-    const notes = await FamilAreaConfirm.prompt({
-      title: 'Modifica scadenza',
-      message: 'Aggiorna le note della scadenza.',
-      confirmText: 'Salva',
-      input: { label: 'Note', value: d.notes || '' }
-    });
-    if (notes === null) return;
-    const result = await c.rpc('update_deadline', {
-      p_deadline_id: id,
-      p_title: title,
-      p_category: d.category,
-      p_first_due_on: d.first_due_on,
-      p_recurrence_months: d.recurrence_months,
-      p_reminder_days: d.reminder_days,
-      p_notes: notes || null,
-      p_family_member_id: d.family_member_id || null,
-      p_status: d.status
-    });
-    if (result.error) {
-      m.textContent = 'Impossibile aggiornare la scadenza.';
-      return;
-    }
-    load();
+    location.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(id)}`;
     return;
   }
 

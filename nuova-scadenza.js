@@ -134,11 +134,6 @@ function populateEditForm(deadline) {
 }
 
 async function initialiseEditMode(account) {
-  if (account?.account_type !== 'personal') {
-    m.textContent = 'La modifica completa Ã¨ disponibile per le Scadenze personali.';
-    return false;
-  }
-
   const { data, error } = await c.rpc('get_deadline', { p_deadline_id: editingDeadlineId });
   if (error || !data) {
     m.textContent = 'Scadenza non disponibile.';
@@ -195,7 +190,7 @@ async function initialiseCreateMode(account, context) {
     return true;
   }
 
-  if (account?.account_type === 'personal') await loadDeadlineItemSelector();
+  await loadDeadlineItemSelector();
   return true;
 }
 
