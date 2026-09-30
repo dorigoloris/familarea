@@ -4,13 +4,18 @@ const managedMemberHome = document.getElementById('managed-member-home');
 const avatar = document.getElementById('managed-member-avatar');
 const avatarInput = document.getElementById('managed-member-avatar-input');
 const avatarUpload = document.getElementById('managed-member-avatar-upload');
+const avatarConfirm = document.getElementById('managed-member-avatar-confirm');
+const avatarCancel = document.getElementById('managed-member-avatar-cancel');
 const avatarRemove = document.getElementById('managed-member-avatar-remove');
 const avatarMessage = document.getElementById('managed-member-avatar-message');
 const avatarService = window.FamilAreaFamilyMemberAvatar;
 let managedMember = null;
+let pendingAvatarFile = null;
+let pendingAvatarObjectUrl = null;
 
 function managedMemberKind(member) {
-  if (member.member_type !== 'pet') return 'Persona · Membro della Famiglia';
+  if (member.member_type === 'assisted_person') return 'Persona assistita · Membro della Famiglia';
+  if (member.member_type === 'person') return 'Persona · Membro della Famiglia';
   const species = { dog: 'Cane', cat: 'Gatto', other: 'Animale' }[member.pet_species] || 'Animale';
   return `${species} · Animale domestico`;
 }
@@ -24,7 +29,19 @@ function setAvatarMessage(text = '', isError = false) {
 function setAvatarBusy(busy) {
   avatarInput.disabled = busy;
   avatarUpload.classList.toggle('is-disabled', busy);
+  avatarConfirm.disabled = busy;
+  avatarCancel.disabled = busy;
   avatarRemove.disabled = busy;
+}
+
+function clearAvatarPreview(restoreSavedAvatar = false) {
+  if (pendingAvatarObjectUrl) URL.revokeObjectURL(pendingAvatarObjectUrl);
+  pendingAvatarFile = null;
+  pendingAvatarObjectUrl = null;
+  avatarInput.value = '';
+  avatarConfirm.hidden = true;
+  avatarCancel.hidden = true;
+  if (restoreSavedAvatar && managedMember) renderAvatar();
 }
 
 function renderAvatar() {
@@ -39,7 +56,12 @@ function renderAvatar() {
     contextAvatar.replaceChildren();
     contextAvatar.textContent = name.trim().charAt(0).toLocaleUpperCase('it-IT') || '?';
   }
-  if (managedMember.avatar_path) {
+  if (pendingAvatarObjectUrl) {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = pendingAvatarObjectUrl;
+    avatar.replaceChildren(image);
+  } else if (managedMember.avatar_path) {
     void avatarService.render(avatar, managedMember.avatar_path);
     if (contextAvatar) void avatarService.render(contextAvatar, managedMember.avatar_path);
   }
@@ -52,17 +74,34 @@ async function currentAccount() {
   return data;
 }
 
-async function uploadAvatar() {
+function previewAvatar() {
   const file = avatarInput.files?.[0];
   avatarInput.value = '';
   if (!file || !managedMember) return;
   if (!avatarService.allowedTypes.has(file.type)) { setAvatarMessage('Scegli un’immagine JPG, PNG o WebP.', true); return; }
   if (file.size > avatarService.maxBytes) { setAvatarMessage('L’immagine deve pesare al massimo 2 MB.', true); return; }
 
-  const account = await currentAccount();
-  if (!account?.account_id) { setAvatarMessage('Impossibile verificare l’account.', true); return; }
-  const path = avatarService.storagePath(account.account_id, managedMember.id);
+  clearAvatarPreview();
+  pendingAvatarFile = file;
+  pendingAvatarObjectUrl = URL.createObjectURL(file);
+  avatarConfirm.hidden = false;
+  avatarCancel.hidden = false;
+  renderAvatar();
+  setAvatarMessage('Foto selezionata. Conferma per caricarla.');
+}
+
+async function uploadAvatar() {
+  const file = pendingAvatarFile;
+  if (!file || !managedMember) return;
+
   setAvatarBusy(true);
+  const account = await currentAccount();
+  if (!account?.account_id) {
+    setAvatarBusy(false);
+    setAvatarMessage('Impossibile verificare l’account.', true);
+    return;
+  }
+  const path = avatarService.storagePath(account.account_id, managedMember.id);
   setAvatarMessage('Caricamento foto in corso...');
   const client = window.FamilAreaSupabaseClient;
   const { error: uploadError } = await client.storage.from(avatarService.bucket).upload(path, file, { upsert: true, contentType: file.type });
@@ -78,6 +117,7 @@ async function uploadAvatar() {
     return;
   }
   managedMember.avatar_path = data.avatar_path;
+  clearAvatarPreview();
   renderAvatar();
   setAvatarMessage('Foto aggiornata.');
 }
@@ -131,6 +171,11 @@ async function loadManagedMemberHome() {
   managedMemberMessage.textContent = '';
 }
 
-avatarInput.addEventListener('change', () => void uploadAvatar());
+avatarInput.addEventListener('change', previewAvatar);
+avatarConfirm.addEventListener('click', () => void uploadAvatar());
+avatarCancel.addEventListener('click', () => {
+  clearAvatarPreview(true);
+  setAvatarMessage('');
+});
 avatarRemove.addEventListener('click', () => void removeAvatar());
 loadManagedMemberHome();

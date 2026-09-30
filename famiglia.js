@@ -22,11 +22,17 @@ function editFormMessage(text = '', isError = false) { const el = $('family-memb
 function isOwnerDuplicate(member) { return Boolean(member.linked_profile_id && member.linked_profile_id === familyOwner?.profile_id); }
 
 function updateMemberMode() {
-  const isPet = $('family-member-type').value === 'pet';
-  if (isPet) document.querySelector('input[name="family-member-source"][value="manual"]').checked = true;
-  const useContact = !isPet && selectedSource() === 'contact';
-  $('family-member-source-field').hidden = isPet;
+  const memberType = $('family-member-type').value;
+  const isPerson = memberType === 'person';
+  const isPet = memberType === 'pet';
+  const isAssistedPerson = memberType === 'assisted_person';
+  const isManagedMember = isPet || isAssistedPerson;
+  if (isManagedMember) document.querySelector('input[name="family-member-source"][value="manual"]').checked = true;
+  const useContact = isPerson && selectedSource() === 'contact';
+  $('family-member-source-field').hidden = isManagedMember;
   $('family-member-contact-field').hidden = !useContact;
+  $('family-member-species-field').hidden = !isPet;
+  $('family-member-species-label-field').hidden = true;
   $('family-member-first-name').closest('div').hidden = useContact;
   $('family-member-last-name-field').hidden = useContact;
   $('family-member-first-name').required = !useContact;
@@ -75,6 +81,7 @@ function memberInitials(member) {
 }
 
 function relationshipLabel(member) {
+  if (member.member_type === 'assisted_person') return 'Persona assistita';
   if (member.member_type === 'pet') return member.pet_species ? `${speciesLabel(member.pet_species)} · Animale domestico` : 'Animale domestico';
   return {
     partner: 'Partner', child: 'Figlio/a', parent: 'Genitore', grandparent: 'Nonno/a',
@@ -178,7 +185,7 @@ function createMemberCard(member, options = {}) {
       actions.append(inviteButton);
     }
   }
-  if (member.member_type === 'pet') {
+  if (member.member_type === 'pet' || member.member_type === 'assisted_person') {
     const manageButton = document.createElement('button');
     manageButton.className = 'fa-button fa-button-secondary';
     manageButton.type = 'button';
@@ -198,6 +205,14 @@ function createMemberCard(member, options = {}) {
   removeButton.type = 'button';
   removeButton.textContent = 'Elimina';
   removeButton.onclick = async () => {
+    const confirmed = await FamilAreaConfirm.confirm({
+      variant: 'danger',
+      title: 'Elimina membro',
+      message: 'Vuoi davvero eliminare questo membro dalla famiglia?',
+      cancelText: 'Annulla',
+      confirmText: 'Elimina'
+    });
+    if (!confirmed) return;
     removeButton.disabled = true;
     const result = await c.rpc('delete_family_member', { p_member_id: member.id });
     if (result.error) { console.error('delete_family_member failed', result.error); removeButton.disabled = false; }
@@ -265,7 +280,7 @@ function openEditMemberModal(member) {
   $('family-member-edit-first-name').required = !linkedContact;
   $('family-member-linked-contact').hidden = !linkedContact;
   $('family-member-linked-name').textContent = name;
-  $('family-member-edit-intro').textContent = member.member_type === 'pet' ? 'Aggiorna le informazioni del tuo animale domestico.' : 'Aggiorna le informazioni del membro.';
+  $('family-member-edit-intro').textContent = member.member_type === 'pet' ? 'Aggiorna le informazioni del tuo animale domestico.' : (member.member_type === 'assisted_person' ? 'Aggiorna le informazioni della persona assistita.' : 'Aggiorna le informazioni del membro.');
   editFormMessage('');
   $('family-member-edit-modal').hidden = false;
   $('family-member-edit-dialog').focus();
@@ -314,13 +329,15 @@ $('family-member-type').addEventListener('change', updateMemberMode);
 $('family-member-contact').addEventListener('change', applyContactSelection);
 $('family-member-form').onsubmit = async (event) => {
   event.preventDefault(); formMessage('');
-  const useContact = $('family-member-type').value === 'person' && selectedSource() === 'contact';
+  const memberType = $('family-member-type').value;
+  const isPet = memberType === 'pet';
+  const useContact = memberType === 'person' && selectedSource() === 'contact';
   const contactId = useContact ? $('family-member-contact').value : null;
   if (useContact && !contactId) { formMessage('Seleziona un contatto.', true); return; }
   const { error } = await c.rpc('create_family_member', {
     p_first_name: $('family-member-first-name').value.trim(), p_relationship: $('family-member-relationship').value,
-    p_member_type: $('family-member-type').value, p_last_name: $('family-member-last-name').value.trim() || null,
-    p_birth_date: $('family-member-birth-date').value || null, p_pet_species: $('family-member-species').value || null, p_contact_id: contactId
+    p_member_type: memberType, p_last_name: $('family-member-last-name').value.trim() || null,
+    p_birth_date: $('family-member-birth-date').value || null, p_pet_species: isPet ? ($('family-member-species').value || null) : null, p_contact_id: contactId
   });
   if (error) { console.error('create_family_member failed', error); formMessage(error.message || 'Non è stato possibile salvare il membro.', true); return; }
   closeMemberModal(); load();
@@ -342,7 +359,7 @@ $('family-member-edit-form').onsubmit = async (event) => {
     p_relationship: $('family-member-edit-relationship').value,
     p_member_type: editingMember.member_type,
     p_birth_date: $('family-member-edit-birth-date').value || null,
-    p_pet_species: editingMember.pet_species || null,
+    p_pet_species: editingMember.member_type === 'pet' ? (editingMember.pet_species || null) : null,
     p_contact_id: editingMember.contact_id || null
   });
   saveButton.disabled = false;

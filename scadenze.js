@@ -37,7 +37,7 @@ async function load() {
   if (context.requested && !isManaged) m.textContent = 'Il membro selezionato non è gestibile dalla tua Famiglia. Stai visualizzando le tue scadenze personali.';
   if (isManaged) {
     contextContainer.hidden = false; window.FamilAreaManagedContext.renderBar(contextContainer, context.member);
-    const newDeadline = document.getElementById('new-deadline-link'); newDeadline.href = window.FamilAreaManagedContext.withMember('nuova-scadenza.html', context.member.id); newDeadline.hidden = false;
+    document.getElementById('single-deadline-link').href = window.FamilAreaManagedContext.withMember('nuova-scadenza.html?mode=single', context.member.id);
   }
   const { data, error } = isManaged ? await c.rpc('get_my_deadlines_for_managed_member', { p_member_id: context.member.id }) : await c.rpc('get_my_deadlines');
   if (error) { m.textContent = 'Impossibile caricare le scadenze.'; return; }

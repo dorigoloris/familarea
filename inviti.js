@@ -4,6 +4,17 @@ const pageMessage = document.getElementById('page-message');
 const invitesSection = document.getElementById('invites-section');
 const invitesList = document.getElementById('invites-list');
 const invitesEmpty = document.getElementById('invites-empty');
+let pageMessageTimeout;
+
+function setPageMessage(text = '', timeout = 0) {
+  window.clearTimeout(pageMessageTimeout);
+  pageMessage.textContent = text;
+  if (text && timeout) pageMessageTimeout = window.setTimeout(() => { pageMessage.textContent = ''; }, timeout);
+}
+
+function acceptedInviteMessage(kind) {
+  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+}
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
 function statusLabel(status) { return ({ pending: 'In attesa', accepted: 'Attivo', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto' })[status] || status; }
@@ -41,18 +52,15 @@ function setCardBusy(card, busy) { card.querySelectorAll('button').forEach((butt
 
 async function respondToInvite(invite, rpcName, card, kind = 'area') {
   setCardBusy(card, true);
-  pageMessage.textContent = rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…';
+  setPageMessage(rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…');
   const params = kind === 'suggestion'
     ? { p_suggestion_id: invite.suggestion_id }
     : { p_invite_id: invite.invite_id };
   const { error } = await supabaseClient.rpc(rpcName, params);
-  if (error) { setCardBusy(card, false); pageMessage.textContent = inviteErrorMessage(error); return; }
+  if (error) { setCardBusy(card, false); setPageMessage(inviteErrorMessage(error)); return; }
   if (await loadInvites()) {
-    pageMessage.textContent = kind === 'family' && rpcName.startsWith('accept_')
-      ? 'Invito Famiglia accettato.'
-      : kind === 'event' && rpcName.startsWith('accept_')
-        ? 'Invito Evento accettato.'
-        : '';
+    if (rpcName.startsWith('accept_')) setPageMessage(acceptedInviteMessage(kind), 3000);
+    else setPageMessage('');
   }
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
 }
@@ -201,7 +209,7 @@ async function loadInvites() {
     supabaseClient.rpc('get_my_event_invites'),
     supabaseClient.rpc('get_my_contact_suggestions')
   ]);
-  if (areaResult.error) { pageMessage.textContent = inviteErrorMessage(areaResult.error); return false; }
+  if (areaResult.error) { setPageMessage(inviteErrorMessage(areaResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
   if (suggestionResult.error) console.error('get_my_contact_suggestions failed', suggestionResult.error);
@@ -226,7 +234,7 @@ async function loadPage() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
   await loadInvites();
-  if (invitesSection.hidden === false) pageMessage.textContent = '';
+  if (invitesSection.hidden === false) setPageMessage('');
 }
 
 loadPage();

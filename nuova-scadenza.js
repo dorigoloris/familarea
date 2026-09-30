@@ -23,6 +23,7 @@ let availableDeadlineItems = [];
 const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
+const isSingleDeadlineCreate = query.get('mode') === 'single';
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
 const deadlineItemCategoryLabels = {
@@ -78,6 +79,12 @@ function clearAssociatedDeadlineHeader() {
   formIntro.hidden = false;
 }
 
+function applyStandardCreateDefaults() {
+  document.getElementById('deadline-category').value = 'vehicle';
+  document.getElementById('deadline-recurrence').value = 'none';
+  document.getElementById('deadline-reminder').value = '30';
+}
+
 function configureDeadlineItemCreateForm(item) {
   const template = deadlineItemTemplateTitle(item.category, presetTitle);
   const isTemplate = Boolean(template);
@@ -117,14 +124,18 @@ async function loadDeadlineItemSelector(selectedItemId = '') {
   }
 
   availableDeadlineItems = results.flatMap((result) => result.data || []);
-  deadlineItemSelector.replaceChildren(new Option('Nessun elemento', ''));
+  const noItemValue = '__none__';
+  deadlineItemSelector.replaceChildren(
+    new Option('Seleziona elemento', '', false, isSingleDeadlineCreate),
+    new Option('Nessun elemento', noItemValue, false, !isSingleDeadlineCreate)
+  );
   availableDeadlineItems.forEach((item) => {
     const category = deadlineItemCategoryLabels[item.category] || 'Elemento';
     deadlineItemSelector.add(new Option(`${item.name} — ${category}`, item.id));
   });
   deadlineItemSelector.value = availableDeadlineItems.some((item) => item.id === selectedItemId)
     ? selectedItemId
-    : '';
+    : (isSingleDeadlineCreate ? '' : noItemValue);
   deadlineItemSelectorField.hidden = false;
   deadlineItemSelector.onchange = updateDeadlineItemAssociationFields;
   updateDeadlineItemAssociationFields();
@@ -135,8 +146,8 @@ function populateEditForm(deadline) {
   document.getElementById('deadline-title').value = deadline.title || '';
   document.getElementById('deadline-category').value = deadline.category || 'other';
   document.getElementById('deadline-first-due-on').value = deadline.first_due_on || '';
-  document.getElementById('deadline-recurrence').value = deadline.recurrence_months || '';
-  document.getElementById('deadline-reminder').value = deadline.reminder_days ?? 30;
+  document.getElementById('deadline-recurrence').value = deadline.recurrence_months || 'none';
+  document.getElementById('deadline-reminder').value = deadline.reminder_days ?? '';
   document.getElementById('deadline-notes').value = deadline.notes || '';
 }
 
@@ -170,6 +181,8 @@ async function initialiseEditMode(account) {
 }
 
 async function initialiseCreateMode(account, context) {
+  if (!isSingleDeadlineCreate) applyStandardCreateDefaults();
+
   if (context.member) {
     managedMember = context.member;
     contextContainer.hidden = false;
@@ -244,6 +257,10 @@ async function transitionToEdit(deadlineId) {
 
 f.onsubmit = async (event) => {
   event.preventDefault();
+  if (!document.getElementById('deadline-recurrence').value || !document.getElementById('deadline-reminder').value) {
+    m.textContent = 'Seleziona ricorrenza e promemoria.';
+    return;
+  }
   const commonParams = {
     p_title: document.getElementById('deadline-title').value.trim(),
     p_category: document.getElementById('deadline-category').value,
