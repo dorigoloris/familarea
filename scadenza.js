@@ -43,7 +43,7 @@ async function renderDeadlineItemReference() {
   const term = document.createElement('dt');
   const definition = document.createElement('dd');
   const link = document.createElement('a');
-  term.textContent = 'Veicolo';
+  term.textContent = item.category === 'home' ? 'Casa' : 'Veicolo';
   link.href = `gestione-scadenza-item.html?item_id=${encodeURIComponent(item.id)}`;
   link.textContent = item.name;
   definition.append(link);

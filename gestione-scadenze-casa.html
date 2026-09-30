@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa - Scadenze - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadline-management-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main id="home-redirect-content" class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" hidden>
+    <p id="home-message" class="deadline-management-message" aria-live="polite">Apertura Casa...</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="gestione-scadenze.js"></script><script src="gestione-scadenze-casa.js"></script>
+</body>
+</html>

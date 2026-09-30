@@ -33,6 +33,7 @@
     'scadenza.html': 'deadlines',
     'gestione-scadenze.html': 'deadlines',
     'gestione-scadenze-veicoli.html': 'deadlines',
+    'gestione-scadenze-casa.html': 'deadlines',
     'gestione-scadenza-item.html': 'deadlines',
     'gestione-scadenza-veicolo.html': 'deadlines',
     'gestione-tagliando.html': 'deadlines',

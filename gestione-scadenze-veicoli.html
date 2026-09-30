@@ -23,20 +23,25 @@
     </header>
 
     <p id="vehicles-message" class="deadline-management-message" aria-live="polite"></p>
-    <form id="vehicle-form" class="deadline-management-form fa-surface" hidden>
-      <h2 id="vehicle-form-title">Nuovo veicolo</h2>
-      <div class="deadline-management-form-grid">
-        <div><label for="vehicle-name">Nome *</label><input id="vehicle-name" type="text" required placeholder="Es. Fiat 500"></div>
-        <div><label for="vehicle-type">Tipo *</label><select id="vehicle-type" required><option value="car">Auto</option><option value="motorcycle">Moto</option><option value="other">Altro</option></select></div>
-        <div><label for="vehicle-plate">Targa</label><input id="vehicle-plate" type="text" placeholder="Es. GB123CD"></div>
-      </div>
-      <div class="deadline-management-item-image-field"><label>Foto del veicolo</label><div class="deadline-management-item-image-actions"><span id="vehicle-image-preview" class="deadline-management-item-image" aria-label="Anteprima foto veicolo">V</span><div><input id="vehicle-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><label id="vehicle-image-upload" class="fa-button fa-button-secondary fa-button-compact" for="vehicle-image-input">Carica foto</label><button id="vehicle-image-remove" class="fa-button fa-button-secondary fa-button-compact" type="button" hidden>Rimuovi foto</button><p id="vehicle-image-message" class="deadline-management-item-image-message" aria-live="polite"></p></div></div></div>
-      <div class="form-actions"><button class="fa-button fa-button-primary" type="submit">Salva veicolo</button><button id="vehicle-cancel" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
-    </form>
-
     <section id="vehicles-empty" class="fa-empty-state deadline-management-empty" hidden><strong>Nessun veicolo.</strong><span>Aggiungi il primo veicolo da organizzare.</span></section>
     <section id="vehicles-list" class="deadline-management-list" aria-label="Veicoli"></section>
   </main>
+  <div id="vehicle-form-modal" class="confirm-modal-overlay deadline-management-vehicle-modal" hidden>
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="vehicle-form-title" tabindex="-1">
+      <button id="vehicle-modal-close" class="confirm-modal-close" type="button" aria-label="Chiudi">×</button>
+      <form id="vehicle-form" class="deadline-management-form">
+        <h2 id="vehicle-form-title">Aggiungi veicolo</h2>
+        <p id="vehicle-form-message" class="deadline-management-message" aria-live="polite"></p>
+        <div class="deadline-management-form-grid">
+          <div><label for="vehicle-name">Nome *</label><input id="vehicle-name" type="text" required placeholder="Es. Fiat 500"></div>
+          <div><label for="vehicle-type">Tipo *</label><select id="vehicle-type" required><option value="car">Auto</option><option value="motorcycle">Moto</option><option value="other">Altro</option></select></div>
+          <div><label for="vehicle-plate">Targa</label><input id="vehicle-plate" type="text" placeholder="Es. GB123CD"></div>
+        </div>
+        <div class="deadline-management-item-image-field"><label>Foto del veicolo</label><div class="deadline-management-item-image-actions"><span id="vehicle-image-preview" class="deadline-management-item-image" aria-label="Anteprima foto veicolo">V</span><div><input id="vehicle-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><label id="vehicle-image-upload" class="fa-button fa-button-secondary fa-button-compact" for="vehicle-image-input">Carica foto</label><button id="vehicle-image-remove" class="fa-button fa-button-secondary fa-button-compact" type="button" hidden>Rimuovi foto</button><p id="vehicle-image-message" class="deadline-management-item-image-message" aria-live="polite"></p></div></div></div>
+        <div class="form-actions vehicle-form-actions"><button id="vehicle-delete" class="fa-button fa-button-danger" type="button" hidden>Elimina veicolo</button><div><button id="vehicle-cancel" class="fa-button fa-button-secondary" type="button">Annulla</button><button id="vehicle-save" class="fa-button fa-button-primary" type="submit">Aggiungi veicolo</button></div></div>
+      </form>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>

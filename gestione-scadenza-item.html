@@ -3,29 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Veicolo - Scadenze - FamilArea</title>
+  <title>Elemento - Scadenze - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="deadline-management-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
-    <p class="account-back-link"><a href="gestione-scadenze-veicoli.html">Torna ai Veicoli</a></p>
-    <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento veicolo...</p>
+    <p class="account-back-link"><a id="deadline-item-back-link" href="scadenze.html">Torna alle Scadenze</a></p>
+    <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento elemento...</p>
     <div id="deadline-item-content" hidden>
-      <header class="fa-section-hero" aria-labelledby="deadline-item-title">
-        <div class="fa-section-hero-content deadline-item-hero-content"><span id="deadline-item-image" class="deadline-management-item-image deadline-management-item-image--hero" aria-label="Foto veicolo">V</span><div><p class="eyebrow">VEICOLO</p><h1 id="deadline-item-title"></h1><p id="deadline-item-type"></p></div></div>
+      <h1 id="deadline-item-page-title" class="fa-visually-hidden"></h1>
+      <header class="deadline-item-summary-card deadline-item-hero" aria-labelledby="deadline-item-page-title">
+        <span id="deadline-item-image" class="deadline-management-item-image deadline-item-summary-image" aria-label="Foto elemento">E</span><p id="deadline-item-type" class="deadline-item-summary-type"></p><h2 id="deadline-item-title" class="deadline-item-summary-name"></h2><span id="deadline-item-plate" class="deadline-item-summary-plate"></span><button id="deadline-item-create" class="fa-button fa-button-secondary fa-button-compact deadline-item-summary-action" type="button">+ Aggiungi scadenza</button>
       </header>
       <section class="deadline-item-deadlines fa-surface" aria-labelledby="deadline-item-deadlines-title">
         <h2 id="deadline-item-deadlines-title">Scadenze</h2>
-        <div id="deadline-item-predefined-cards" class="fa-item-card-grid" aria-label="Tipologie di scadenza del veicolo"></div>
+        <div id="deadline-item-predefined-cards" class="deadline-item-preset-grid" aria-label="Tipologie di scadenza dell'elemento"></div>
         <section id="deadline-item-custom-deadlines" hidden aria-labelledby="deadline-item-custom-deadlines-title">
           <h3 id="deadline-item-custom-deadlines-title">Altre scadenze</h3>
-          <div id="deadline-item-deadlines-list" class="deadline-management-list" aria-label="Altre scadenze del veicolo"></div>
+          <div id="deadline-item-deadlines-list" class="deadline-management-list" aria-label="Altre scadenze dell'elemento"></div>
         </section>
       </section>
     </div>
   </main>
+  <div id="deadline-item-edit-modal" class="confirm-modal-overlay deadline-item-edit-modal" hidden>
+    <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="deadline-item-edit-title">
+      <button id="deadline-item-edit-close" class="confirm-modal-close" type="button" aria-label="Chiudi modifica">&times;</button>
+      <h2 id="deadline-item-edit-title" class="confirm-modal-title">Modifica elemento</h2>
+      <div class="deadline-management-item-image-field deadline-item-image-editor" aria-labelledby="deadline-item-image-label">
+        <label id="deadline-item-image-label" for="deadline-item-image-input">Foto dell’elemento</label>
+        <div class="deadline-management-item-image-actions"><span id="deadline-item-image-preview" class="deadline-management-item-image" aria-label="Anteprima foto">E</span><div><input id="deadline-item-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><label id="deadline-item-image-upload" class="fa-button fa-button-secondary fa-button-compact" for="deadline-item-image-input">Carica foto</label><button id="deadline-item-image-remove" class="fa-button fa-button-secondary fa-button-compact" type="button" hidden>Rimuovi foto</button><button id="deadline-item-image-save" class="fa-button fa-button-primary fa-button-compact" type="button">Salva foto</button><p id="deadline-item-image-message" class="deadline-management-item-image-message" aria-live="polite"></p></div></div>
+      </div>
+    </section>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>

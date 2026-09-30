@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="it">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Gestione Tagliando - FamilArea</title><link rel="stylesheet" href="app.css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tagliando - FamilArea</title><link rel="stylesheet" href="app.css"></head>
 <body class="deadline-management-page-view">
   <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
   <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" hidden data-service-content>
     <p class="account-back-link"><a id="service-back-link" href="gestione-scadenze-veicoli.html">Torna al Veicolo</a></p>
     <p id="service-message" class="deadline-management-message" aria-live="polite">Caricamento Tagliando...</p>
     <div id="service-view" hidden>
-      <header class="fa-section-hero"><div class="fa-section-hero-content"><p class="eyebrow">VEICOLO</p><h1>Gestione Tagliando</h1><p id="service-vehicle"></p></div></header>
-      <section class="vehicle-service-next fa-surface"><h2>Prossima scadenza</h2><p id="service-next-deadline"></p></section>
+      <header class="deadline-context-heading"><span class="fa-icon-badge" aria-hidden="true">&#9200;</span><div><h1 id="service-deadline-title"></h1></div></header>
+      <section class="vehicle-service-next fa-surface"><h2>Prossima scadenza</h2><div id="service-next-deadline" class="deadline-management-section-row"></div></section>
       <section class="deadline-attachments-section fa-surface" aria-labelledby="deadline-attachments-title">
         <div class="deadline-attachments-heading"><div><h2 id="deadline-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questa scadenza.</p></div><label id="deadline-attachment-upload" class="btn secondary-button deadline-attachment-upload" for="deadline-attachment-input">+ Aggiungi allegato</label><input id="deadline-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>
         <p id="deadline-attachments-message" class="deadline-attachments-message" aria-live="polite"></p>
         <p id="deadline-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p>
         <div id="deadline-attachments-list" class="deadline-attachments-list"></div>
       </section>
-      <div class="vehicle-service-history"><div class="vehicle-service-heading"><div><p class="section-kicker">Storico</p><h2>Tagliandi effettuati</h2></div><button id="service-create" class="fa-button fa-button-primary" type="button">+ Nuovo Tagliando</button></div>
+      <section class="vehicle-service-history fa-surface"><div class="vehicle-service-heading"><div><p class="section-kicker">Storico</p><h2>Tagliandi effettuati</h2></div><button id="service-create" class="fa-button fa-button-primary" type="button">+ Nuovo Tagliando</button></div>
         <p id="service-empty">Nessun tagliando registrato.</p><div id="service-list" class="vehicle-service-list"></div>
-      </div>
+      </section>
     </div>
   </main>
   <div id="service-form-modal" class="confirm-modal-overlay vehicle-service-modal" hidden>
