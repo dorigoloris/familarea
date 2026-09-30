@@ -9,6 +9,12 @@
     <div id="service-view" hidden>
       <header class="fa-section-hero"><div class="fa-section-hero-content"><p class="eyebrow">VEICOLO</p><h1>Gestione Tagliando</h1><p id="service-vehicle"></p></div></header>
       <section class="vehicle-service-next fa-surface"><h2>Prossima scadenza</h2><p id="service-next-deadline"></p></section>
+      <section class="deadline-attachments-section fa-surface" aria-labelledby="deadline-attachments-title">
+        <div class="deadline-attachments-heading"><div><h2 id="deadline-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questa scadenza.</p></div><label id="deadline-attachment-upload" class="btn secondary-button deadline-attachment-upload" for="deadline-attachment-input">+ Aggiungi allegato</label><input id="deadline-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>
+        <p id="deadline-attachments-message" class="deadline-attachments-message" aria-live="polite"></p>
+        <p id="deadline-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p>
+        <div id="deadline-attachments-list" class="deadline-attachments-list"></div>
+      </section>
       <div class="vehicle-service-history"><div class="vehicle-service-heading"><div><p class="section-kicker">Storico</p><h2>Tagliandi effettuati</h2></div><button id="service-create" class="fa-button fa-button-primary" type="button">+ Nuovo Tagliando</button></div>
         <p id="service-empty">Nessun tagliando registrato.</p><div id="service-list" class="vehicle-service-list"></div>
       </div>
@@ -26,5 +32,5 @@
       </form>
     </section>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="date-utils.js"></script><script src="gestione-scadenze.js"></script><script src="gestione-tagliando.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="date-utils.js"></script><script src="gestione-scadenze.js"></script><script src="deadline-attachments.js"></script><script src="gestione-tagliando.js"></script>
 </body></html>

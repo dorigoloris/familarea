@@ -7,6 +7,15 @@ const backLink = document.getElementById('deadline-back-link');
 const terminateButton = document.getElementById('terminate-deadline');
 const deleteButton = document.getElementById('delete-deadline');
 const attachmentsSection = document.querySelector('.deadline-attachments-section');
+const deadlineAttachments = window.FamilAreaDeadlineAttachments.create({
+  client: c,
+  deadlineId: id,
+  input: document.getElementById('deadline-attachment-input'),
+  uploadControl: document.getElementById('deadline-attachment-upload'),
+  message: document.getElementById('deadline-attachments-message'),
+  empty: document.getElementById('deadline-attachments-empty'),
+  list: document.getElementById('deadline-attachments-list')
+});
 let d;
 let managedMember = null;
 
@@ -75,7 +84,7 @@ async function load() {
   m.textContent = contextWarning;
   await renderDeadlineItemReference();
   await occurrence();
-  if (!isManaged()) await attachments();
+  if (!isManaged()) await deadlineAttachments.load();
 }
 
 async function occurrence() {
@@ -110,34 +119,6 @@ async function occurrence() {
     load();
   };
   box.append(button);
-}
-
-async function attachments() {
-  const { data } = await c.rpc('get_attachments', { p_target_type: 'deadline', p_target_id: id });
-  const box = document.getElementById('deadline-attachments-list');
-  box.replaceChildren(...(data || []).map((attachment) => {
-    const wrap = document.createElement('div');
-    const open = document.createElement('button');
-    const del = document.createElement('button');
-    open.textContent = attachment.original_filename;
-    open.onclick = async () => {
-      const { data: signed } = await c.storage.from('familarea-attachments').createSignedUrl(attachment.storage_path, 60);
-      if (signed?.signedUrl) window.open(signed.signedUrl, '_blank', 'noopener');
-    };
-    del.textContent = 'Elimina';
-    del.onclick = async () => {
-      const result = await c.rpc('delete_attachment', { p_attachment_id: attachment.id });
-      if (result.error) {
-        m.textContent = 'Impossibile eliminare l’allegato.';
-        return;
-      }
-      await c.storage.from('familarea-attachments').remove([attachment.storage_path]);
-      attachments();
-    };
-    wrap.append(open, del);
-    return wrap;
-  }));
-  document.getElementById('deadline-attachments-empty').hidden = (data || []).length > 0;
 }
 
 document.getElementById('edit-deadline').onclick = async (event) => {
@@ -251,26 +232,6 @@ deleteButton.onclick = async () => {
     await c.rpc('delete_deadline', { p_deadline_id: id });
     location.href = 'scadenze.html';
   }
-};
-
-document.getElementById('deadline-attachment-input').onchange = async (event) => {
-  if (isManaged()) return;
-  const file = event.target.files[0];
-  if (!file) return;
-  const { data: account } = await c.rpc('get_current_account');
-  const path = `attachments/${account.account_id}/deadline/${id}/${crypto.randomUUID()}-${file.name}`;
-  const upload = await c.storage.from('familarea-attachments').upload(path, file, { contentType: file.type });
-  if (upload.error) return;
-  const result = await c.rpc('register_attachment', {
-    p_target_type: 'deadline',
-    p_target_id: id,
-    p_storage_path: path,
-    p_original_filename: file.name,
-    p_mime_type: file.type,
-    p_byte_size: file.size
-  });
-  if (result.error) await c.storage.from('familarea-attachments').remove([path]);
-  attachments();
 };
 
 load();

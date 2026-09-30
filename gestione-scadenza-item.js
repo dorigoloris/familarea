@@ -31,7 +31,7 @@ function createDeadlineCard({ title, kind = '', icon, deadline, presetTitle = ti
   card.href = deadline
     ? (kind === 'vehicle_service'
       ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}`
-      : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`)
+      : `gestione-scadenza-veicolo.html?deadline_id=${encodeURIComponent(deadline.id)}`)
     : itemDeadlineCreateHref(presetTitle, kind);
 
   const cardIcon = document.createElement('span');

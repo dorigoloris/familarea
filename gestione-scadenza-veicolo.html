@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione Scadenza Veicolo - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadline-management-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
+    <p class="account-back-link"><a id="vehicle-deadline-back-link" href="gestione-scadenze-veicoli.html">Torna al Veicolo</a></p>
+    <p id="vehicle-deadline-message" class="deadline-management-message" aria-live="polite">Caricamento scadenza...</p>
+    <div id="vehicle-deadline-content" hidden>
+      <header class="fa-section-hero" aria-labelledby="vehicle-deadline-title">
+        <div class="fa-section-hero-content"><div><p class="eyebrow">VEICOLO</p><h1 id="vehicle-deadline-title"></h1><p id="vehicle-deadline-vehicle"></p></div></div>
+      </header>
+      <section class="vehicle-service-next fa-surface" aria-labelledby="vehicle-deadline-next-title">
+        <h2 id="vehicle-deadline-next-title">Prossima scadenza</h2>
+        <p id="vehicle-deadline-next-date"></p>
+        <p id="vehicle-deadline-meta"></p>
+        <p><a id="vehicle-deadline-edit" class="btn secondary-button" href="#">Modifica</a></p>
+      </section>
+      <section class="deadline-attachments-section fa-surface" aria-labelledby="deadline-attachments-title">
+        <div class="deadline-attachments-heading"><div><h2 id="deadline-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questa scadenza.</p></div><label id="deadline-attachment-upload" class="btn secondary-button deadline-attachment-upload" for="deadline-attachment-input">+ Aggiungi allegato</label><input id="deadline-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>
+        <p id="deadline-attachments-message" class="deadline-attachments-message" aria-live="polite"></p>
+        <p id="deadline-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p>
+        <div id="deadline-attachments-list" class="deadline-attachments-list"></div>
+      </section>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="date-utils.js"></script>
+  <script src="gestione-scadenze.js"></script>
+  <script src="deadline-attachments.js"></script>
+  <script src="gestione-scadenza-veicolo.js"></script>
+</body>
+</html>
