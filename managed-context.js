@@ -28,6 +28,9 @@
       return { requested: true, member: null, error: error || new Error('family member unavailable') };
     }
 
+    const { data: familyData } = await client().rpc('get_my_family');
+    member.owner_account_id = familyData?.family?.owner_account_id || null;
+
     const { data: avatarPath } = await client().rpc('get_my_managed_family_member_avatar_path', {
       p_member_id: memberId
     });

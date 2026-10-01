@@ -67,13 +67,6 @@ function renderAvatar() {
   }
 }
 
-async function currentAccount() {
-  const account = await window.FamilAreaCurrentAccount;
-  if (account?.account_id) return account;
-  const { data } = await window.FamilAreaSupabaseClient.rpc('get_current_account');
-  return data;
-}
-
 function previewAvatar() {
   const file = avatarInput.files?.[0];
   avatarInput.value = '';
@@ -95,13 +88,13 @@ async function uploadAvatar() {
   if (!file || !managedMember) return;
 
   setAvatarBusy(true);
-  const account = await currentAccount();
-  if (!account?.account_id) {
+  const ownerAccountId = managedMember.owner_account_id;
+  if (!ownerAccountId) {
     setAvatarBusy(false);
     setAvatarMessage('Impossibile verificare l’account.', true);
     return;
   }
-  const path = avatarService.storagePath(account.account_id, managedMember.id);
+  const path = avatarService.storagePath(ownerAccountId, managedMember.id);
   setAvatarMessage('Caricamento foto in corso...');
   const client = window.FamilAreaSupabaseClient;
   const { error: uploadError } = await client.storage.from(avatarService.bucket).upload(path, file, { upsert: true, contentType: file.type });

@@ -19,23 +19,25 @@
     </header>
 
     <section class="fa-item-card-grid" aria-label="Categorie di gestione scadenze">
-      <a class="area-card fa-item-card" href="gestione-scadenze-veicoli.html">
+      <a class="area-card fa-item-card deadline-management-category-card" href="gestione-scadenze-veicoli.html">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">V</span>
         <span class="deadline-management-card-copy fa-item-card-copy"><h3>Veicoli</h3><p>Auto, moto e altri veicoli</p></span>
-        <span class="area-card-open-indicator fa-item-card-open-indicator" aria-hidden="true">&rarr;</span>
       </a>
-      <a id="home-category-link" class="area-card fa-item-card" href="gestione-scadenze-casa.html">
+      <a id="home-category-link" class="area-card fa-item-card deadline-management-category-card" href="gestione-scadenze-casa.html">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">C</span>
         <span class="deadline-management-card-copy fa-item-card-copy"><h3>Casa</h3><p>Impianti, tributi e documenti</p></span>
-        <span class="area-card-open-indicator fa-item-card-open-indicator" aria-hidden="true">&rarr;</span>
       </a>
-      <article class="area-card fa-item-card area-card--unavailable fa-item-card--unavailable" aria-label="Utenze e bollette, prossimamente">
+      <a id="documents-category-link" class="area-card fa-item-card deadline-management-category-card" href="gestione-scadenze-documenti.html">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">D</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Documenti personali</h3><p>Identit&agrave;, patente, passaporto e altri documenti</p></span>
+      </a>
+      <article class="area-card fa-item-card deadline-management-category-card area-card--unavailable fa-item-card--unavailable" aria-label="Utenze e bollette, prossimamente">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">U</span>
         <span class="deadline-management-card-copy fa-item-card-copy"><h3>Utenze e bollette</h3><p>Prossimamente</p></span>
       </article>
-      <a id="single-deadline-link" class="area-card fa-item-card" href="nuova-scadenza.html?mode=single" aria-label="Scadenze singole">
+      <a id="single-deadline-link" class="area-card fa-item-card deadline-management-category-card" href="nuova-scadenza.html?mode=single" aria-label="Scadenze e appuntamenti">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">+</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Scadenze singole</h3><p>Crea una scadenza non associata a un elemento</p></span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Scadenze e appuntamenti</h3><p>Ricorda una data o pianifica un appuntamento</p></span>
       </a>
     </section>
 
@@ -46,7 +48,7 @@
       <div id="managed-context" hidden></div>
       <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
       <div id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong></div>
-      <div id="active-deadlines-section" class="deadlines-section" hidden aria-labelledby="upcoming-deadlines-title"><div id="active-deadlines-list" class="deadlines-grid"></div></div>
+      <div id="active-deadlines-section" class="deadlines-section" hidden aria-labelledby="upcoming-deadlines-title"><div id="active-deadlines-list" class="deadlines-grid"></div><div id="deadline-list-toggle" class="deadline-list-toggle" hidden><button id="deadline-list-toggle-button" class="fa-button fa-button-secondary" type="button" aria-controls="active-deadlines-list" aria-expanded="false">Vedi tutte <span aria-hidden="true">↓</span></button></div></div>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione documento - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadline-management-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
+    <p class="account-back-link"><a id="document-back-link" href="gestione-scadenze-documenti.html">Torna ai Documenti personali</a></p>
+    <header class="fa-section-hero" aria-labelledby="document-form-title">
+      <div class="fa-section-hero-content">
+        <p class="eyebrow">DOCUMENTI PERSONALI</p>
+        <h1 id="document-form-title">Aggiungi documento</h1>
+        <p id="document-form-intro">Inserisci le informazioni essenziali del documento.</p>
+      </div>
+    </header>
+    <div id="managed-context" hidden></div>
+    <p id="deadline-form-message" class="deadline-management-message" aria-live="polite">Caricamento...</p>
+    <form id="personal-document-form" class="deadline-management-form fa-surface" hidden>
+      <div class="deadline-management-form-grid">
+        <div><label for="personal-document-type">Tipo documento *</label><select id="personal-document-type" required><option value="identity_card">Carta d’identità</option><option value="driving_license">Patente</option><option value="passport">Passaporto</option><option value="health_card">Tessera sanitaria</option><option value="permit_license">Permesso/licenza</option><option value="other">Altro documento</option></select></div>
+        <div><label for="personal-document-holder">Intestatario *</label><select id="personal-document-holder" required></select></div>
+        <div><label for="personal-document-number">Numero documento</label><input id="personal-document-number" type="text"></div>
+        <div><label for="personal-document-issued-on">Data rilascio</label><input id="personal-document-issued-on" type="date"></div>
+        <div><label for="personal-document-expiry-date">Data scadenza</label><input id="personal-document-expiry-date" type="date"></div>
+        <div><label for="personal-document-reminder">Promemoria</label><select id="personal-document-reminder"><option value="">Nessun promemoria</option><option value="0">Il giorno stesso</option><option value="7">7 giorni prima</option><option value="15">15 giorni prima</option><option value="30">30 giorni prima</option></select></div>
+        <div><label for="personal-document-issuer">Ente di rilascio</label><input id="personal-document-issuer" type="text"></div>
+        <div><label for="personal-document-notes">Note</label><textarea id="personal-document-notes" rows="4"></textarea></div>
+      </div>
+      <section id="personal-document-file-section" class="deadline-attachments-section fa-surface" aria-labelledby="personal-document-file-title" hidden>
+        <div class="deadline-attachments-heading">
+          <div><h2 id="personal-document-file-title">Documento</h2><p class="deadline-attachments-intro">PDF, JPG, PNG o WebP · massimo 10 MB.</p></div>
+          <label id="personal-document-file-upload" class="fa-button fa-button-secondary deadline-attachment-upload" for="personal-document-file-input">Carica documento</label>
+          <input id="personal-document-file-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden>
+        </div>
+        <p id="personal-document-file-message" class="deadline-attachments-message" aria-live="polite"></p>
+        <p id="personal-document-file-empty" class="deadline-attachments-empty">Nessun documento caricato</p>
+        <div id="personal-document-file-details" class="deadline-attachments-list" hidden></div>
+      </section>
+      <div class="deadline-management-form-actions"><button id="personal-document-delete" class="fa-button fa-button-danger" type="button" hidden>Elimina documento</button><a id="personal-document-cancel" class="fa-button fa-button-secondary" href="gestione-scadenze-documenti.html">Annulla</a><button id="personal-document-submit" class="fa-button fa-button-primary" type="submit">Crea documento</button></div>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="managed-context.js"></script>
+  <script src="gestione-scadenze.js"></script>
+  <script src="gestione-documento.js"></script>
+</body>
+</html>

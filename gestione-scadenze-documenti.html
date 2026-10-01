@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documenti personali - Scadenze - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadline-management-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
+    <p class="account-back-link"><a id="documents-back-link" href="scadenze.html">Torna alle Scadenze</a></p>
+    <header class="fa-section-hero" aria-labelledby="personal-documents-title">
+      <div class="fa-section-hero-content">
+        <p class="eyebrow">GESTIONE SCADENZE</p>
+        <div class="fa-section-hero-title-row">
+          <h1 id="personal-documents-title">Documenti personali</h1>
+          <a id="document-create" class="fa-button fa-button-primary" href="gestione-documento.html">+ Aggiungi documento</a>
+        </div>
+        <p>Conserva le informazioni essenziali e ricevi un promemoria alla scadenza.</p>
+      </div>
+    </header>
+    <div id="managed-context" hidden></div>
+    <p id="documents-message" class="deadline-management-message" aria-live="polite"></p>
+    <section id="documents-empty" class="fa-empty-state deadline-management-empty" hidden><strong>Nessun documento.</strong><span>Aggiungi il primo documento personale da organizzare.</span></section>
+    <section id="documents-list" class="deadline-management-list" aria-label="Documenti personali"></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="managed-context.js"></script>
+  <script src="date-utils.js"></script>
+  <script src="gestione-scadenze.js"></script>
+  <script src="gestione-scadenze-documenti.js"></script>
+</body>
+</html>

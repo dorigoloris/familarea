@@ -15,6 +15,14 @@ const cancelLink = document.getElementById('deadline-cancel-link');
 const formTitle = document.getElementById('deadline-form-title');
 const formIntro = document.getElementById('deadline-form-intro');
 const submitButton = document.getElementById('deadline-submit');
+const startTimeInput = document.getElementById('deadline-start-time');
+const endTimeInput = document.getElementById('deadline-end-time');
+const categoryInput = document.getElementById('deadline-category');
+const deadlineTypeChoice = document.getElementById('deadline-type-choice');
+const deadlineTypeNote = document.getElementById('deadline-type-note');
+const deadlineTypeInputs = [...document.querySelectorAll('input[name="deadline-type"]')];
+let otherOptionsToggle = null;
+let otherOptionsContent = null;
 let managedMember = null;
 let deadlineItem = null;
 let editingDeadline = null;
@@ -24,6 +32,7 @@ const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
 const isSingleDeadlineCreate = query.get('mode') === 'single';
+let isSingleDeadlineFlow = isSingleDeadlineCreate;
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
 const deadlineItemCategoryLabels = {
@@ -43,6 +52,11 @@ const deadlineItemTemplates = {
   ]
 };
 let deadlineItemKind = null;
+
+function setFormMessage(text, isSuccess = false) {
+  m.textContent = text;
+  m.classList.toggle('deadline-form-message--success', Boolean(text) && isSuccess);
+}
 
 function managedHref(path) {
   return managedMember
@@ -149,16 +163,121 @@ function populateEditForm(deadline) {
   document.getElementById('deadline-recurrence').value = deadline.recurrence_months || 'none';
   document.getElementById('deadline-reminder').value = deadline.reminder_days ?? '';
   document.getElementById('deadline-notes').value = deadline.notes || '';
+  startTimeInput.value = String(deadline.start_time || '').slice(0, 5);
+  endTimeInput.value = String(deadline.end_time || '').slice(0, 5);
+  if (isSingleDeadlineFlow) setDeadlineType(deadline.start_time ? 'appointment' : 'deadline');
+  updateTimeValidation();
+}
+
+function selectedDeadlineType() {
+  return deadlineTypeInputs.find((input) => input.checked)?.value || 'deadline';
+}
+
+function setDeadlineType(type) {
+  const isAppointment = type === 'appointment';
+  deadlineTypeInputs.forEach((input) => { input.checked = input.value === type; });
+  startTimeInput.closest('div').hidden = !isAppointment;
+  endTimeInput.closest('div').hidden = !isAppointment;
+  startTimeInput.required = isAppointment;
+  deadlineTypeNote.textContent = isAppointment
+    ? 'Un appuntamento prevede un orario di inizio e, facoltativamente, di fine.'
+    : 'Una scadenza indica una data da ricordare, senza un orario.';
+  updateTimeValidation();
+}
+
+function setOtherOptionsOpen(isOpen) {
+  if (!otherOptionsToggle || !otherOptionsContent) return;
+  otherOptionsToggle.setAttribute('aria-expanded', String(isOpen));
+  otherOptionsContent.hidden = !isOpen;
+}
+
+function updateTimeValidation(showMessage = false) {
+  const startTime = startTimeInput.value;
+  const endTime = endTimeInput.value;
+  endTimeInput.setCustomValidity('');
+
+  const isAppointment = isSingleDeadlineFlow && selectedDeadlineType() === 'appointment';
+  if (isAppointment && !startTime) {
+    if (showMessage) setFormMessage('Inserisci l’ora di inizio.');
+    return false;
+  }
+  if (isSingleDeadlineFlow && !isAppointment) return true;
+  if (endTime && !startTime) {
+    endTimeInput.setCustomValidity('Inserisci prima l’ora di inizio.');
+    if (showMessage) setFormMessage('Inserisci prima l’ora di inizio.');
+    return false;
+  }
+  if (startTime && endTime && endTime <= startTime) {
+    endTimeInput.setCustomValidity('L’ora fine deve essere successiva all’ora di inizio.');
+    if (showMessage) setFormMessage('L’ora fine deve essere successiva all’ora di inizio.');
+    return false;
+  }
+  return true;
+}
+
+function configureSingleDeadlineLayout() {
+  if (!isSingleDeadlineFlow || f.classList.contains('deadline-form--single')) return;
+
+  const grid = f.querySelector('.deadline-form-grid');
+  const notesField = document.getElementById('deadline-notes').closest('div');
+  const dateField = document.getElementById('deadline-first-due-on').closest('div');
+  const startTimeField = startTimeInput.closest('div');
+  const endTimeField = endTimeInput.closest('div');
+  const primaryFields = document.createElement('div');
+  const otherOptions = document.createElement('section');
+  const otherOptionsChevron = document.createElement('span');
+
+  primaryFields.className = 'deadline-form-primary-grid';
+  titleField.classList.add('deadline-form-title-field');
+  dateField.classList.add('deadline-form-date-field');
+  startTimeField.classList.add('deadline-form-start-time-field');
+  endTimeField.classList.add('deadline-form-end-time-field');
+  notesField.classList.add('deadline-form-notes-field');
+  document.querySelector('label[for="deadline-first-due-on"]').textContent = 'Data *';
+  document.querySelector('label[for="deadline-start-time"]').textContent = 'Ora inizio *';
+  categoryInput.required = false;
+  document.querySelector('label[for="deadline-category"]').textContent = 'Categoria';
+
+  primaryFields.append(titleField, dateField, startTimeField, endTimeField, notesField);
+  otherOptions.className = 'deadline-form-other-options';
+  otherOptionsToggle = document.createElement('button');
+  otherOptionsToggle.type = 'button';
+  otherOptionsToggle.className = 'fa-button fa-button-secondary deadline-form-other-options-toggle';
+  otherOptionsToggle.textContent = 'Altre opzioni';
+  otherOptionsToggle.setAttribute('aria-controls', 'deadline-other-options');
+  otherOptionsToggle.setAttribute('aria-expanded', 'false');
+  otherOptionsChevron.className = 'deadline-form-other-options-chevron';
+  otherOptionsChevron.setAttribute('aria-hidden', 'true');
+  otherOptionsChevron.textContent = '⌄';
+  otherOptionsToggle.append(otherOptionsChevron);
+  otherOptionsContent = grid;
+  otherOptionsContent.id = 'deadline-other-options';
+  otherOptionsContent.classList.add('deadline-form-other-options-content');
+  otherOptions.append(otherOptionsToggle, otherOptionsContent);
+  grid.append(referenceField);
+  f.insertBefore(primaryFields, f.querySelector('.form-actions'));
+  f.insertBefore(otherOptions, f.querySelector('.form-actions'));
+  f.classList.add('deadline-form--single');
+  deadlineTypeChoice.hidden = false;
+  setDeadlineType(selectedDeadlineType());
+  setOtherOptionsOpen(false);
+  otherOptionsToggle.addEventListener('click', () => {
+    setOtherOptionsOpen(otherOptionsToggle.getAttribute('aria-expanded') !== 'true');
+  });
 }
 
 async function initialiseEditMode(account) {
   const { data, error } = await c.rpc('get_deadline', { p_deadline_id: editingDeadlineId });
   if (error || !data) {
-    m.textContent = 'Scadenza non disponibile.';
+    setFormMessage('Scadenza non disponibile.');
     return false;
   }
 
   editingDeadline = data;
+  if (!editingDeadline.deadline_item_id) {
+    isSingleDeadlineFlow = true;
+    configureSingleDeadlineLayout();
+  }
   populateEditForm(editingDeadline);
   clearAssociatedDeadlineHeader();
   formIntro.textContent = 'Aggiorna le informazioni della scadenza.';
@@ -168,7 +287,7 @@ async function initialiseEditMode(account) {
   backLink.href = deadlineItem?.id ? deadlineItemHref(deadlineItem.id) : deadlineDetailHref(editingDeadline.id);
   cancelLink.href = backLink.href;
   if (!await loadDeadlineItemSelector(editingDeadline.deadline_item_id || '')) {
-    m.textContent = 'Impossibile preparare il selettore degli elementi.';
+    setFormMessage('Impossibile preparare il selettore degli elementi.');
     return false;
   }
   const associatedItem = selectedDeadlineItem();
@@ -201,7 +320,7 @@ async function initialiseCreateMode(account, context) {
       p_item_id: requestedDeadlineItemId
     });
     if (itemError || !item || !deadlineItemTemplates[item.category]) {
-      m.textContent = 'Elemento non disponibile. Stai creando una scadenza normale.';
+      setFormMessage('Elemento non disponibile. Stai creando una scadenza normale.');
       return true;
     }
 
@@ -222,13 +341,14 @@ async function initialiseCreateMode(account, context) {
 async function init() {
   const context = await window.FamilAreaManagedContext.load();
   if (context.requested && !context.member) {
+    m.classList.remove('deadline-form-message--success');
     m.textContent = 'Il membro selezionato non Ã¨ gestibile dalla tua Famiglia. Stai creando una scadenza personale.';
   }
 
   const { data: account, error } = await c.rpc('get_current_account');
   if (error) {
     console.error('get_current_account failed while configuring deadline form', error);
-    m.textContent = 'Impossibile preparare il modulo.';
+    setFormMessage('Impossibile preparare il modulo.');
     return;
   }
 
@@ -238,11 +358,31 @@ async function init() {
   if (!ready) return;
 
   f.hidden = false;
-  if (editingDeadline || context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) m.textContent = '';
+  if (editingDeadline || context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) setFormMessage('');
 }
 
 document.getElementById('deadline-title').addEventListener('input', () => {
   if (headerDeadlineItem) setAssociatedDeadlineHeader(headerDeadlineItem, document.getElementById('deadline-title').value);
+});
+
+startTimeInput.addEventListener('input', () => updateTimeValidation());
+endTimeInput.addEventListener('change', () => updateTimeValidation());
+startTimeInput.addEventListener('invalid', () => {
+  if (isSingleDeadlineFlow && selectedDeadlineType() === 'appointment') setFormMessage('Inserisci l’ora di inizio.');
+});
+endTimeInput.addEventListener('invalid', () => updateTimeValidation(true));
+deadlineTypeInputs.forEach((input) => input.addEventListener('change', () => {
+  if (isSingleDeadlineFlow) setDeadlineType(selectedDeadlineType());
+}));
+startTimeInput.addEventListener('keydown', (event) => {
+  if (!isSingleDeadlineFlow || selectedDeadlineType() !== 'appointment' || event.key !== 'Enter') return;
+  event.preventDefault();
+  if (startTimeInput.value) endTimeInput.focus();
+});
+endTimeInput.addEventListener('keydown', (event) => {
+  if (!isSingleDeadlineFlow || selectedDeadlineType() !== 'appointment' || event.key !== 'Enter') return;
+  event.preventDefault();
+  document.getElementById('deadline-notes').focus();
 });
 
 async function transitionToEdit(deadlineId) {
@@ -252,22 +392,28 @@ async function transitionToEdit(deadlineId) {
   url.searchParams.set('deadline_id', deadlineId);
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   const ready = await initialiseEditMode();
-  if (ready) m.textContent = 'Scadenza creata.';
+  if (ready) setFormMessage('Scadenza creata.');
 }
 
 f.onsubmit = async (event) => {
   event.preventDefault();
-  if (!document.getElementById('deadline-recurrence').value || !document.getElementById('deadline-reminder').value) {
-    m.textContent = 'Seleziona ricorrenza e promemoria.';
+  if (!updateTimeValidation(true)) return;
+  const recurrenceValue = document.getElementById('deadline-recurrence').value;
+  const reminderValue = document.getElementById('deadline-reminder').value;
+  const categoryValue = categoryInput.value;
+  if (!isSingleDeadlineFlow && (!recurrenceValue || !reminderValue)) {
+    setFormMessage('Seleziona ricorrenza e promemoria.');
     return;
   }
   const commonParams = {
     p_title: document.getElementById('deadline-title').value.trim(),
-    p_category: document.getElementById('deadline-category').value,
+    p_category: isSingleDeadlineFlow ? (categoryValue || 'other') : categoryValue,
     p_first_due_on: document.getElementById('deadline-first-due-on').value,
-    p_recurrence_months: Number(document.getElementById('deadline-recurrence').value) || null,
-    p_reminder_days: Number(document.getElementById('deadline-reminder').value),
-    p_notes: document.getElementById('deadline-notes').value.trim() || null
+    p_recurrence_months: Number(recurrenceValue) || null,
+    p_reminder_days: reminderValue ? Number(reminderValue) : null,
+    p_notes: document.getElementById('deadline-notes').value.trim() || null,
+    p_start_time: !isSingleDeadlineFlow || selectedDeadlineType() === 'appointment' ? (startTimeInput.value || null) : null,
+    p_end_time: !isSingleDeadlineFlow || selectedDeadlineType() === 'appointment' ? (endTimeInput.value || null) : null
   };
 
   if (editingDeadline) {
@@ -277,10 +423,11 @@ f.onsubmit = async (event) => {
       p_deadline_item_id: selectedDeadlineItem()?.id || null
     });
     if (error) {
-      m.textContent = 'Impossibile aggiornare la scadenza.';
+      setFormMessage('Impossibile aggiornare la scadenza.');
       return;
     }
-    m.textContent = 'Modifiche salvate.';
+    setFormMessage('Modifiche salvate.', true);
+    if (isSingleDeadlineFlow) setOtherOptionsOpen(false);
     return;
   }
 
@@ -298,11 +445,11 @@ f.onsubmit = async (event) => {
         : (familyMemberField.hidden ? null : (document.getElementById('deadline-family-member').value || null))
     });
   if (error) {
-    m.textContent = 'Impossibile creare la scadenza.';
+    setFormMessage('Impossibile creare la scadenza.');
     return;
   }
 
-  if (managedMember) {
+  if (managedMember || isSingleDeadlineCreate) {
     location.href = managedHref('scadenze.html');
     return;
   }
@@ -310,4 +457,5 @@ f.onsubmit = async (event) => {
   await transitionToEdit(data);
 };
 
+configureSingleDeadlineLayout();
 init();

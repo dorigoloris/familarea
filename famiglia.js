@@ -13,6 +13,9 @@ function formMessage(text = '', isError = false) { const el = $('family-member-f
 function selectedSource() { return document.querySelector('input[name="family-member-source"]:checked')?.value || 'manual'; }
 function contactLabel(contact) { const name = [contact.first_name, contact.last_name].filter(Boolean).join(' '); return [name, contact.primary_email || contact.primary_phone].filter(Boolean).join(' — '); }
 
+function canManageFamily() { return familyViewer?.can_manage === true; }
+function canUseContacts() { return familyViewer?.is_owner === true; }
+
 function resetMemberModal() {
   $('family-member-form').reset(); contacts = []; manualDraft = { firstName: '', lastName: '', birthDate: '' };
   $('family-member-contact').replaceChildren(); formMessage(''); updateMemberMode();
@@ -27,9 +30,9 @@ function updateMemberMode() {
   const isPet = memberType === 'pet';
   const isAssistedPerson = memberType === 'assisted_person';
   const isManagedMember = isPet || isAssistedPerson;
-  if (isManagedMember) document.querySelector('input[name="family-member-source"][value="manual"]').checked = true;
-  const useContact = isPerson && selectedSource() === 'contact';
-  $('family-member-source-field').hidden = isManagedMember;
+  if (isManagedMember || !canUseContacts()) document.querySelector('input[name="family-member-source"][value="manual"]').checked = true;
+  const useContact = canUseContacts() && isPerson && selectedSource() === 'contact';
+  $('family-member-source-field').hidden = isManagedMember || !canUseContacts();
   $('family-member-contact-field').hidden = !useContact;
   $('family-member-species-field').hidden = !isPet;
   $('family-member-species-label-field').hidden = true;
@@ -50,6 +53,7 @@ function updateMemberMode() {
 
 async function loadContacts() {
   const select = $('family-member-contact'); const help = $('family-member-contact-help'); const save = $('family-member-save-button');
+  if (!canUseContacts()) return;
   if (contacts.length) return;
   select.disabled = true; save.disabled = true; help.hidden = false; help.textContent = 'Caricamento contatti…';
   const { data, error } = await c.rpc('get_my_contacts');
@@ -166,7 +170,7 @@ function createMemberCard(member, options = {}) {
 
   const actions = document.createElement('div');
   actions.className = 'family-member-actions';
-  if (isSelf || !canManage) { item.append(header, details); return item; }
+  if (isSelf || isOwnerCard || !canManage) { item.append(header, details); return item; }
   if (member.member_type === 'person' && member.membership_status !== 'confirmed') {
     if (member.membership_status === 'pending' && member.pending_invite_id) {
       const revokeButton = document.createElement('button');
@@ -252,7 +256,7 @@ async function openFamilyInviteModal(member) {
   inviteFormMessage('');
   $('family-invite-modal').hidden = false;
   $('family-invite-dialog').focus();
-  if (!member.contact_id) return;
+  if (!canUseContacts() || !member.contact_id) return;
   const { data, error } = await c.rpc('get_my_contacts');
   if (error || !invitingMember || invitingMember.id !== member.id) return;
   const contact = (data || []).find((item) => item.id === member.contact_id);
@@ -268,7 +272,7 @@ function closeFamilyInviteModal() {
 
 function openEditMemberModal(member) {
   editingMember = member;
-  const linkedContact = Boolean(member.contact_id);
+  const linkedContact = canUseContacts() && Boolean(member.contact_id);
   const name = memberName(member);
   populateEditRelationshipOptions();
   $('family-member-edit-first-name').value = member.first_name || '';
@@ -304,11 +308,12 @@ async function load() {
   familyViewer = data?.viewer || null;
   if (!family) { $('family-content').hidden = true; $('family-empty-state').hidden = false; $('family-message').textContent = ''; return; }
   $('family-empty-state').hidden = true; $('family-content').hidden = false;
-  $('add-member-button').hidden = familyViewer?.is_owner !== true;
+  const canManage = canManageFamily();
+  $('add-member-button').hidden = !canManage;
   const members = (data.members || []).filter((member) => !isOwnerDuplicate(member));
   const cards = familyOwner
-    ? [createOwnerCard(familyOwner), ...members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage: familyViewer?.is_owner === true }))]
-    : members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage: familyViewer?.is_owner === true }));
+    ? [createOwnerCard(familyOwner), ...members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }))]
+    : members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }));
   $('family-members-list').replaceChildren(...cards);
   $('family-message').textContent = '';
 }
@@ -331,7 +336,7 @@ $('family-member-form').onsubmit = async (event) => {
   event.preventDefault(); formMessage('');
   const memberType = $('family-member-type').value;
   const isPet = memberType === 'pet';
-  const useContact = memberType === 'person' && selectedSource() === 'contact';
+  const useContact = canUseContacts() && memberType === 'person' && selectedSource() === 'contact';
   const contactId = useContact ? $('family-member-contact').value : null;
   if (useContact && !contactId) { formMessage('Seleziona un contatto.', true); return; }
   const { error } = await c.rpc('create_family_member', {
@@ -360,7 +365,7 @@ $('family-member-edit-form').onsubmit = async (event) => {
     p_member_type: editingMember.member_type,
     p_birth_date: $('family-member-edit-birth-date').value || null,
     p_pet_species: editingMember.member_type === 'pet' ? (editingMember.pet_species || null) : null,
-    p_contact_id: editingMember.contact_id || null
+    p_contact_id: canUseContacts() ? (editingMember.contact_id || null) : null
   });
   saveButton.disabled = false;
   if (error) { console.error('update_family_member failed', error); editFormMessage(error.message || 'Non è stato possibile salvare le modifiche.', true); return; }
