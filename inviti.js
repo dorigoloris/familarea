@@ -105,7 +105,7 @@ function createInviteCard(invite) {
     const actions = document.createElement('div');
     actions.className = 'invite-actions';
     const decline = document.createElement('button');
-    decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
+    decline.type = 'button'; decline.className = 'fa-button fa-button-secondary'; decline.textContent = 'Rifiuta';
     decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_area_invite', article));
     const accept = document.createElement('button');
     accept.type = 'button'; accept.textContent = 'Accetta';
@@ -134,7 +134,7 @@ function createFamilyInviteCard(invite) {
   if (invite.status === 'pending') {
     const actions = document.createElement('div'); actions.className = 'invite-actions';
     const decline = document.createElement('button');
-    decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
+    decline.type = 'button'; decline.className = 'fa-button fa-button-secondary'; decline.textContent = 'Rifiuta';
     decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_family_invite', article, 'family'));
     const accept = document.createElement('button');
     accept.type = 'button'; accept.textContent = 'Accetta';
@@ -170,7 +170,7 @@ function createEventInviteCard(invite) {
   if (invite.status === 'pending') {
     const actions = document.createElement('div'); actions.className = 'invite-actions';
     const decline = document.createElement('button');
-    decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Rifiuta';
+    decline.type = 'button'; decline.className = 'fa-button fa-button-secondary'; decline.textContent = 'Rifiuta';
     decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_event_invite', article, 'event'));
     const accept = document.createElement('button');
     accept.type = 'button'; accept.textContent = 'Accetta';
@@ -193,7 +193,7 @@ function createContactSuggestionCard(suggestion) {
   details.append(type, title, status); article.append(details);
   const actions = document.createElement('div'); actions.className = 'invite-actions';
   const decline = document.createElement('button');
-  decline.type = 'button'; decline.className = 'secondary-button'; decline.textContent = 'Ignora';
+  decline.type = 'button'; decline.className = 'fa-button fa-button-secondary'; decline.textContent = 'Ignora';
   decline.addEventListener('click', () => respondToInvite(suggestion, 'decline_my_contact_suggestion', article, 'suggestion'));
   const accept = document.createElement('button');
   accept.type = 'button'; accept.textContent = 'Aggiungi ai Contatti';

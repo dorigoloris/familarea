@@ -170,7 +170,7 @@ function createMemberCard(member, options = {}) {
   if (member.member_type === 'person' && member.membership_status !== 'confirmed') {
     if (member.membership_status === 'pending' && member.pending_invite_id) {
       const revokeButton = document.createElement('button');
-      revokeButton.className = 'secondary-button'; revokeButton.type = 'button'; revokeButton.textContent = 'Annulla invito';
+      revokeButton.className = 'fa-button fa-button-secondary'; revokeButton.type = 'button'; revokeButton.textContent = 'Annulla invito';
       revokeButton.onclick = async () => {
         revokeButton.disabled = true;
         const { error } = await c.rpc('revoke_family_invite', { p_invite_id: member.pending_invite_id });
@@ -180,7 +180,7 @@ function createMemberCard(member, options = {}) {
       actions.append(revokeButton);
     } else {
       const inviteButton = document.createElement('button');
-      inviteButton.className = 'secondary-button'; inviteButton.type = 'button'; inviteButton.textContent = 'Invita';
+      inviteButton.className = 'fa-button fa-button-secondary'; inviteButton.type = 'button'; inviteButton.textContent = 'Invita';
       inviteButton.onclick = () => { void openFamilyInviteModal(member); };
       actions.append(inviteButton);
     }
@@ -196,7 +196,7 @@ function createMemberCard(member, options = {}) {
     actions.append(manageButton);
   }
   const editButton = document.createElement('button');
-  editButton.className = 'secondary-button family-member-edit';
+  editButton.className = 'fa-button fa-button-secondary family-member-edit';
   editButton.type = 'button';
   editButton.textContent = 'Modifica';
   editButton.onclick = () => openEditMemberModal(member);

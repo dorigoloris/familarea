@@ -526,7 +526,7 @@ async function renderParticipantControls() {
   actions.className = 'event-participant-actions';
   const invite = document.createElement('button');
   invite.type = 'button';
-  invite.className = 'secondary-button';
+  invite.className = 'fa-button fa-button-secondary';
   invite.textContent = 'Invita una persona';
   invite.addEventListener('click', async () => {
     const recipient = await FamilAreaConfirm.form({

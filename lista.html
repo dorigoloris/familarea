@@ -16,15 +16,15 @@
       <div class="section-heading">
         <div><p class="section-kicker" id="area-name">Area</p><h1 id="list-title">Lista</h1></div>
         <div id="list-actions" class="contact-actions" hidden>
-          <button id="edit-list-button" type="button">Modifica lista</button>
-          <button id="delete-list-button" type="button" class="member-remove-button">Elimina lista</button>
+          <button id="edit-list-button" class="fa-button fa-button-secondary" type="button">Modifica lista</button>
+          <button id="delete-list-button" class="fa-button fa-button-danger member-remove-button" type="button">Elimina lista</button>
         </div>
       </div>
       <p id="list-description" class="list-description" hidden></p>
       <p id="list-visibility" class="list-visibility"></p>
       <form id="add-item-form" class="list-add-item-form">
         <label for="item-text">Aggiungi un elemento</label>
-        <div class="list-add-item-controls"><input id="item-text" required><button id="add-item-button" type="submit">Aggiungi</button></div>
+        <div class="list-add-item-controls"><input id="item-text" required><button id="add-item-button" class="fa-button fa-button-primary" type="submit">Aggiungi</button></div>
       </form>
       <h2>Elementi</h2>
       <ul id="items-list" class="list-items"></ul>
@@ -44,7 +44,7 @@
         <p id="edit-participants-help"></p>
         <div id="edit-participants" class="participant-checklist"></div>
       </fieldset>
-      <div class="form-actions"><button id="save-list-button" type="submit">Salva modifiche</button><button id="cancel-edit-button" type="button" class="secondary-button">Annulla</button></div>
+      <div class="form-actions"><button id="save-list-button" class="fa-button fa-button-primary" type="submit">Salva modifiche</button><button id="cancel-edit-button" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
     </form>
   </main>
   <style>
