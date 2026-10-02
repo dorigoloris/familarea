@@ -6,27 +6,25 @@
   <title>I miei Contatti - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="contacts-page-view">
+<body class="contacts-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card contacts-page fa-page fa-page--wide fa-section-page">
-    <div class="contacts-page-decoration contacts-page-decoration-one" aria-hidden="true"></div>
-    <header class="fa-section-hero" aria-labelledby="contacts-page-title">
+  <main class="page-card contacts-page fa-page fa-page--wide fa-section-page fa-v2-page fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="contacts-page-title">
       <div class="fa-section-hero-content">
-        <p class="eyebrow">RUBRICA CONTATTI</p>
         <div class="fa-section-hero-title-row">
           <h1 id="contacts-page-title">I miei Contatti</h1>
-          <a class="btn fa-section-hero-action fa-action-primary" href="nuovo-contatto.html">Aggiungi contatto</a>
+          <a class="btn fa-section-hero-action fa-action-primary fa-v2-button fa-v2-button--primary" href="nuovo-contatto.html">Aggiungi contatto</a>
         </div>
         <p>I contatti che vuoi tenere a portata di mano.</p>
       </div>
     </header>
 
     <p id="message" aria-live="polite">Caricamento contatti...</p>
-    <section id="my-contact" class="my-contact-section" aria-labelledby="my-contact-title" hidden>
-      <p id="my-contact-title" class="my-contact-label">IL MIO CONTATTO</p>
-      <article class="contact-card contact-directory-row my-contact-card">
+    <section id="my-contact" class="fa-v2-section-card fa-v2-section-card--compact fa-v2-section-card--dense fa-v2-card" aria-labelledby="my-contact-title" hidden>
+      <p id="my-contact-title" class="my-contact-label fa-v2-list-heading">IL MIO CONTATTO</p>
+      <article class="contact-card contact-directory-row fa-v2-list-row fa-v2-list-row--compact fa-v2-contact-summary-row">
         <div class="contact-directory-field contact-directory-name">
           <span id="my-contact-avatar" class="contact-directory-avatar" aria-hidden="true"></span>
           <h2 id="my-contact-name"></h2>
@@ -36,11 +34,11 @@
         </div>
       </article>
     </section>
-    <section class="contacts-directory-surface fa-surface fa-data-card fa-contacts-grid" aria-label="Elenco contatti">
-      <div class="contacts-directory-header fa-data-header" aria-hidden="true">
+    <section class="contacts-directory-surface fa-v2-section-card fa-v2-section-card--list fa-v2-section-card--dense fa-v2-list-surface fa-data-card fa-contacts-grid fa-v2-card" aria-label="Elenco contatti">
+      <div class="contacts-directory-header fa-data-header fa-v2-list-heading" aria-hidden="true">
         <span>NOME E COGNOME</span><span>EMAIL</span><span>CELLULARE</span><span>DATA DI NASCITA</span><span>AZIONI</span>
       </div>
-      <div id="contacts-list" class="contacts-list fa-data-list"></div>
+      <div id="contacts-list" class="contacts-list fa-data-list fa-v2-list fa-v2-list--compact"></div>
       <div id="empty-state" class="contacts-empty-state fa-empty-state" hidden>
         <span class="fa-icon-badge contacts-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M17 10h4M19 8v4"/></svg></span>
         <div><strong>Non hai ancora contatti.</strong><span>Inizia creando la tua rubrica contatti.</span></div>

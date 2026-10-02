@@ -40,14 +40,14 @@
       </a>
     </section>
 
-    <section class="deadline-v2-upcoming fa-v2-card" aria-labelledby="upcoming-deadlines-title">
-      <div class="deadlines-section-header">
+    <section class="deadline-v2-upcoming fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-page-stack fa-v2-card" aria-labelledby="upcoming-deadlines-title">
+      <div class="deadlines-section-header fa-v2-section-heading">
         <div><h2 id="upcoming-deadlines-title">Prossime scadenze</h2><p class="deadline-page-intro">Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p></div>
       </div>
-      <div id="managed-context" hidden></div>
-      <p id="deadlines-message" class="deadlines-message" aria-live="polite">Caricamento scadenze...</p>
+      <div id="managed-context" class="fa-v2-stack-optional" hidden></div>
+      <p id="deadlines-message" class="deadlines-message fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento scadenze...</p>
       <div id="deadlines-empty" class="fa-empty-state deadlines-empty" hidden><strong>Nessuna scadenza ancora.</strong></div>
-      <div id="active-deadlines-section" class="deadlines-section" hidden aria-labelledby="upcoming-deadlines-title"><div id="active-deadlines-list" class="deadlines-grid"></div><div id="deadline-list-toggle" class="deadline-list-toggle" hidden><button id="deadline-list-toggle-button" class="fa-button fa-button-secondary" type="button" aria-controls="active-deadlines-list" aria-expanded="false">Vedi tutte <span aria-hidden="true">↓</span></button></div></div>
+      <div id="active-deadlines-section" class="deadlines-section" hidden aria-labelledby="upcoming-deadlines-title"><div id="active-deadlines-list" class="deadlines-grid fa-v2-list"></div><div id="deadline-list-toggle" class="deadline-list-toggle" hidden><button id="deadline-list-toggle-button" class="fa-button fa-button-secondary" type="button" aria-controls="active-deadlines-list" aria-expanded="false">Vedi tutte <span aria-hidden="true">↓</span></button></div></div>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -976,7 +976,7 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 .profile-email-control{display:flex;align-items:center;gap:10px}.profile-email-control input{min-width:0;flex:1 1 auto}.profile-email-control .fa-button{width:auto;margin:0;white-space:nowrap}@media(max-width:600px){.profile-email-control{align-items:stretch;flex-direction:column}.profile-email-control .fa-button{width:100%}}
 
 /* Profilo: campi personali e contatto verificato mantengono un layout comune e responsivo. */
-.profile-first-name-field{grid-column:1;grid-row:1}.profile-last-name-field{grid-column:2;grid-row:1}.profile-birth-date-field{grid-column:1;grid-row:2}.profile-email-field{grid-column:1/-1;grid-row:3}.my-contact-section{width:100%;max-width:none;margin:0 0 14px}.my-contact-label{margin:0 0 8px;color:#718397;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.my-contact-card.contact-directory-row{grid-template-columns:minmax(0,1fr) auto}.my-contact-card .contact-directory-actions{grid-column:2;grid-row:1;justify-self:end}.my-contact-card .fa-button{width:auto;margin:0;white-space:nowrap}@media(max-width:600px){.profile-first-name-field{grid-column:1;grid-row:1}.profile-last-name-field{grid-column:1;grid-row:2}.profile-birth-date-field{grid-column:1;grid-row:3}.profile-email-field{grid-column:1;grid-row:4}.profile-form .form-actions{grid-row:5}.my-contact-card.contact-directory-row{grid-template-columns:1fr}.my-contact-card .contact-directory-actions{grid-column:1;grid-row:2;justify-self:stretch;display:block}.my-contact-card .contact-directory-actions .fa-button{width:100%}}
+.profile-first-name-field{grid-column:1;grid-row:1}.profile-last-name-field{grid-column:2;grid-row:1}.profile-birth-date-field{grid-column:1;grid-row:2}.profile-email-field{grid-column:1/-1;grid-row:3}@media(max-width:600px){.profile-first-name-field{grid-column:1;grid-row:1}.profile-last-name-field{grid-column:1;grid-row:2}.profile-birth-date-field{grid-column:1;grid-row:3}.profile-email-field{grid-column:1;grid-row:4}.profile-form .form-actions{grid-row:5}}
 
 /* Card a griglia condivise da Aree e Gestione Scadenze. */
 /* Colonne fluide e centrate; l'altezza resta quella definita dalla card base. */
@@ -986,7 +986,7 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 /* Gestione Scadenze: form e righe item riutilizzabili, senza dipendere da una categoria. */
 .deadline-management-page>.fa-item-card-grid{max-width:none}@media(min-width:1300px){.deadline-management-page>.fa-item-card-grid{grid-template-columns:repeat(5,minmax(220px,1fr))!important}}@media(min-width:900px) and (max-width:1299px){.deadline-management-page>.fa-item-card-grid{grid-template-columns:repeat(3,minmax(220px,1fr))!important}}@media(min-width:701px) and (max-width:899px){.deadline-management-page>.fa-item-card-grid{grid-template-columns:repeat(2,minmax(220px,1fr))!important}}
 .deadline-management-category-card{display:block;padding:25px;text-decoration:none}.deadline-management-category-card .fa-item-card-copy{display:block;min-width:0;padding-right:63px}.deadline-management-category-card .fa-item-card-copy h3{text-decoration:none}.deadline-management-category-card .fa-item-card-icon{position:absolute;top:25px;right:25px;margin:0}@media(max-width:700px){.deadline-management-category-card{padding:20px}.deadline-management-category-card .fa-item-card-icon{top:20px;right:20px}}
-.deadline-list-toggle{display:flex;justify-content:center;margin-top:16px}.deadline-list-toggle .fa-button{width:auto;margin:0}
+.deadline-list-toggle{display:flex;justify-content:center}.deadline-list-toggle .fa-button{width:auto;margin:0}
 .fa-choice-fieldset{margin:0 0 22px;padding:0;border:0}.fa-choice-fieldset legend{margin-bottom:10px;color:#0d2b4f;font-size:14px;font-weight:700}.fa-choice-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fa-choice-fieldset .fa-choice-options label{display:flex;align-items:center;gap:8px;margin:0;padding:12px 13px;border:1px solid #d4e0e7;border-radius:12px;color:#0d2b4f;font-size:14px;font-weight:700;cursor:pointer}.fa-choice-fieldset input[type=radio]{width:16px;height:16px;padding:0;accent-color:#4d8b4f}@media(max-width:400px){.fa-choice-options{grid-template-columns:1fr}}
 #deadline-type-choice[hidden]{display:none}
 #deadline-form-message.deadline-form-message--success{max-width:780px;margin:0 auto 16px;padding:12px 14px;border:1px solid #b9dbb7;border-radius:12px;background:#e5f2e2;color:#285e36;font-weight:800}
@@ -1297,42 +1297,104 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
   background:#f1f4f2;
   color:var(--fa-v2-muted);
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming{
-  display:grid;
+.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-card{
   gap:var(--fa-v2-space-3);
+}
+.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-list-toggle{margin-top:var(--fa-v2-space-1)}
+@media(max-width:700px){
+  .deadline-management-page-view.fa-v2-app .deadline-v2-header{padding:var(--fa-v2-space-4)}
+  .deadline-management-page-view.fa-v2-app .deadline-management-category-card{min-height:100px;padding:var(--fa-v2-space-3)}
+  .deadline-management-page-view.fa-v2-app .deadline-management-category-card .fa-item-card-icon{top:var(--fa-v2-space-4);right:var(--fa-v2-space-4)}
+}
+
+/* FamilArea V2 — primitive per pagine, header e liste dati. */
+.fa-v2-page-stack{
+  display:grid;
+  align-content:start;
+  align-items:start;
+  gap:var(--fa-v2-space-5);
+}
+.fa-v2-page-stack > *{margin:0}
+.fa-v2-page-stack .managed-context-bar{margin:0}
+.fa-v2-stack-optional:empty{display:none}
+.fa-v2-status{margin:0;color:var(--fa-v2-muted);font-size:13px}
+.fa-v2-section-heading h2{margin:0;color:var(--fa-v2-text);font-size:20px;line-height:1.25}
+.fa-v2-section-heading p{margin:var(--fa-v2-space-1) 0 0;color:var(--fa-v2-muted);font-size:13px}
+.fa-v2-header-card{
   margin:0;
-  padding:var(--fa-v2-space-5);
+  padding:var(--fa-v2-space-6);
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadlines-section-header{margin:0}
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadlines-section-header h2{
+.fa-v2-header-card h1{
+  margin:0;
   color:var(--fa-v2-text);
-  font-size:20px;
+  font-size:28px;
+  line-height:1.2;
+  letter-spacing:-.6px;
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-page-intro{
-  margin:var(--fa-v2-space-1) 0 0;
+.fa-v2-header-card .fa-section-hero-content>p:not(.eyebrow){
+  margin:var(--fa-v2-space-2) 0 0;
   color:var(--fa-v2-muted);
   font-size:13px;
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming #managed-context{margin:0}
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadlines-message{margin:0;color:var(--fa-v2-muted);font-size:13px}
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadlines-section{margin:0}
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadlines-grid{gap:var(--fa-v2-space-2)}
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-card{
-  gap:var(--fa-v2-space-3);
-  padding:12px 14px;
+.fa-v2-section-card{
+  margin:0;
+  padding:var(--fa-v2-space-6);
+}
+.fa-v2-section-card--compact{padding:var(--fa-v2-space-3) var(--fa-v2-space-4)}
+.fa-v2-section-card--list{padding:var(--fa-v2-space-5)}
+.fa-v2-list{display:grid;gap:var(--fa-v2-space-2)}
+.fa-v2-list-row,
+.fa-v2-list-surface .fa-v2-list > *{
+  padding:10px var(--fa-v2-space-3);
   border-color:var(--fa-v2-border);
   border-radius:10px;
   box-shadow:none;
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-card:hover,
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-card:focus-visible{
+.fa-v2-list-row--compact,
+.fa-v2-list-surface .fa-v2-list--compact > *{padding:6px var(--fa-v2-space-3)}
+.fa-v2-list-surface .fa-v2-list > *:hover,
+.fa-v2-list-surface .fa-v2-list > *:focus-visible{
   border-color:#c5d9c9;
   box-shadow:0 4px 12px rgba(25,50,74,.06);
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-list-toggle{margin-top:var(--fa-v2-space-1)}
+.fa-v2-contact-summary-row{grid-template-columns:minmax(0,1fr) auto}
+.fa-v2-contact-summary-row .contact-directory-actions{grid-column:2;grid-row:1;justify-self:end}
+.fa-v2-contact-summary-row .fa-button{width:auto;margin:0;white-space:nowrap}
 @media(max-width:700px){
-  .deadline-management-page-view.fa-v2-app .deadline-v2-header,
-  .deadline-management-page-view.fa-v2-app .deadline-v2-upcoming{padding:var(--fa-v2-space-4)}
-  .deadline-management-page-view.fa-v2-app .deadline-management-category-card{min-height:100px;padding:var(--fa-v2-space-3)}
-  .deadline-management-page-view.fa-v2-app .deadline-management-category-card .fa-item-card-icon{top:var(--fa-v2-space-4);right:var(--fa-v2-space-4)}
+  .fa-v2-header-card,
+  .fa-v2-section-card,
+  .fa-v2-section-card--compact,
+  .fa-v2-section-card--list{padding:var(--fa-v2-space-4)}
+}
+@media(max-width:600px){
+  .fa-v2-contact-summary-row{grid-template-columns:1fr}
+  .fa-v2-contact-summary-row .contact-directory-actions{grid-column:1;grid-row:2;justify-self:stretch;display:block}
+  .fa-v2-contact-summary-row .contact-directory-actions .fa-button{width:100%}
+}
+.fa-v2-section-card--dense{padding-block:var(--fa-v2-space-2)}
+.fa-v2-list-heading{
+  margin:0;
+  padding:0 var(--fa-v2-space-3) var(--fa-v2-space-2);
+  color:var(--fa-v2-muted);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.contacts-page-view.fa-v2-app{background:var(--fa-v2-page)}
+.contacts-page-view.fa-v2-app #message{
+  min-height:0;
+  margin:0;
+  color:var(--fa-v2-muted);
+  font-size:13px;
+}
+.fa-v2-list-surface .contact-directory-avatar{
+  background:var(--fa-v2-info-bg);
+  color:var(--fa-v2-info);
+}
+.fa-v2-list-surface .contacts-empty-state{
+  margin:0;
+  border-color:var(--fa-v2-border);
+  box-shadow:none;
 }
