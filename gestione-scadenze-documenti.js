@@ -40,7 +40,7 @@ function documentHref(documentId) {
 
 function documentRow(record) {
   const row = document.createElement('a');
-  row.className = 'deadline-management-row deadline-management-row--clickable fa-surface';
+  row.className = 'deadline-management-row deadline-management-row--clickable fa-v2-list-row';
   row.href = documentHref(record.id);
   row.setAttribute('aria-label', `Apri ${personalDocumentLabels[record.document_type] || 'documento'} di ${holderName(record)}`);
 

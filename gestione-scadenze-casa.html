@@ -6,11 +6,18 @@
   <title>Casa - Scadenze - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="deadline-management-page-view">
+<body class="deadline-management-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main id="home-redirect-content" class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" hidden>
-    <p id="home-message" class="deadline-management-message" aria-live="polite">Apertura Casa...</p>
+  <main id="home-redirect-content" class="page-card fa-page fa-page--wide fa-section-page fa-v2-page fa-v2-page-stack deadline-management-page" hidden>
+    <p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="home-title">
+      <div class="fa-section-hero-content">
+        <h1 id="home-title">Casa</h1>
+        <p>Organizza le scadenze della tua casa.</p>
+      </div>
+    </header>
+    <p id="home-message" class="deadline-management-message fa-v2-status" aria-live="polite">Apertura Casa...</p>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="gestione-scadenze.js"></script><script src="gestione-scadenze-casa.js"></script>

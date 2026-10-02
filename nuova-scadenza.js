@@ -242,7 +242,7 @@ function configureSingleDeadlineLayout() {
   otherOptions.className = 'deadline-form-other-options';
   otherOptionsToggle = document.createElement('button');
   otherOptionsToggle.type = 'button';
-  otherOptionsToggle.className = 'fa-button fa-button-secondary deadline-form-other-options-toggle';
+  otherOptionsToggle.className = 'fa-v2-button fa-v2-button--secondary deadline-form-other-options-toggle';
   otherOptionsToggle.textContent = 'Altre opzioni';
   otherOptionsToggle.setAttribute('aria-controls', 'deadline-other-options');
   otherOptionsToggle.setAttribute('aria-expanded', 'false');

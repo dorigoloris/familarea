@@ -67,7 +67,7 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
 
 function createInviteCard(invite) {
   const article = document.createElement('article');
-  article.className = 'invite-card fa-list-row';
+  article.className = 'invite-card fa-list-row fa-v2-list-row';
   const senderLabel = inviteSenderLabel(invite);
   if (invite.status === 'accepted') {
     article.classList.add('invite-card-active');
@@ -117,7 +117,7 @@ function createInviteCard(invite) {
 
 function createFamilyInviteCard(invite) {
   const article = document.createElement('article');
-  article.className = 'invite-card fa-list-row family-invite-card';
+  article.className = 'invite-card fa-list-row fa-v2-list-row family-invite-card';
   const details = document.createElement('div');
   const type = document.createElement('p');
   type.className = 'section-kicker'; type.textContent = 'Famiglia';
@@ -146,7 +146,7 @@ function createFamilyInviteCard(invite) {
 
 function createEventInviteCard(invite) {
   const article = document.createElement('article');
-  article.className = 'invite-card fa-list-row event-invite-card';
+  article.className = 'invite-card fa-list-row fa-v2-list-row event-invite-card';
   const details = document.createElement('div');
   const type = document.createElement('p');
   type.className = 'section-kicker'; type.textContent = 'Evento';
@@ -182,7 +182,7 @@ function createEventInviteCard(invite) {
 
 function createContactSuggestionCard(suggestion) {
   const article = document.createElement('article');
-  article.className = 'invite-card fa-list-row contact-suggestion-card';
+  article.className = 'invite-card fa-list-row fa-v2-list-row contact-suggestion-card';
   const details = document.createElement('div');
   const type = document.createElement('p'); type.className = 'section-kicker'; type.textContent = 'Suggerimento contatto';
   const title = document.createElement('h3');
