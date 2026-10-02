@@ -6,27 +6,40 @@
   <title>La mia Famiglia - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="family-page-view">
+<body class="family-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card family-page fa-page fa-page--wide fa-section-page">
-    <header class="fa-section-hero" aria-labelledby="family-title">
+  <main class="page-card family-page fa-page fa-page--wide fa-section-page fa-v2-page">
+    <header class="fa-section-hero family-v2-header fa-v2-card" aria-labelledby="family-title">
       <div class="fa-section-hero-content">
-        <p class="eyebrow">Spazio personale</p>
         <div class="fa-section-hero-title-row">
-          <h1 id="family-title">La mia Famiglia</h1>
-          <button id="add-member-button" class="fa-section-hero-action fa-action-primary" type="button" hidden><span aria-hidden="true">+</span> Aggiungi famigliare</button>
+          <h1 id="family-title">Famiglia</h1>
+          <button id="add-member-button" class="fa-section-hero-action fa-action-primary fa-v2-button fa-v2-button--primary" type="button" hidden><span aria-hidden="true">+</span> Aggiungi famigliare</button>
         </div>
         <p>Organizza le persone e gli animali che fanno parte della tua vita quotidiana.</p>
       </div>
     </header>
+    <aside class="family-privacy-notice fa-v2-card fa-v2-notice fa-v2-notice--info" aria-label="Spazio Famiglia privato">
+      Famiglia è uno spazio privato per organizzare persone e condivisioni.
+    </aside>
     <p id="family-message" class="family-message" aria-live="polite">Caricamento Famiglia...</p>
     <section id="family-empty-state" class="family-empty-state fa-surface" hidden aria-labelledby="family-empty-title">
       <span class="fa-icon-badge family-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M17 10a3 3 0 1 0 0-6"/></svg></span>
       <div><h2 id="family-empty-title">Crea la tua Famiglia</h2><p>Crea il tuo nucleo familiare per organizzare le persone e gli animali che fanno parte della tua vita quotidiana.</p><button id="create-family-button" type="button">Crea la mia Famiglia</button></div>
     </section>
-    <div id="family-content" hidden>
-      <div id="family-members-list" class="family-members-grid" aria-live="polite"></div>
+    <div id="family-content" class="family-v2-content" hidden>
+      <section class="family-v2-members-section fa-v2-card" aria-labelledby="family-people-title">
+        <header class="family-v2-section-header">
+          <div><h2 id="family-people-title">Persone</h2><p>Le persone che fanno parte della tua Famiglia.</p></div>
+        </header>
+        <div id="family-members-list" class="family-members-grid" aria-live="polite"></div>
+      </section>
+      <section id="family-managed-members-section" class="family-v2-members-section fa-v2-card" aria-labelledby="family-managed-title" hidden>
+        <header class="family-v2-section-header">
+          <div><h2 id="family-managed-title">Profili gestiti</h2><p>Persone assistite e animali gestiti nella tua Famiglia.</p></div>
+        </header>
+        <div id="family-managed-members-list" class="family-members-grid" aria-live="polite"></div>
+      </section>
     </div>
   </main>
   <div id="family-member-modal" class="family-member-modal" hidden>

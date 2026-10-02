@@ -1,6 +1,5 @@
 (function () {
   const body = document.body;
-  const isDashboard = body.classList.contains('dashboard-page');
   const params = new URLSearchParams(window.location.search);
   const areaId = params.get('area_id');
   const path = window.location.pathname.split('/').pop() || 'dashboard.html';
@@ -53,34 +52,32 @@
   const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
   const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
 
-  let header;
-  let actions;
-  if (isDashboard) {
-    header = document.querySelector('.app-header');
-    actions = header?.querySelector('.header-actions');
-    document.querySelector('.dashboard-sidebar')?.remove();
-  } else {
-    body.classList.add('protected-page');
-    header = document.createElement('header');
-    header.className = 'shared-header';
-    const brand = document.createElement('a');
-    brand.className = 'app-brand';
-    brand.href = 'dashboard.html';
-    brand.setAttribute('aria-label', 'FamilArea, Dashboard');
-    brand.append(document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
-    actions = document.createElement('div');
-    actions.className = 'header-actions';
-    const existingLogout = document.querySelector('[data-logout]');
-    const logoutMessage = document.getElementById('logout-message');
-    if (existingLogout) actions.appendChild(existingLogout);
-    header.append(brand, actions);
-    if (logoutMessage) header.appendChild(logoutMessage);
-    body.prepend(header);
-  }
+  if (!body.classList.contains('fa-v2-app')) body.classList.add('protected-page');
+  const header = document.createElement('header');
+  header.className = 'shared-header fa-v2-app-header';
+  const brand = document.createElement('div');
+  brand.className = 'fa-v2-brand';
+  const brandMain = document.createElement('a');
+  brandMain.className = 'app-brand fa-v2-brand-main';
+  brandMain.href = 'dashboard.html';
+  brandMain.setAttribute('aria-label', 'FamilArea, Dashboard');
+  brandMain.append(document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
+  const brandRound = document.createElement('span');
+  brandRound.className = 'fa-v2-brand-round';
+  brandRound.setAttribute('aria-hidden', 'true');
+  brand.append(brandMain, brandRound);
+  const actions = document.createElement('div');
+  actions.className = 'header-actions';
+  const existingLogout = document.querySelector('[data-logout]');
+  const logoutMessage = document.getElementById('logout-message');
+  if (existingLogout) actions.appendChild(existingLogout);
+  header.append(brand, actions);
+  if (logoutMessage) header.appendChild(logoutMessage);
+  body.prepend(header);
   if (!header || !actions || !window.supabase || typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') return;
 
   const topNav = document.createElement('nav');
-  topNav.className = 'shared-top-nav';
+  topNav.className = 'shared-top-nav fa-v2-top-nav';
   topNav.setAttribute('aria-label', 'Navigazione principale');
   let personalInvitesLink;
   function renderNavigation(accountType) {
@@ -97,7 +94,14 @@
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
     const items = accountType === 'personal'
-      ? [sharedItems[0], { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') }, sharedItems[1], { label: 'Interessi', href: 'interessi.html', active: isPrimaryNavActive('interests') }, ...sharedItems.slice(2, 4), { label: 'Proposte', href: 'proposte.html', active: isPrimaryNavActive('suggestions') }, ...sharedItems.slice(4), { label: 'Inviti', href: 'inviti.html', active: isPrimaryNavActive('invites') }]
+      ? [
+        sharedItems[0],
+        { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') },
+        sharedItems[5],
+        sharedItems[6],
+        sharedItems[7],
+        { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') }
+      ]
       : sharedItems;
     items.forEach((item) => {
       const link = document.createElement('a');
@@ -105,7 +109,7 @@
       link.href = item.href;
       link.textContent = item.label;
       if (item.active) link.setAttribute('aria-current', 'page');
-      if (item.label === 'Inviti') {
+      if (item.id === 'invites') {
         link.classList.add('top-nav-invites-link');
         personalInvitesLink = link;
       }
@@ -125,33 +129,6 @@
     topNav.appendChild(link);
   }
 
-  /* Legacy static navigation kept below only until the account-specific menu is rendered. */
-  /*
-    { label: 'Dashboard', href: 'dashboard.html', active: isActive(['dashboard.html']) },
-    { label: 'Famiglia', href: 'famiglia.html', active: isActive(['famiglia.html']) },
-    { label: 'Aree', href: 'mie-aree.html', active: isActive(['mie-aree.html']) },
-    { label: 'Organizzazioni', href: 'organizzazioni.html', active: isActive(['organizzazioni.html', 'nuova-organizzazione.html', 'organizzazione.html']) },
-    { label: 'Interessi', href: 'interessi.html', active: isActive(['interessi.html']) },
-    { label: 'Attività', href: 'attivita-globali.html', active: isGlobalView && isActive(['attivita-globali.html']) },
-    { label: 'Eventi', href: 'eventi.html', active: isGlobalView && isActive(['eventi.html']) },
-    { label: 'Liste', href: 'liste.html', active: isGlobalView && isActive(['liste.html']) },
-    { label: 'Calendario', href: 'calendario.html', active: isActive(['calendario.html']) },
-    { label: 'Scadenze', href: 'scadenze.html', active: isActive(['scadenze.html', 'nuova-scadenza.html', 'scadenza.html']) },
-    { label: 'Contatti', href: 'contatti.html', active: isActive(['contatti.html', 'nuovo-contatto.html', 'contatto.html']) },
-    { label: 'Inviti', href: 'inviti.html', active: isActive(['inviti.html']) }
-  ].forEach((item) => {
-    const link = document.createElement('a');
-    link.className = `top-nav-link${item.active}`;
-    link.href = item.href;
-    link.textContent = item.label;
-    if (item.active) link.setAttribute('aria-current', 'page');
-    if (item.label === 'Inviti') {
-      link.classList.add('top-nav-invites-link');
-      personalInvitesLink = link;
-    }
-    topNav.appendChild(link);
-  });
-  */
   header.insertBefore(topNav, actions);
 
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -402,7 +379,7 @@
     badge.textContent = pendingCount >= 10 ? '9+' : String(pendingCount);
     badge.setAttribute('aria-hidden', 'true');
     personalInvitesLink.appendChild(badge);
-    personalInvitesLink.setAttribute('aria-label', `Inviti, ${pendingCount} in attesa`);
+    personalInvitesLink.setAttribute('aria-label', `Condivisioni, ${pendingCount} in attesa`);
   }
 
   accountPromise.then((account) => {

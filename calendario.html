@@ -6,18 +6,15 @@
   <title>Il mio Calendario - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="calendar-page-view">
+<body class="calendar-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card calendar-page fa-page fa-page--wide fa-section-page">
-    <div class="calendar-page-decoration calendar-page-decoration-one" aria-hidden="true"></div>
-    <div class="calendar-page-decoration calendar-page-decoration-two" aria-hidden="true"></div>
+  <main class="page-card calendar-page fa-page fa-page--wide fa-section-page fa-v2-page">
 
-    <header id="calendar-hero" class="fa-section-page fa-section-hero" aria-labelledby="calendar-page-title">
+    <header id="calendar-hero" class="fa-section-page fa-section-hero calendar-v2-header fa-v2-card" aria-labelledby="calendar-page-title">
       <div class="fa-section-hero-content">
-        <p class="eyebrow">CALENDARIO</p>
-        <div class="fa-section-hero-title-row"><h1 id="calendar-page-title">Il mio Calendario</h1></div>
+        <div class="fa-section-hero-title-row"><h1 id="calendar-page-title">Calendario</h1></div>
         <p>Attività, eventi, compleanni e scadenze in un unico sguardo.</p>
       </div>
     </header>
@@ -25,15 +22,15 @@
     <p id="managed-member-home-link" class="account-back-link" hidden><a href="familiare.html">Torna alla gestione famigliare</a></p>
     <div id="managed-context" hidden></div>
 
-    <section id="calendar-family-sharing" class="calendar-family-sharing" hidden aria-labelledby="calendar-family-sharing-title">
-      <div class="calendar-family-sharing-heading"><div><p class="eyebrow">IL MIO CALENDARIO</p><h2 id="calendar-family-sharing-title">Condivisione con la Famiglia</h2></div></div>
+    <section id="calendar-family-sharing" class="calendar-family-sharing calendar-v2-sharing fa-v2-card" hidden aria-labelledby="calendar-family-sharing-title">
+      <div class="calendar-family-sharing-heading"><div><h2 id="calendar-family-sharing-title">Condivisione con la Famiglia</h2><p>Gestisci la visualizzazione dei calendari condivisi e la condivisione del tuo.</p></div></div>
       <div id="calendar-family-sharing-list" class="calendar-family-sharing-list"></div>
     </section>
 
     <p id="calendar-message" aria-live="polite">Caricamento calendario...</p>
 
     <div id="calendar-content" hidden>
-      <section class="calendar-section calendar-month-surface fa-surface" aria-labelledby="month-title">
+      <section class="calendar-section calendar-month-surface calendar-v2-surface fa-surface fa-v2-card" aria-labelledby="month-title">
         <div class="calendar-print-heading" aria-hidden="true"><strong><span class="calendar-print-brand-prefix">Il Calendario di </span>Famil<span class="calendar-print-brand-accent">Area</span></strong><b id="print-month-title"></b></div>
         <div class="calendar-controls">
           <button id="previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
@@ -67,7 +64,7 @@
         <div id="day-calendar" class="calendar-day-view" hidden aria-label="Agenda giornaliera"></div>
       </section>
 
-      <section id="undated-section" class="calendar-section calendar-undated-surface fa-surface" aria-labelledby="undated-title">
+      <section id="undated-section" class="calendar-section calendar-undated-surface calendar-v2-surface fa-surface fa-v2-card" aria-labelledby="undated-title">
         <div class="calendar-undated-heading">
           <span class="fa-icon-badge calendar-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg></span>
           <div><h2 id="undated-title">Senza data</h2><p>Attività aperte da pianificare.</p></div>

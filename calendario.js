@@ -232,7 +232,7 @@ function renderFamilyCalendarControls() {
     const group = document.createElement('div'); group.className = 'calendar-family-control-group';
     const heading = document.createElement('div'); heading.className = 'calendar-family-control-heading';
     const family = document.createElement('strong'); family.textContent = controls[0].family_name || 'Famiglia';
-    heading.append(family, Object.assign(document.createElement('span'), { textContent: 'Visualizza' }), Object.assign(document.createElement('span'), { textContent: 'Attiva' }));
+    heading.append(family, Object.assign(document.createElement('span'), { textContent: 'Visualizza' }), Object.assign(document.createElement('span'), { textContent: 'Condividi' }));
     group.append(heading, ...controls.map(compactControlRow)); list.appendChild(group);
   });
   section.hidden = false;

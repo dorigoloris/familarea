@@ -135,7 +135,8 @@ function membershipLabel(member) {
 function createMemberCard(member, options = {}) {
   const { isSelf = false, isOwnerCard = false, canManage = false } = options;
   const item = document.createElement('article');
-  item.className = `family-member-card${member.member_type === 'pet' ? ' is-pet' : ''}${isSelf ? ' is-self' : ''}`;
+  const isManaged = member.member_type === 'pet' || member.member_type === 'assisted_person';
+  item.className = `family-member-card fa-v2-card${member.member_type === 'pet' ? ' is-pet' : ''}${member.member_type === 'assisted_person' ? ' is-assisted-person' : ''}${isManaged ? ' is-managed' : ''}${isSelf ? ' is-self' : ''}`;
 
   const header = document.createElement('header');
   header.className = 'family-member-card-header';
@@ -311,10 +312,14 @@ async function load() {
   const canManage = canManageFamily();
   $('add-member-button').hidden = !canManage;
   const members = (data.members || []).filter((member) => !isOwnerDuplicate(member));
-  const cards = familyOwner
-    ? [createOwnerCard(familyOwner), ...members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }))]
-    : members.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }));
-  $('family-members-list').replaceChildren(...cards);
+  const people = members.filter((member) => member.member_type === 'person');
+  const managedMembers = members.filter((member) => member.member_type === 'pet' || member.member_type === 'assisted_person');
+  const peopleCards = familyOwner
+    ? [createOwnerCard(familyOwner), ...people.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }))]
+    : people.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }));
+  $('family-members-list').replaceChildren(...peopleCards);
+  $('family-managed-members-list').replaceChildren(...managedMembers.map((member) => createMemberCard(member, { isSelf: false, canManage })));
+  $('family-managed-members-section').hidden = managedMembers.length === 0;
   $('family-message').textContent = '';
 }
 
