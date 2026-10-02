@@ -6,19 +6,18 @@
   <title>Scadenze - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="deadline-management-page-view">
+<body class="deadline-management-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
-    <header class="fa-section-hero" aria-labelledby="deadlines-page-title">
+  <main class="page-card fa-page fa-page--wide fa-section-page fa-v2-page deadline-management-page deadline-v2-page" data-deadline-management-content hidden>
+    <header class="fa-section-hero deadline-v2-header fa-v2-card" aria-labelledby="deadlines-page-title">
       <div class="fa-section-hero-content">
-        <p class="eyebrow">SCADENZE</p>
         <h1 id="deadlines-page-title">Scadenze</h1>
         <p>Organizza le tue scadenze per gli elementi che vuoi tenere sotto controllo.</p>
       </div>
     </header>
 
-    <section class="fa-item-card-grid" aria-label="Categorie di gestione scadenze">
+    <section class="fa-item-card-grid deadline-v2-categories" aria-label="Categorie di gestione scadenze">
       <a class="area-card fa-item-card deadline-management-category-card" href="gestione-scadenze-veicoli.html">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">V</span>
         <span class="deadline-management-card-copy fa-item-card-copy"><h3>Veicoli</h3><p>Auto, moto e altri veicoli</p></span>
@@ -41,7 +40,7 @@
       </a>
     </section>
 
-    <section aria-labelledby="upcoming-deadlines-title">
+    <section class="deadline-v2-upcoming fa-v2-card" aria-labelledby="upcoming-deadlines-title">
       <div class="deadlines-section-header">
         <div><h2 id="upcoming-deadlines-title">Prossime scadenze</h2><p class="deadline-page-intro">Tieni sotto controllo documenti, contratti, manutenzioni e tutto ci&ograve; che conta.</p></div>
       </div>
