@@ -20,13 +20,7 @@ const personalDocumentFileUpload = document.getElementById('personal-document-fi
 const personalDocumentFileMessage = document.getElementById('personal-document-file-message');
 const personalDocumentFileEmpty = document.getElementById('personal-document-file-empty');
 const personalDocumentFileDetails = document.getElementById('personal-document-file-details');
-const personalDocumentAttachmentTypes = new Map([
-  ['application/pdf', 'PDF'],
-  ['image/jpeg', 'JPG'],
-  ['image/png', 'PNG'],
-  ['image/webp', 'WEBP']
-]);
-const maxPersonalDocumentFileBytes = 10 * 1024 * 1024;
+const personalDocumentAttachmentPreview = window.FamilAreaAttachmentPreview;
 let personalDocumentFamily = null;
 let personalDocumentContext = null;
 let editingPersonalDocument = null;
@@ -140,7 +134,7 @@ function renderPersonalDocumentAttachment() {
   const name = document.createElement('strong');
   name.textContent = attachment.original_filename;
   const details = document.createElement('span');
-  details.textContent = `${personalDocumentAttachmentTypes.get(attachment.mime_type) || 'FILE'} · ${formatPersonalDocumentFileSize(attachment.byte_size)}`;
+  details.textContent = `${personalDocumentAttachmentPreview.formatAttachmentType(attachment.mime_type)} · ${formatPersonalDocumentFileSize(attachment.byte_size)}`;
   info.append(name, details);
 
   const actions = document.createElement('div');
@@ -295,11 +289,11 @@ personalDocumentFileInput.addEventListener('change', async (event) => {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  if (!personalDocumentAttachmentTypes.has(file.type)) {
+  if (!personalDocumentAttachmentPreview.isSupportedMimeType(file.type)) {
     setPersonalDocumentFileMessage('Formato non supportato. Puoi caricare PDF, JPG, PNG o WebP.', true);
     return;
   }
-  if (file.size > maxPersonalDocumentFileBytes) {
+  if (file.size > personalDocumentAttachmentPreview.maxAttachmentBytes) {
     setPersonalDocumentFileMessage('Il file supera il limite massimo di 10 MB.', true);
     return;
   }

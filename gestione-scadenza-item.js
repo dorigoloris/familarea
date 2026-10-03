@@ -9,7 +9,7 @@ const itemConfigurations = {
     { title: 'Assicurazione RCA', kind: 'vehicle_insurance', icon: 'R' }, { title: 'Bollo', kind: 'vehicle_tax', icon: 'B' },
     { title: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' }, { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' }
   ] },
-  home: { label: 'Casa', imageLabel: 'Foto della casa', backHref: 'gestione-scadenze-casa.html', templates: [
+  home: { label: 'Casa', imageLabel: 'Foto della casa', backHref: 'scadenze.html', templates: [
     { title: 'Caldaia / Impianto termico', kind: 'home_heating', icon: 'I' }, { title: 'Assicurazione casa', kind: 'home_insurance', icon: 'A' },
     { title: 'Imposte e tributi', kind: 'home_taxes', icon: 'T' }, { title: 'Rifiuti', kind: 'home_waste', icon: 'R' }
   ] }
@@ -29,23 +29,20 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   const card = document.createElement('a');
   const href = deadline ? (kind === 'vehicle_service' ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}` : `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`) : itemDeadlineCreateHref(presetTitle, kind);
   card.href = href;
-  if (currentConfiguration?.label === 'Casa') {
-    card.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
-    const image = document.createElement('span'); image.className = 'deadline-management-item-image deadline-item-summary-image'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
-    const type = document.createElement('p'); type.className = 'deadline-item-summary-type';
-    const heading = document.createElement('h2'); heading.className = 'deadline-item-summary-name'; heading.textContent = title;
-    const detail = document.createElement('span'); detail.className = 'deadline-item-summary-plate'; detail.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza';
-    const action = document.createElement('span'); action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
-    card.append(image, type, heading, detail, action);
-    return card;
-  }
-  card.className = 'deadline-item-preset-card fa-surface';
-  const cardIcon = document.createElement('span'); cardIcon.className = 'deadline-item-preset-icon'; cardIcon.setAttribute('aria-hidden', 'true'); cardIcon.textContent = icon;
-  const copy = document.createElement('span'); copy.className = 'fa-item-card-copy'; const heading = document.createElement('h3'); heading.textContent = title;
-  const detail = document.createElement('p'); detail.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza'; copy.append(heading, detail);
-  const action = document.createElement('span'); action.className = 'deadline-item-preset-action';
-  const actionButton = document.createElement('span'); actionButton.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action'; actionButton.textContent = deadline ? 'Modifica' : 'Aggiungi'; action.append(actionButton);
-  card.append(cardIcon, copy, action); return card;
+  card.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
+  const image = document.createElement('span'); image.className = 'deadline-management-item-image deadline-item-summary-image'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
+  if (deadline) void window.FamilAreaAttachmentPreview.renderTargetCardPreview({
+    client: deadlineItemClient,
+    targetType: 'deadline',
+    targetId: deadline.id,
+    container: image
+  });
+  const type = document.createElement('p'); type.className = 'deadline-item-summary-type'; type.textContent = currentConfiguration?.label || '';
+  const heading = document.createElement('h2'); heading.className = 'deadline-item-summary-name'; heading.textContent = title;
+  const detail = document.createElement('span'); detail.className = 'deadline-item-summary-plate'; detail.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza';
+  const action = document.createElement('span'); action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
+  card.append(image, type, heading, detail, action);
+  return card;
 }
 function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
 function renderItemDeadlines(rows) { const unmatchedRows = new Set(rows); const cards = currentConfiguration.templates.map((template) => { const deadline = rows.find((row) => unmatchedRows.has(row) && row.deadline_kind === template.kind); if (deadline) unmatchedRows.delete(deadline); return createDeadlineCard({ ...template, deadline }); }); deadlineItemPredefinedCards.replaceChildren(...cards); renderCustomDeadlines([...unmatchedRows]); }
@@ -57,8 +54,9 @@ function applyHomeV2() {
   document.getElementById('deadline-item-content')?.classList.add('fa-v2-page-stack');
   deadlineItemMessage.classList.add('fa-v2-status', 'fa-v2-stack-optional');
   document.querySelector('.deadline-item-hero')?.classList.add('fa-v2-list-row');
-  deadlineItemPredefinedCards.classList.remove('deadline-item-preset-grid');
-  deadlineItemPredefinedCards.classList.add('deadline-management-list', 'fa-v2-list');
+  const deadlinesSection = document.querySelector('.deadline-item-deadlines');
+  deadlinesSection?.setAttribute('aria-label', 'Scadenze');
+  document.getElementById('deadline-item-deadlines-title')?.remove();
   const createButton = document.getElementById('deadline-item-create');
   createButton?.classList.remove('fa-button', 'fa-button-secondary', 'fa-button-compact');
   createButton?.classList.add('fa-v2-button', 'fa-v2-button--primary');

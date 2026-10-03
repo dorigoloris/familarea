@@ -10,7 +10,7 @@ const deadlineItemSelector = document.getElementById('deadline-item-selector');
 const titleField = document.getElementById('deadline-title').closest('div');
 const categoryField = document.getElementById('deadline-category').closest('div');
 const contextContainer = document.getElementById('managed-context');
-const backLink = document.getElementById('deadline-back-link');
+const backLink = document.querySelector('.account-back-link a');
 const cancelLink = document.getElementById('deadline-cancel-link');
 const formTitle = document.getElementById('deadline-form-title');
 const formIntro = document.getElementById('deadline-form-intro');
@@ -21,6 +21,7 @@ const categoryInput = document.getElementById('deadline-category');
 const deadlineTypeChoice = document.getElementById('deadline-type-choice');
 const deadlineTypeNote = document.getElementById('deadline-type-note');
 const deadlineTypeInputs = [...document.querySelectorAll('input[name="deadline-type"]')];
+const deadlineAttachmentsSection = document.getElementById('deadline-attachments-section');
 let otherOptionsToggle = null;
 let otherOptionsContent = null;
 let managedMember = null;
@@ -288,6 +289,21 @@ function configureSingleDeadlineLayout() {
   });
 }
 
+async function loadDeadlineAttachments() {
+  if (!editingDeadline) return;
+  deadlineAttachmentsSection.hidden = false;
+  const attachments = window.FamilAreaDeadlineAttachments.create({
+    client: c,
+    deadlineId: editingDeadline.id,
+    input: document.getElementById('deadline-attachment-input'),
+    uploadControl: document.getElementById('deadline-attachment-upload'),
+    message: document.getElementById('deadline-attachments-message'),
+    empty: document.getElementById('deadline-attachments-empty'),
+    list: document.getElementById('deadline-attachments-list')
+  });
+  await attachments.load();
+}
+
 async function initialiseEditMode(account) {
   const { data, error } = await c.rpc('get_deadline', { p_deadline_id: editingDeadlineId });
   if (error || !data) {
@@ -318,6 +334,7 @@ async function initialiseEditMode(account) {
     backLink.href = deadlineItemHref(associatedItem.id);
     cancelLink.href = backLink.href;
   }
+  await loadDeadlineAttachments();
   return true;
 }
 

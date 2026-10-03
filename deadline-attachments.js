@@ -1,11 +1,5 @@
 (function () {
-  const attachmentTypes = new Map([
-    ['application/pdf', 'PDF'],
-    ['image/jpeg', 'JPG'],
-    ['image/png', 'PNG'],
-    ['image/webp', 'WEBP']
-  ]);
-  const maxAttachmentBytes = 10 * 1024 * 1024;
+  const attachmentPreview = window.FamilAreaAttachmentPreview;
 
   function formatAttachmentSize(bytes) {
     const size = Number(bytes) || 0;
@@ -80,7 +74,7 @@
       const name = document.createElement('strong');
       name.textContent = attachment.original_filename;
       const details = document.createElement('span');
-      details.textContent = `${attachmentTypes.get(attachment.mime_type) || 'FILE'} · ${formatAttachmentSize(attachment.byte_size)}`;
+      details.textContent = `${attachmentPreview.formatAttachmentType(attachment.mime_type)} · ${formatAttachmentSize(attachment.byte_size)}`;
       info.append(name, details);
 
       const actions = document.createElement('div');
@@ -121,11 +115,11 @@
       const file = event.target.files[0];
       input.value = '';
       if (!file) return;
-      if (!attachmentTypes.has(file.type)) {
+      if (!attachmentPreview.isSupportedMimeType(file.type)) {
         setMessage('Formato non supportato. Puoi allegare PDF, JPG, PNG o WebP.', true);
         return;
       }
-      if (file.size > maxAttachmentBytes) {
+      if (file.size > attachmentPreview.maxAttachmentBytes) {
         setMessage('Il file supera il limite massimo di 10 MB.', true);
         return;
       }

@@ -12,7 +12,6 @@ const vehiclePlate = document.getElementById('vehicle-plate');
 const vehicleDelete = document.getElementById('vehicle-delete');
 const vehicleSave = document.getElementById('vehicle-save');
 const vehicleImageService = window.FamilAreaDeadlineItemImage;
-const vehicleTypeLabels = { car: 'Auto', motorcycle: 'Moto', other: 'Altro' };
 const vehicleAnnualCalendarGrid = document.getElementById('vehicle-annual-calendar-grid');
 const vehicleAnnualCalendarYear = document.getElementById('vehicle-calendar-year');
 const vehicleAnnualCalendarMessage = document.getElementById('vehicle-calendar-message');
@@ -105,9 +104,6 @@ function vehicleRow(vehicle) {
   image.setAttribute('aria-label', `Foto di ${vehicle.name}`);
   image.textContent = (vehicle.name.trim().charAt(0) || 'V').toLocaleUpperCase('it-IT');
   if (vehicle.image_path) void vehicleImageService.render(image, vehicle.image_path, `Foto di ${vehicle.name}`);
-  const type = document.createElement('p');
-  type.className = 'deadline-item-summary-type';
-  type.textContent = vehicleTypeLabels[vehicle.item_type] || 'Altro';
   const title = document.createElement('h2');
   title.className = 'deadline-item-summary-name';
   title.textContent = vehicle.name;
@@ -122,7 +118,7 @@ function vehicleRow(vehicle) {
     event.stopPropagation();
     openForm(vehicle);
   });
-  row.append(image, type, title, plate, edit);
+  row.append(image, title, plate, edit);
   return row;
 }
 

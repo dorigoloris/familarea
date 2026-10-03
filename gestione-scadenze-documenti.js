@@ -3,7 +3,7 @@ const personalDocumentsMessage = document.getElementById('documents-message');
 const personalDocumentsList = document.getElementById('documents-list');
 const personalDocumentsEmpty = document.getElementById('documents-empty');
 const personalDocumentCreate = document.getElementById('document-create');
-const personalDocumentsBackLink = document.getElementById('documents-back-link');
+const personalDocumentsBackLink = document.querySelector('.account-back-link > a');
 const personalDocumentLabels = {
   identity_card: 'Carta d’identità',
   driving_license: 'Patente',
@@ -38,31 +38,40 @@ function documentHref(documentId) {
     : path;
 }
 
+async function renderDocumentThumbnail(record, image) {
+  await window.FamilAreaAttachmentPreview.renderTargetCardPreview({
+    client: personalDocumentsClient,
+    targetType: 'personal_document',
+    targetId: record.id,
+    container: image
+  });
+}
+
 function documentRow(record) {
   const row = document.createElement('a');
-  row.className = 'deadline-management-row deadline-management-row--clickable fa-v2-list-row';
+  row.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
   row.href = documentHref(record.id);
   row.setAttribute('aria-label', `Apri ${personalDocumentLabels[record.document_type] || 'documento'} di ${holderName(record)}`);
 
-  const copy = document.createElement('div');
-  copy.className = 'deadline-management-row-copy';
-  const title = document.createElement('span');
-  title.className = 'deadline-management-row-title';
-  title.textContent = personalDocumentLabels[record.document_type] || 'Altro documento';
-  const holder = document.createElement('small');
-  holder.textContent = `Intestatario: ${holderName(record)}`;
-  copy.append(title, holder);
-  if (record.document_number) {
-    const number = document.createElement('small');
-    number.textContent = `Numero: ${record.document_number}`;
-    copy.append(number);
-  }
-
-  const expiry = document.createElement('small');
-  expiry.textContent = record.expiry_date
-    ? `Scadenza: ${window.FamilAreaDateUtils.formatDateDisplay(record.expiry_date)}`
-    : 'Nessuna scadenza';
-  row.append(copy, expiry);
+  const documentLabel = personalDocumentLabels[record.document_type] || 'Altro documento';
+  const image = document.createElement('span');
+  image.className = 'deadline-management-item-image deadline-item-summary-image';
+  image.setAttribute('aria-hidden', 'true');
+  image.textContent = (documentLabel.trim().charAt(0) || 'D').toLocaleUpperCase('it-IT');
+  void renderDocumentThumbnail(record, image);
+  const title = document.createElement('h2');
+  title.className = 'deadline-item-summary-name';
+  title.textContent = documentLabel;
+  const details = document.createElement('span');
+  details.className = 'deadline-item-summary-plate';
+  details.textContent = [
+    record.document_number ? `Numero: ${record.document_number}` : '',
+    record.expiry_date ? `Scadenza: ${window.FamilAreaDateUtils.formatDateDisplay(record.expiry_date)}` : 'Nessuna scadenza'
+  ].filter(Boolean).join(' · ');
+  const action = document.createElement('span');
+  action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action';
+  action.textContent = 'Apri';
+  row.append(image, title, details, action);
   return row;
 }
 
