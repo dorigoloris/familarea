@@ -68,6 +68,12 @@ function deadlineItemHref(itemId) {
   return `gestione-scadenza-item.html?item_id=${encodeURIComponent(itemId)}`;
 }
 
+function returnToAssociatedDeadlineItem(itemId) {
+  if (!itemId) return false;
+  location.href = deadlineItemHref(itemId);
+  return true;
+}
+
 function deadlineDetailHref(deadlineId) {
   return `scadenza.html?deadline_id=${encodeURIComponent(deadlineId)}`;
 }
@@ -110,10 +116,25 @@ function configureDeadlineItemCreateForm(item) {
     document.getElementById('deadline-title').value = template.title;
   }
   setAssociatedDeadlineHeader(item, template?.title || document.getElementById('deadline-title').value);
+  updateVehicleDeadlineTimeFields();
 }
 
 function selectedDeadlineItem() {
   return availableDeadlineItems.find((item) => item.id === deadlineItemSelector.value) || null;
+}
+
+function isVehicleDeadlineContext() {
+  return !isSingleDeadlineFlow && (deadlineItem?.category === 'vehicle' || selectedDeadlineItem()?.category === 'vehicle');
+}
+
+function updateVehicleDeadlineTimeFields() {
+  const isVehicleDeadline = isVehicleDeadlineContext();
+  startTimeInput.closest('div').hidden = isVehicleDeadline;
+  endTimeInput.closest('div').hidden = isVehicleDeadline;
+  if (!isVehicleDeadline) return;
+  startTimeInput.value = '';
+  endTimeInput.value = '';
+  endTimeInput.setCustomValidity('');
 }
 
 function updateDeadlineItemAssociationFields() {
@@ -128,6 +149,7 @@ function updateDeadlineItemAssociationFields() {
   }
   if (item) setAssociatedDeadlineHeader(item, document.getElementById('deadline-title').value);
   else if (!deadlineItem) clearAssociatedDeadlineHeader();
+  updateVehicleDeadlineTimeFields();
 }
 
 async function loadDeadlineItemSelector(selectedItemId = '') {
@@ -401,6 +423,7 @@ f.onsubmit = async (event) => {
   const recurrenceValue = document.getElementById('deadline-recurrence').value;
   const reminderValue = document.getElementById('deadline-reminder').value;
   const categoryValue = categoryInput.value;
+  const isVehicleDeadline = isVehicleDeadlineContext();
   if (!isSingleDeadlineFlow && (!recurrenceValue || !reminderValue)) {
     setFormMessage('Seleziona ricorrenza e promemoria.');
     return;
@@ -412,8 +435,8 @@ f.onsubmit = async (event) => {
     p_recurrence_months: Number(recurrenceValue) || null,
     p_reminder_days: reminderValue ? Number(reminderValue) : null,
     p_notes: document.getElementById('deadline-notes').value.trim() || null,
-    p_start_time: !isSingleDeadlineFlow || selectedDeadlineType() === 'appointment' ? (startTimeInput.value || null) : null,
-    p_end_time: !isSingleDeadlineFlow || selectedDeadlineType() === 'appointment' ? (endTimeInput.value || null) : null
+    p_start_time: !isVehicleDeadline && (!isSingleDeadlineFlow || selectedDeadlineType() === 'appointment') ? (startTimeInput.value || null) : null,
+    p_end_time: !isVehicleDeadline && (!isSingleDeadlineFlow || selectedDeadlineType() === 'appointment') ? (endTimeInput.value || null) : null
   };
 
   if (editingDeadline) {
@@ -426,6 +449,7 @@ f.onsubmit = async (event) => {
       setFormMessage('Impossibile aggiornare la scadenza.');
       return;
     }
+    if (returnToAssociatedDeadlineItem(selectedDeadlineItem()?.id || editingDeadline.deadline_item_id)) return;
     setFormMessage('Modifiche salvate.', true);
     if (isSingleDeadlineFlow) setOtherOptionsOpen(false);
     return;
@@ -449,6 +473,7 @@ f.onsubmit = async (event) => {
     return;
   }
 
+  if (returnToAssociatedDeadlineItem(associatedItem?.id)) return;
   if (managedMember || isSingleDeadlineCreate) {
     location.href = managedHref('scadenze.html');
     return;

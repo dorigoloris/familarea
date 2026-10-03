@@ -10,7 +10,7 @@ async function initialiseHome() {
     document.getElementById('home-redirect-content').hidden = false;
     return;
   }
-  location.replace(`gestione-scadenza-item.html?item_id=${encodeURIComponent(data.id)}`);
+  location.replace(`gestione-scadenza-item.html?item_id=${encodeURIComponent(data.id)}&context=home`);
 }
 
 void initialiseHome();

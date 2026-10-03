@@ -24,6 +24,21 @@
     <p id="vehicles-message" class="deadline-management-message fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
     <section id="vehicles-empty" class="fa-v2-section-card fa-v2-empty-state fa-v2-card deadline-management-empty" hidden><strong>Nessun veicolo.</strong><span>Aggiungi il primo veicolo da organizzare.</span></section>
     <section id="vehicles-list" class="deadline-management-list fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-list fa-v2-card" aria-label="Veicoli"></section>
+    <section class="fa-v2-section-card fa-v2-card annual-deadline-calendar" aria-labelledby="vehicle-annual-calendar-title">
+      <div class="annual-deadline-calendar-heading">
+        <div>
+          <h2 id="vehicle-annual-calendar-title">Calendario scadenze veicoli</h2>
+          <p>Una panoramica annuale delle scadenze previste per i tuoi veicoli.</p>
+        </div>
+        <div class="annual-deadline-calendar-controls" aria-label="Navigazione anno">
+          <button id="vehicle-calendar-previous-year" class="fa-v2-button fa-v2-button--secondary" type="button" aria-label="Anno precedente">←</button>
+          <strong id="vehicle-calendar-year" aria-live="polite"></strong>
+          <button id="vehicle-calendar-next-year" class="fa-v2-button fa-v2-button--secondary" type="button" aria-label="Anno successivo">→</button>
+        </div>
+      </div>
+      <p id="vehicle-calendar-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
+      <div id="vehicle-annual-calendar-grid" class="annual-deadline-calendar-grid" aria-label="Calendario annuale delle scadenze veicoli"></div>
+    </section>
   </main>
   <div id="vehicle-form-modal" class="confirm-modal-overlay deadline-management-vehicle-modal" hidden>
     <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="vehicle-form-title" tabindex="-1">
@@ -48,6 +63,7 @@
   <script src="confirm-modal.js"></script>
   <script src="gestione-scadenze.js"></script>
   <script src="deadline-item-image.js"></script>
+  <script src="annual-deadline-calendar.js"></script>
   <script src="gestione-scadenze-veicoli.js"></script>
 </body>
 </html>

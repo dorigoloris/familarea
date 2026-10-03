@@ -13,8 +13,13 @@ const vehicleDelete = document.getElementById('vehicle-delete');
 const vehicleSave = document.getElementById('vehicle-save');
 const vehicleImageService = window.FamilAreaDeadlineItemImage;
 const vehicleTypeLabels = { car: 'Auto', motorcycle: 'Moto', other: 'Altro' };
+const vehicleAnnualCalendarGrid = document.getElementById('vehicle-annual-calendar-grid');
+const vehicleAnnualCalendarYear = document.getElementById('vehicle-calendar-year');
+const vehicleAnnualCalendarMessage = document.getElementById('vehicle-calendar-message');
 let editingVehicle = null;
 let vehicleFormPreviousFocus = null;
+let currentVehicles = [];
+let vehicleAnnualCalendar = null;
 const vehicleImageEditor = vehicleImageService.createEditor({ client: vehiclesClient, input: document.getElementById('vehicle-image-input'), preview: document.getElementById('vehicle-image-preview'), upload: document.getElementById('vehicle-image-upload'), remove: document.getElementById('vehicle-image-remove'), message: document.getElementById('vehicle-image-message'), getItem: () => editingVehicle, fallback: () => vehicleName.value || 'V', noun: 'foto' });
 
 function setMessage(text = '', isError = false) {
@@ -127,9 +132,10 @@ async function loadVehicles() {
     setMessage('Impossibile caricare i veicoli.', true);
     return;
   }
-  const vehicles = data || [];
-  vehiclesList.replaceChildren(...vehicles.map(vehicleRow));
-  vehiclesEmpty.hidden = vehicles.length > 0;
+  currentVehicles = data || [];
+  vehiclesList.replaceChildren(...currentVehicles.map(vehicleRow));
+  vehiclesEmpty.hidden = currentVehicles.length > 0;
+  await vehicleAnnualCalendar?.load();
 }
 
 vehicleForm.addEventListener('submit', async (event) => {
@@ -167,6 +173,19 @@ vehicleName.addEventListener('input', () => {
 
 async function initialiseVehicles() {
   if (!await window.FamilAreaDeadlineManagementReady) return;
+  vehicleAnnualCalendar = window.FamilAreaAnnualDeadlineCalendar.create({
+    client: vehiclesClient,
+    gridElement: vehicleAnnualCalendarGrid,
+    yearElement: vehicleAnnualCalendarYear,
+    messageElement: vehicleAnnualCalendarMessage,
+    previousButton: document.getElementById('vehicle-calendar-previous-year'),
+    nextButton: document.getElementById('vehicle-calendar-next-year'),
+    getItems: () => currentVehicles,
+    itemFallback: 'Veicolo',
+    imageService: vehicleImageService,
+    idPrefix: 'vehicle-calendar',
+    isOccurrence: (occurrence) => occurrence.deadline_id && occurrence.deadline_item_category === 'vehicle'
+  });
   document.getElementById('vehicle-create').addEventListener('click', () => openForm());
   document.getElementById('vehicle-cancel').addEventListener('click', closeForm);
   document.getElementById('vehicle-modal-close').addEventListener('click', closeForm);

@@ -7,10 +7,11 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="deadline-management-page-view">
+  <script>if (new URLSearchParams(window.location.search).get('context') === 'home') document.body.classList.add('fa-v2-app', 'home-deadline-item');</script>
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
-    <p class="account-back-link"><a id="deadline-item-back-link" href="scadenze.html">Torna alle Scadenze</a></p>
+    <p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p>
     <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento elemento...</p>
     <div id="deadline-item-content" hidden>
       <h1 id="deadline-item-page-title" class="fa-visually-hidden"></h1>
@@ -24,6 +25,21 @@
           <h3 id="deadline-item-custom-deadlines-title">Altre scadenze</h3>
           <div id="deadline-item-deadlines-list" class="deadline-management-list" aria-label="Altre scadenze dell'elemento"></div>
         </section>
+      </section>
+      <section id="home-annual-calendar" class="fa-v2-section-card fa-v2-card annual-deadline-calendar" aria-labelledby="home-annual-calendar-title" hidden>
+        <div class="annual-deadline-calendar-heading">
+          <div>
+            <h2 id="home-annual-calendar-title">Calendario scadenze Casa</h2>
+            <p>Una panoramica annuale delle scadenze previste per la tua casa.</p>
+          </div>
+          <div class="annual-deadline-calendar-controls" aria-label="Navigazione anno">
+            <button id="home-calendar-previous-year" class="fa-v2-button fa-v2-button--secondary" type="button" aria-label="Anno precedente">←</button>
+            <strong id="home-calendar-year" aria-live="polite"></strong>
+            <button id="home-calendar-next-year" class="fa-v2-button fa-v2-button--secondary" type="button" aria-label="Anno successivo">→</button>
+          </div>
+        </div>
+        <p id="home-calendar-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
+        <div id="home-annual-calendar-grid" class="annual-deadline-calendar-grid" aria-label="Calendario annuale delle scadenze Casa"></div>
       </section>
     </div>
   </main>
@@ -44,6 +60,7 @@
   <script src="gestione-scadenze.js"></script>
   <script src="date-utils.js"></script>
   <script src="deadline-item-image.js"></script>
+  <script src="annual-deadline-calendar.js"></script>
   <script src="gestione-scadenza-item.js"></script>
 </body>
 </html>
