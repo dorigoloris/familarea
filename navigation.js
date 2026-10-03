@@ -85,10 +85,7 @@
     topNav.replaceChildren();
     const sharedItems = [
       { label: 'Dashboard', href: 'dashboard.html', active: isPrimaryNavActive('dashboard') },
-      { label: 'Aree', href: 'mie-aree.html', active: isPrimaryNavActive('areas') },
       { label: 'Attività', href: 'attivita-globali.html', active: isPrimaryNavActive('activities') },
-      { label: 'Eventi', href: 'eventi.html', active: isPrimaryNavActive('events') },
-      { label: 'Liste', href: 'liste.html', active: isPrimaryNavActive('lists') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
@@ -97,10 +94,11 @@
       ? [
         sharedItems[0],
         { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') },
-        sharedItems[5],
-        sharedItems[6],
-        sharedItems[7],
-        { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') }
+        sharedItems[2],
+        sharedItems[1],
+        sharedItems[3],
+        { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') },
+        sharedItems[4]
       ]
       : sharedItems;
     items.forEach((item) => {

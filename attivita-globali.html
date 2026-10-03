@@ -3,24 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Le mie Attività - FamilArea</title>
+  <title>Attività - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="global-activities-page-view">
+<body class="deadline-management-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card global-activities-page fa-page">
-    <header class="global-activities-page-header" aria-labelledby="global-activities-title">
-      <div class="global-activities-page-heading">
-        <p class="eyebrow">Le tue Attività</p>
-        <h1 id="global-activities-title">Le mie Attività</h1>
-        <p>Qui trovi le attività personali e quelle delle tue Aree.</p>
-      </div><a class="fa-button fa-button-primary" href="nuova-attivita.html">+ Nuova attivit&agrave;</a>
+  <main class="page-card fa-page fa-page--wide fa-section-page fa-v2-page fa-v2-page-stack deadline-management-page deadline-v2-page">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="activities-title">
+      <div class="fa-section-hero-content">
+        <div class="fa-section-hero-title-row"><h1 id="activities-title">Attività</h1></div>
+        <p>Le attività, i corsi e gli appuntamenti a cui partecipi.</p>
+      </div>
     </header>
-    <p id="message" class="global-view-message" aria-live="polite">Caricamento attività...</p>
-    <section id="activities-section" class="global-activities-surface fa-surface" hidden aria-label="Elenco attività">
-      <div id="activities-list" class="global-activities-list"></div>
-      <p id="activities-empty" class="global-activities-empty fa-empty-state" hidden><strong>Nessuna attività.</strong></p>
+
+    <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento attività...</p>
+    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card" aria-labelledby="my-activities-title">
+      <div class="fa-v2-section-heading">
+        <h2 id="my-activities-title">Le mie attività</h2>
+        <p>I corsi e le attività a cui partecipi.</p>
+      </div>
+      <div id="courses-list" class="deadline-management-list fa-v2-list" aria-label="Corsi e attività"></div>
+      <p id="courses-empty" class="fa-v2-empty-state" hidden><strong>Nessun corso o attività.</strong><span>Quando parteciperai a un corso, lo troverai qui.</span></p>
+    </section>
+
+    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card" aria-labelledby="upcoming-appointments-title">
+      <div class="fa-v2-section-heading">
+        <h2 id="upcoming-appointments-title">Prossimi appuntamenti</h2>
+        <p>Il riepilogo dei prossimi eventi collegati alle tue attività.</p>
+      </div>
+      <div id="appointments-list" class="deadline-management-list fa-v2-list" aria-label="Prossimi appuntamenti"></div>
+      <p id="appointments-empty" class="fa-v2-empty-state" hidden><strong>Nessun prossimo appuntamento.</strong><span>Il Calendario raccoglie tutti i tuoi impegni.</span></p>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
