@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <script>if (new URLSearchParams(window.location.search).get('event_kind') === 'commitment') document.body.classList.add('fa-v2-app');</script>
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="page-card">

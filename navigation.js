@@ -19,6 +19,7 @@
     'attivita-area.html': 'activities',
     'attivita.html': 'activities',
     'nuova-attivita.html': 'activities',
+    'impegni.html': 'commitments',
     'eventi.html': 'events',
     'proposte.html': 'suggestions',
     'evento.html': 'events',
@@ -88,6 +89,7 @@
       { label: 'Attività', href: 'attivita-globali.html', active: isPrimaryNavActive('activities') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
+      { label: 'Impegni', href: 'impegni.html', active: isPrimaryNavActive('commitments') },
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
     const items = accountType === 'personal'
@@ -95,12 +97,13 @@
         sharedItems[0],
         { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') },
         sharedItems[2],
-        sharedItems[1],
         sharedItems[3],
+        sharedItems[1],
+        sharedItems[4],
         { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') },
-        sharedItems[4]
+        sharedItems[5]
       ]
-      : sharedItems;
+      : [sharedItems[0], sharedItems[2], sharedItems[3], sharedItems[1], sharedItems[4], sharedItems[5]];
     items.forEach((item) => {
       const link = document.createElement('a');
       link.className = `top-nav-link${item.active}`;

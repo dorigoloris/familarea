@@ -1,6 +1,10 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const areaId = new URLSearchParams(location.search).get('area_id');
+const eventQuery = new URLSearchParams(location.search);
+const areaId = eventQuery.get('area_id');
+const eventKind = eventQuery.get('event_kind') === 'commitment' ? 'commitment' : null;
+const commitmentMode = eventQuery.get('commitment_mode');
 const form = document.getElementById('event-form');
+const backLink = document.getElementById('back-link');
 const message = document.getElementById('message');
 const eventInterestsSelector = document.getElementById('event-interests-selector');
 const eventInterestsMessage = document.getElementById('event-interests-message');
@@ -16,6 +20,77 @@ const endDateField = document.getElementById('end-date-field');
 const endSection = document.getElementById('event-end-section');
 const endDates = document.getElementById('event-end-dates');
 let isPersonalAccount = false;
+
+function isCommitmentMultiDay() {
+  return commitmentMode === 'multiday' || commitmentMode === 'multi-day';
+}
+
+function hideElement(selector) {
+  document.querySelector(selector)?.setAttribute('hidden', '');
+}
+
+function configureCommitmentV2() {
+  if (eventKind !== 'commitment') return;
+
+  const page = document.querySelector('main.page-card');
+  const legacyTitle = page.querySelector('h1');
+  const heading = isCommitmentMultiDay() ? 'Nuovo impegno' : 'Nuovo appuntamento';
+  const description = isCommitmentMultiDay()
+    ? 'Inserisci le date di inizio e fine del tuo impegno.'
+    : 'Inserisci data e orario del tuo appuntamento.';
+  const header = document.createElement('header');
+  const headerContent = document.createElement('div');
+  const title = document.createElement('h1');
+  const intro = document.createElement('p');
+
+  document.body.classList.add('fa-v2-app');
+  page.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
+  backLink.closest('p')?.classList.add('account-back-link');
+  backLink.removeAttribute('id');
+  backLink.textContent = '← Torna agli Impegni';
+  form.classList.add('fa-v2-card', 'fa-v2-section-card', 'fa-v2-form-card');
+  form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach((field) => {
+    field.classList.add(field.tagName === 'TEXTAREA' ? 'fa-v2-textarea' : field.tagName === 'SELECT' ? 'fa-v2-select' : 'fa-v2-input');
+  });
+  const submit = form.querySelector('[type="submit"]');
+  submit?.classList.add('fa-v2-button', 'fa-v2-button--primary');
+  if (submit) submit.textContent = isCommitmentMultiDay() ? 'Crea impegno' : 'Crea appuntamento';
+  form.querySelectorAll('br').forEach((element) => { element.hidden = true; });
+
+  header.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
+  headerContent.className = 'fa-section-hero-content';
+  title.textContent = heading;
+  intro.textContent = description;
+  headerContent.append(title, intro);
+  header.append(headerContent);
+  page.insertBefore(header, message);
+  legacyTitle?.remove();
+
+  hideElement('.event-interests-fieldset');
+  const optionGroups = [...document.querySelectorAll('.event-form-options')];
+  optionGroups.forEach((element) => { element.hidden = true; });
+  hideElement('#recurrence-fields');
+  hideElement('#calendar-private-fieldset');
+  hideElement('#calendar-private-spacing');
+  hideElement('label[for="location"]');
+  hideElement('#location');
+  hideElement('#event-start-heading');
+  hideElement('#event-end-heading');
+  document.getElementById('recurrence-enabled').checked = false;
+
+  if (isCommitmentMultiDay()) {
+    optionGroups[0].hidden = false;
+    multiDayInput.closest('label').hidden = true;
+    multiDayInput.checked = true;
+    allDayInput.checked = true;
+    allDayInput.disabled = true;
+    startTimeInput.required = false;
+  } else {
+    multiDayInput.checked = false;
+    allDayInput.checked = false;
+    startTimeInput.required = true;
+  }
+}
 
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
 function localIsoWeekday(dateValue) {
@@ -109,9 +184,12 @@ function focusOnEnter(next) {
 async function load() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data.session) { location.href = 'login.html'; return; }
-  document.getElementById('back-link').href = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
+  backLink.href = eventKind === 'commitment'
+    ? 'impegni.html'
+    : areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
   const { data: account } = await supabaseClient.rpc('get_current_account');
   isPersonalAccount = account?.account_type === 'personal';
+  if (eventKind !== 'commitment') {
   try {
     const categories = await window.FamilAreaEventInterests.loadCatalog();
     window.FamilAreaEventInterests.renderSelector(eventInterestsSelector, categories);
@@ -119,8 +197,9 @@ async function load() {
   } catch (_) {
     eventInterestsMessage.textContent = 'Il catalogo degli Interessi non è disponibile.';
   }
+  }
   const privateFieldset = document.getElementById('calendar-private-fieldset');
-  privateFieldset.hidden = !isPersonalAccount || Boolean(areaId);
+  privateFieldset.hidden = eventKind === 'commitment' || !isPersonalAccount || Boolean(areaId);
   document.getElementById('calendar-private-spacing').hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
   syncMultiDayLayout();
@@ -182,13 +261,21 @@ form.addEventListener('submit', async (event) => {
   if (isPersonalAccount && !areaId) {
     payload.p_calendar_private = document.getElementById('calendar-private').checked;
   }
+  if (eventKind === 'commitment') payload.p_event_kind = eventKind;
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
-  payload.p_interest_ids = window.FamilAreaEventInterests.selectedIds(eventInterestsSelector);
+  payload.p_interest_ids = eventKind === 'commitment'
+    ? []
+    : window.FamilAreaEventInterests.selectedIds(eventInterestsSelector);
   const { data, error } = await supabaseClient.rpc('create_event_with_interests', payload);
   submit.disabled = false;
   if (error || !data) { message.textContent = 'Impossibile creare l’evento.'; return; }
+  if (eventKind === 'commitment') {
+    location.href = 'impegni.html';
+    return;
+  }
   location.href = `evento.html${areaId ? `?area_id=${encodeURIComponent(areaId)}&` : '?'}event_id=${encodeURIComponent(data)}`;
 });
 
+configureCommitmentV2();
 load();

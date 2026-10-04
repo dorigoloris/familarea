@@ -33,6 +33,7 @@ const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
 const isSingleDeadlineCreate = query.get('mode') === 'single';
+const isCommitmentContext = query.get('context') === 'commitment';
 let isSingleDeadlineFlow = isSingleDeadlineCreate;
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
@@ -63,6 +64,13 @@ function managedHref(path) {
   return managedMember
     ? window.FamilAreaManagedContext.withMember(path, managedMember.id)
     : path;
+}
+
+function applyCommitmentReturn() {
+  if (!isCommitmentContext) return;
+  backLink.href = 'impegni.html';
+  backLink.textContent = '← Torna agli Impegni';
+  cancelLink.href = 'impegni.html';
 }
 
 function deadlineItemHref(itemId) {
@@ -398,6 +406,7 @@ async function init() {
 
   f.hidden = false;
   if (editingDeadline || context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) setFormMessage('');
+  if (isCommitmentContext && !managedMember && !requestedDeadlineItemId) applyCommitmentReturn();
 }
 
 document.getElementById('deadline-title').addEventListener('input', () => {
@@ -491,6 +500,10 @@ f.onsubmit = async (event) => {
   }
 
   if (returnToAssociatedDeadlineItem(associatedItem?.id)) return;
+  if (isCommitmentContext) {
+    location.href = 'impegni.html';
+    return;
+  }
   if (managedMember || isSingleDeadlineCreate) {
     location.href = managedHref('scadenze.html');
     return;

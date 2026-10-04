@@ -38,6 +38,12 @@ function recurrenceLabel(event) {
   return event.recurrence_interval > 1 ? `Ogni ${event.recurrence_interval} ${unit}` : base;
 }
 
+function isActivityEvent(event) {
+  if (event.event_kind === 'activity') return true;
+  if (event.event_kind === 'commitment') return false;
+  return Boolean(event.recurrence_frequency);
+}
+
 function provenanceLabel(event, occurrence) {
   if (event.organization_name) return event.organization_name;
   if (occurrence?.area_name) return occurrence.area_name;
@@ -108,14 +114,20 @@ function activityCard(event, occurrence) {
 }
 
 function appointmentCard(occurrence, event) {
-  const details = [provenanceLabel(event, occurrence), formatWhen(occurrence), occurrence.location || event.location].filter(Boolean).join(' · ');
-  return createSummaryCard({
-    title: occurrence.title || event.title,
-    details,
-    href: eventHref(event),
-    fallback: 'A',
-    label: `Apri appuntamento ${occurrence.title || event.title}`
-  });
+  const item = document.createElement('a');
+  const title = occurrence.title || event.title;
+  item.className = 'deadline-card deadline-card--with-item-thumbnail';
+  item.href = eventHref(event);
+  item.setAttribute('aria-label', `Apri appuntamento ${title}`);
+  const thumbnail = document.createElement('span');
+  thumbnail.className = 'deadline-item-thumbnail';
+  thumbnail.setAttribute('aria-hidden', 'true');
+  thumbnail.textContent = initials(title, 'A');
+  const copy = document.createElement('span');
+  copy.className = 'deadline-card-item-copy';
+  copy.textContent = `${formatWhen(occurrence)} — ${title}`;
+  item.append(thumbnail, copy);
+  return item;
 }
 
 function futureWindow() {
@@ -141,16 +153,16 @@ async function loadActivities() {
 
   const visibleEvents = eventsResult.data || [];
   const eventsById = new Map(visibleEvents.map((event) => [event.id || event.event_id, event]));
+  const activities = visibleEvents.filter(isActivityEvent);
+  const activityEventIds = new Set(activities.map((event) => event.id || event.event_id));
   const occurrences = occurrencesResult.error ? [] : (occurrencesResult.data || [])
-    .filter((occurrence) => occurrence.kind === 'event' && eventsById.has(occurrence.event_id || occurrence.id))
+    .filter((occurrence) => occurrence.kind === 'event' && activityEventIds.has(occurrence.event_id || occurrence.id))
     .sort((first, second) => new Date(first.starts_at) - new Date(second.starts_at));
   const nextOccurrenceByEventId = new Map();
   occurrences.forEach((occurrence) => {
     const eventId = occurrence.event_id || occurrence.id;
     if (!nextOccurrenceByEventId.has(eventId)) nextOccurrenceByEventId.set(eventId, occurrence);
   });
-  const activities = visibleEvents.filter((event) => Boolean(event.recurrence_frequency));
-
   coursesList.replaceChildren(...activities.map((event) => activityCard(event, nextOccurrenceByEventId.get(event.id || event.event_id))));
   coursesEmpty.hidden = activities.length > 0;
   appointmentsList.replaceChildren(...occurrences.slice(0, 5).map((occurrence) => appointmentCard(occurrence, eventsById.get(occurrence.event_id || occurrence.id))));

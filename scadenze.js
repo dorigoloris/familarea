@@ -20,15 +20,13 @@ async function openHomeItem(event) {
 function deadlineRow(deadline, isManaged, member) {
   const item = document.createElement('a');
   item.href = isManaged ? window.FamilAreaManagedContext.withMember(`scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`, member.id) : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
-  item.className = 'deadline-card';
-  if (!deadline.deadline_item_id) { item.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`; return item; }
-  item.classList.add('deadline-card--with-item-thumbnail');
+  item.className = 'deadline-card deadline-card--with-item-thumbnail';
   const thumbnail = document.createElement('span');
   thumbnail.className = 'deadline-item-thumbnail';
-  const itemName = deadline.deadline_item_name || 'Elemento';
-  thumbnail.setAttribute('aria-label', `Foto di ${itemName}`);
-  thumbnail.textContent = itemName.trim().charAt(0).toLocaleUpperCase('it-IT');
-  if (deadline.deadline_item_image_path) void deadlineItemImageService.render(thumbnail, deadline.deadline_item_image_path, `Foto di ${itemName}`);
+  const thumbnailName = deadline.deadline_item_name || deadline.title || 'Scadenza';
+  thumbnail.setAttribute('aria-label', `Miniatura di ${thumbnailName}`);
+  thumbnail.textContent = thumbnailName.trim().charAt(0).toLocaleUpperCase('it-IT');
+  if (deadline.deadline_item_image_path) void deadlineItemImageService.render(thumbnail, deadline.deadline_item_image_path, `Foto di ${thumbnailName}`);
   const copy = document.createElement('span'); copy.className = 'deadline-card-item-copy'; copy.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`;
   item.append(thumbnail, copy);
   return item;
@@ -63,7 +61,6 @@ async function load() {
   if (context.requested && !isManaged) m.textContent = 'Il membro selezionato non è gestibile dalla tua Famiglia. Stai visualizzando le tue scadenze personali.';
   if (isManaged) {
     contextContainer.hidden = false; window.FamilAreaManagedContext.renderBar(contextContainer, context.member);
-    document.getElementById('single-deadline-link').href = window.FamilAreaManagedContext.withMember('nuova-scadenza.html?mode=single', context.member.id);
     document.getElementById('documents-category-link').href = window.FamilAreaManagedContext.withMember('gestione-scadenze-documenti.html', context.member.id);
   }
   const { data, error } = isManaged ? await c.rpc('get_my_deadlines_for_managed_member', { p_member_id: context.member.id }) : await c.rpc('get_my_deadlines');
