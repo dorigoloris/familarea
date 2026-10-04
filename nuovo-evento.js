@@ -47,7 +47,7 @@ function configureCommitmentV2() {
   page.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
   backLink.closest('p')?.classList.add('account-back-link');
   backLink.removeAttribute('id');
-  backLink.textContent = '← Torna agli Impegni';
+  backLink.textContent = 'Torna agli Impegni';
   form.classList.add('fa-v2-card', 'fa-v2-section-card', 'fa-v2-form-card');
   form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach((field) => {
     field.classList.add(field.tagName === 'TEXTAREA' ? 'fa-v2-textarea' : field.tagName === 'SELECT' ? 'fa-v2-select' : 'fa-v2-input');

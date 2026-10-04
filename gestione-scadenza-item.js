@@ -29,7 +29,7 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   const card = document.createElement('a');
   const href = deadline ? (kind === 'vehicle_service' ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}` : `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`) : itemDeadlineCreateHref(presetTitle, kind);
   card.href = href;
-  card.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
+  card.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
   const image = document.createElement('span'); image.className = 'deadline-management-item-image deadline-item-summary-image'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
   if (deadline) void window.FamilAreaAttachmentPreview.renderTargetCardPreview({
     client: deadlineItemClient,

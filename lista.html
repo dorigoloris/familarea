@@ -6,54 +6,34 @@
   <title>Lista - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card list-detail-page">
-    <p><a id="back-link" href="#">Torna alle liste</a></p>
-    <p id="message" aria-live="polite">Caricamento lista...</p>
-    <section id="list-view" hidden>
-      <div class="section-heading">
-        <div><p class="section-kicker" id="area-name">Area</p><h1 id="list-title">Lista</h1></div>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a href="#">Torna alle liste</a></p>
+    <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento lista...</p>
+    <div id="list-view" class="fa-v2-page-stack" hidden>
+      <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="list-title">
+        <div class="fa-section-hero-content">
+          <p class="section-kicker" id="area-name">Area</p>
+          <div class="fa-section-hero-title-row"><h1 id="list-title">Lista</h1>
         <div id="list-actions" class="contact-actions" hidden>
-          <button id="edit-list-button" class="fa-button fa-button-secondary" type="button">Modifica lista</button>
-          <button id="delete-list-button" class="fa-button fa-button-danger member-remove-button" type="button">Elimina lista</button>
+            <button id="edit-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica lista</button>
+            <button id="delete-list-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina lista</button>
+          </div></div>
+          <p id="list-description" class="list-description" hidden></p>
         </div>
-      </div>
-      <p id="list-description" class="list-description" hidden></p>
-      <p id="list-visibility" class="list-visibility"></p>
-      <form id="add-item-form" class="list-add-item-form">
+      </header>
+      <form id="add-item-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card">
         <label for="item-text">Aggiungi un elemento</label>
-        <div class="list-add-item-controls"><input id="item-text" required><button id="add-item-button" class="fa-button fa-button-primary" type="submit">Aggiungi</button></div>
+        <div class="list-add-item-controls"><input id="item-text" class="fa-v2-input" required><button id="add-item-button" class="fa-v2-button fa-v2-button--primary" type="submit">Aggiungi</button></div>
       </form>
-      <h2>Elementi</h2>
-      <ul id="items-list" class="list-items"></ul>
-    </section>
-    <form id="edit-list-form" hidden>
-      <h1>Modifica lista</h1>
-      <div><label for="edit-title">Titolo *</label><input id="edit-title" required></div>
-      <div><label for="edit-description">Descrizione</label><textarea id="edit-description"></textarea></div>
-      <fieldset>
-        <legend>Visibilità</legend>
-        <label><input type="radio" name="edit-visibility" value="area"> Tutti i partecipanti dell'Area</label>
-        <label><input type="radio" name="edit-visibility" value="private"> Solo io</label>
-        <label><input type="radio" name="edit-visibility" value="creator_participants"> Io + partecipanti selezionati</label>
-      </fieldset>
-      <fieldset id="edit-participants-fieldset">
-        <legend>Partecipanti selezionati</legend>
-        <p id="edit-participants-help"></p>
-        <div id="edit-participants" class="participant-checklist"></div>
-      </fieldset>
-      <div class="form-actions"><button id="save-list-button" class="fa-button fa-button-primary" type="submit">Salva modifiche</button><button id="cancel-edit-button" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
-    </form>
+      <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card" aria-labelledby="list-items-title">
+        <div class="fa-v2-section-heading"><h2 id="list-items-title">Elementi</h2></div>
+        <ul id="items-list" class="list-items fa-v2-list"></ul>
+      </section>
+    </div>
   </main>
-  <style>
-    .list-detail-page .list-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center}
-    .list-detail-page .list-item-text{min-width:0;overflow-wrap:anywhere}
-    .list-detail-page .list-item>input{width:20px;height:20px;margin:0;accent-color:var(--green)}
-    .list-detail-page .list-item-delete{width:auto;margin:0;white-space:nowrap}
-    @media(max-width:600px){.list-detail-page .list-item{grid-template-columns:minmax(0,1fr) auto}.list-detail-page .list-item-delete{grid-column:1/-1;width:100%}}
-  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>

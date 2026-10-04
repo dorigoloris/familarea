@@ -88,7 +88,7 @@ async function removeVehicle(vehicle) {
 
 function vehicleRow(vehicle) {
   const row = document.createElement('article');
-  row.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
+  row.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
   row.tabIndex = 0;
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', `Apri veicolo ${vehicle.name}`);

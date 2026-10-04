@@ -6,30 +6,24 @@
   <title>Nuova lista - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card list-editor-page">
-    <p><a id="back-link" href="#">Torna alle liste</a></p>
-    <h1>Nuova lista</h1>
-    <p id="message" aria-live="polite">Caricamento...</p>
-    <form id="list-form" hidden>
-      <div><label for="title">Titolo *</label><input id="title" required></div>
-      <div><label for="description">Descrizione</label><textarea id="description"></textarea></div>
-      <fieldset>
-        <legend>Visibilità</legend>
-        <label><input type="radio" name="visibility" value="area" checked> Tutti i partecipanti dell'Area</label>
-        <label><input type="radio" name="visibility" value="private"> Solo io</label>
-        <label><input type="radio" name="visibility" value="creator_participants"> Io + partecipanti selezionati</label>
-      </fieldset>
-      <fieldset id="participants-fieldset" hidden>
-        <legend>Partecipanti selezionati</legend>
-        <p id="participants-help">Seleziona almeno un partecipante.</p>
-        <div id="participants" class="participant-checklist"></div>
-      </fieldset>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a href="#">Torna alle liste</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card">
+      <div class="fa-section-hero-content">
+        <h1>Nuova lista</h1>
+        <p>Crea una nuova lista personale o condivisa.</p>
+      </div>
+    </header>
+    <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento...</p>
+    <form id="list-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card" hidden>
+      <div><label for="title">Titolo *</label><input id="title" class="fa-v2-input" required></div>
+      <div><label for="description">Descrizione</label><textarea id="description" class="fa-v2-textarea"></textarea></div>
       <div class="form-actions">
-        <button id="save-button" type="submit">Crea lista</button>
-        <a id="cancel-link" class="btn secondary-button" href="#">Annulla</a>
+        <button id="save-button" class="fa-v2-button fa-v2-button--primary" type="submit">Crea lista</button>
+        <a class="fa-v2-button fa-v2-button--secondary" href="#">Annulla</a>
       </div>
     </form>
   </main>

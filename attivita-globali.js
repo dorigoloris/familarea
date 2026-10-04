@@ -62,7 +62,7 @@ function activityHierarchyLabel(event, occurrence) {
 
 function createSummaryCard({ title, details, href, fallback, label }) {
   const card = document.createElement('a');
-  card.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
+  card.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
   card.href = href;
   card.setAttribute('aria-label', label);
 

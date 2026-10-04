@@ -49,7 +49,7 @@ async function renderDocumentThumbnail(record, image) {
 
 function documentRow(record) {
   const row = document.createElement('a');
-  row.className = 'deadline-item-summary-card deadline-item-summary-card--clickable fa-v2-list-row';
+  row.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
   row.href = documentHref(record.id);
   row.setAttribute('aria-label', `Apri ${personalDocumentLabels[record.document_type] || 'documento'} di ${holderName(record)}`);
 

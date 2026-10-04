@@ -69,7 +69,7 @@ function managedHref(path) {
 function applyCommitmentReturn() {
   if (!isCommitmentContext) return;
   backLink.href = 'impegni.html';
-  backLink.textContent = '← Torna agli Impegni';
+  backLink.textContent = 'Torna agli Impegni';
   cancelLink.href = 'impegni.html';
 }
 
