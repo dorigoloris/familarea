@@ -54,6 +54,12 @@ function row(x) {
     cancel.type = 'button';
     cancel.textContent = 'Annulla';
     cancel.className = 'fa-v2-button fa-v2-button--secondary';
+    const itemDraft = FamilAreaUnsavedChanges.register({
+      root: li,
+      getState: () => ({ text: input.value }),
+      isActive: () => li.isConnected && li.contains(input),
+      onDiscard: () => cancel.click()
+    });
 
     const saveItem = async () => {
       const nextText = input.value.trim();
@@ -63,7 +69,11 @@ function row(x) {
         return;
       }
       input.setCustomValidity('');
-      await updateItem(x, nextText, x.status || 'open');
+      const saved = await updateItem(x, nextText, x.status || 'open');
+      if (saved) {
+        FamilAreaUnsavedChanges.markSaved(itemDraft);
+        FamilAreaUnsavedChanges.dispose(itemDraft);
+      }
     };
 
     check.disabled = true;
@@ -71,7 +81,11 @@ function row(x) {
     input.focus();
     input.select();
     save.onclick = saveItem;
-    cancel.onclick = restoreRow;
+    cancel.onclick = () => {
+      restoreRow();
+      FamilAreaUnsavedChanges.reset(itemDraft);
+      FamilAreaUnsavedChanges.dispose(itemDraft);
+    };
     input.oninput = () => input.setCustomValidity('');
     input.onkeydown = (event) => {
       if (event.key === 'Enter') {
@@ -80,7 +94,7 @@ function row(x) {
       }
       if (event.key === 'Escape') {
         event.preventDefault();
-        restoreRow();
+        cancel.click();
       }
     };
   };
@@ -89,7 +103,9 @@ function row(x) {
     const saved = await updateItem(x, x.text, check.checked ? 'completed' : 'open');
     if (!saved) check.checked = x.status === 'completed';
   };
-  edit.onclick = beginEdit;
+  edit.onclick = () => {
+    FamilAreaUnsavedChanges.attempt(beginEdit, { discardActive: true });
+  };
   del.onclick = async () => {
     if (!await FamilAreaConfirm.confirm({ variant: 'danger', title: 'Eliminare questo elemento?', message: 'L’elemento verrà eliminato definitivamente.', confirmText: 'Elimina' })) return;
     await c.rpc('delete_list_item', { p_item_id: x.id });
@@ -137,6 +153,7 @@ function beginListEdit() {
   const descriptionInput = document.createElement('textarea');
   const save = document.createElement('button');
   const cancel = document.createElement('button');
+  const header = title.closest('header');
 
   titleInput.type = 'text';
   titleInput.value = list.title;
@@ -152,6 +169,12 @@ function beginListEdit() {
   cancel.type = 'button';
   cancel.textContent = 'Annulla';
   cancel.className = 'fa-v2-button fa-v2-button--secondary';
+  const listDraft = FamilAreaUnsavedChanges.register({
+    root: header,
+    getState: () => ({ title: titleInput.value, description: descriptionInput.value }),
+    isActive: () => editingList,
+    onDiscard: () => cancel.click()
+  });
 
   const saveList = async () => {
     const titleValue = titleInput.value.trim();
@@ -174,9 +197,11 @@ function beginListEdit() {
     list = data;
     m.textContent = '';
     m.hidden = true;
+    FamilAreaUnsavedChanges.markSaved(listDraft);
     titleInput.remove();
     descriptionInput.remove();
     restoreListHeader();
+    FamilAreaUnsavedChanges.dispose(listDraft);
   };
 
   title.hidden = true;
@@ -193,6 +218,8 @@ function beginListEdit() {
     titleInput.remove();
     descriptionInput.remove();
     restoreListHeader();
+    FamilAreaUnsavedChanges.reset(listDraft);
+    FamilAreaUnsavedChanges.dispose(listDraft);
   };
 }
 
@@ -237,7 +264,9 @@ document.getElementById('add-item-form').onsubmit = async (e) => {
   load();
 };
 
-editListButton.onclick = beginListEdit;
+editListButton.onclick = () => {
+  FamilAreaUnsavedChanges.attempt(beginListEdit, { discardActive: true });
+};
 
 deleteListButton.onclick = async () => {
   if (editable && await FamilAreaConfirm.confirm({ variant: 'danger', title: 'Eliminare la lista?', message: 'La lista verrà eliminata definitivamente.', confirmText: 'Elimina' })) {
