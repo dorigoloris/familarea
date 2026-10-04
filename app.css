@@ -1451,3 +1451,6 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
 .home-deadline-item .deadline-item-deadlines-list{display:grid;gap:var(--fa-v2-space-2)}
 .home-deadline-item .deadline-item-deadlines-list .deadline-card{margin:0;padding:10px var(--fa-v2-space-3);border:1px solid var(--fa-v2-border);border-radius:10px;background:var(--fa-v2-surface);box-shadow:none}
 @media(max-width:700px){.home-deadline-item .deadline-item-deadlines{padding:var(--fa-v2-space-4)}}
+
+/* V2 navigation: shared current-page state. */
+.fa-v2-top-nav .top-nav-link.is-active{background:var(--fa-v2-primary);color:#fff}

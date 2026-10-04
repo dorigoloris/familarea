@@ -6,29 +6,39 @@
   <title>Liste - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card lists-page">
-    <p id="back-link-container"><a id="back-link" href="#">Torna all'Area</a></p>
-    <div class="section-heading">
-      <div><p class="section-kicker" id="area-name">Area</p><h1>Liste</h1></div>
-      <button id="new-list-button" class="btn" type="button">Nuova lista</button>
-    </div>
-    <p id="message" aria-live="polite">Caricamento liste...</p>
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack lists-page">
+    <p class="account-back-link"><a href="impegni.html">Torna agli Impegni</a></p>
+    <p id="back-link-container" class="account-back-link"><a id="back-link" href="#">Torna all'Area</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="lists-title">
+      <div class="fa-section-hero-content">
+        <p class="eyebrow" id="area-name">Area</p>
+        <div class="fa-section-hero-title-row"><h1 id="lists-title">Liste</h1><button id="new-list-button" class="fa-v2-button fa-v2-button--primary fa-section-hero-action" type="button">Nuova lista</button></div>
+        <p>Liste della spesa, cose da fare e checklist personali.</p>
+      </div>
+    </header>
+    <p id="message" class="fa-v2-status" aria-live="polite">Caricamento liste...</p>
     <section id="area-picker" hidden aria-labelledby="area-picker-title">
-      <h2 id="area-picker-title">Scegli l'Area</h2>
-      <p id="area-picker-message">Scegli l'Area in cui creare la nuova lista.</p>
-      <form id="area-picker-form">
+      <form id="area-picker-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card">
+        <h2 id="area-picker-title">Scegli l'Area</h2>
+        <p id="area-picker-message">Scegli l'Area in cui creare la nuova lista.</p>
         <label for="area-picker-select">Area</label>
         <select id="area-picker-select" required></select>
         <div class="form-actions">
-          <button type="submit">Continua</button>
-          <button id="cancel-area-picker" class="secondary-button" type="button">Annulla</button>
+          <button class="fa-v2-button fa-v2-button--primary" type="submit">Continua</button>
+          <button id="cancel-area-picker" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button>
         </div>
       </form>
     </section>
-    <div id="lists-list" class="lists-list"></div>
+    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card" aria-labelledby="my-lists-title">
+      <div class="fa-v2-section-heading">
+        <h2 id="my-lists-title">Le mie liste</h2>
+        <p>Apri una lista per aggiungere, completare o gestire i suoi elementi.</p>
+      </div>
+      <div id="lists-list" class="fa-v2-list" aria-label="Le mie liste"></div>
+    </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
