@@ -118,15 +118,13 @@ function activityCard(event, occurrence) {
 function appointmentCard(occurrence, event) {
   const item = document.createElement('a');
   const title = occurrence.title || event.title;
-  item.className = 'deadline-card deadline-card--with-item-thumbnail';
+  item.className = 'fa-v2-list-row fa-v2-list-row--media';
   item.href = eventHref(event);
   item.setAttribute('aria-label', `Apri appuntamento ${title}`);
   const thumbnail = document.createElement('span');
-  thumbnail.className = 'deadline-item-thumbnail';
   thumbnail.setAttribute('aria-hidden', 'true');
   thumbnail.textContent = initials(title, 'A');
   const copy = document.createElement('span');
-  copy.className = 'deadline-card-item-copy';
   copy.textContent = `${formatWhen(occurrence)} — ${title}`;
   item.append(thumbnail, copy);
   return item;

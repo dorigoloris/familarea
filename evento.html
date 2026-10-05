@@ -6,44 +6,50 @@
   <title>Evento - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card event-detail-page">
-    <p class="event-detail-back"><a id="back-link" class="fa-button fa-button-secondary fa-button-compact" href="#">Torna agli eventi</a></p>
-    <header class="event-detail-heading">
-      <div class="event-detail-title-block"><p class="eyebrow">PROGRAMMA</p><h1 id="event-title">Evento</h1></div>
-      <div id="creator-actions" class="event-detail-actions" hidden>
-        <button id="edit-button" class="fa-button fa-button-primary" type="button">Modifica</button>
-        <button id="delete-button" class="fa-button fa-button-danger" type="button">Elimina evento</button>
-      </div>
-    </header>
-    <p id="message" aria-live="polite">Caricamento...</p>
-    <section id="event-view" class="event-detail-card" hidden>
-      <dl class="event-detail-list">
-        <dt>Organizzato da</dt><dd id="event-organizer"></dd>
-        <dt id="event-area-label" hidden>Area</dt><dd id="event-area" hidden></dd>
-        <dt>Data e ora</dt><dd id="when"></dd>
-        <dt>Luogo</dt><dd id="location"></dd>
-        <dt>Stato</dt><dd class="event-status-value"><span id="status"></span><span id="status-editor" class="event-status-editor"><label for="status-select">Cambia stato:</label><select id="status-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-button fa-button-primary fa-button-compact" type="button">Salva</button></span></dd>
-        <dt id="event-visibility-label" hidden>Visibilità</dt><dd id="event-visibility" hidden></dd>
-        <dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="event-participant-list"></dd>
-        <dt id="event-interests-label" hidden>Interessi</dt><dd id="event-interests" class="event-interests-view" hidden></dd>
-        <dt id="recurrence-label" hidden>Ripetizione</dt><dd id="recurrence" hidden></dd>
-        <dt id="notes-label">Note</dt><dd id="notes" class="event-detail-notes"></dd>
-      </dl>
-      <p id="suggested-event-reason" class="suggested-event-reason" hidden></p>
-      <div id="suggested-event-actions" class="suggested-event-actions" hidden>
-        <button id="join-suggested-event" class="fa-button fa-button-primary" type="button">Partecipa</button>
-        <p id="join-suggested-message" class="join-suggested-message" aria-live="polite" hidden></p>
-      </div>
-    </section>
-    <form id="edit-form" class="event-edit-form" hidden>
-      <h2>Modifica evento</h2>
-      <label for="edit-title">Titolo</label><input id="edit-title" required>
-      <br><br>
-      <label for="edit-notes">Note</label><textarea id="edit-notes"></textarea>
-      <br><br>
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack">
+    <p class="account-back-link"><a id="event-back" href="#">Torna agli eventi</a></p>
+    <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento...</p>
+    <div id="event-view" class="fa-v2-page-stack" hidden>
+      <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="event-title">
+        <div class="fa-section-hero-content">
+          <p class="eyebrow">PROGRAMMA</p>
+          <div class="fa-section-hero-title-row">
+            <h1 id="event-title">Evento</h1>
+            <div id="creator-actions" class="fa-v2-card-actions" hidden>
+              <button id="edit-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica</button>
+              <button id="delete-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina evento</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-details-title">
+        <div class="fa-v2-section-heading"><h2 id="event-details-title">Dettagli</h2></div>
+        <dl class="fa-v2-list">
+          <div class="fa-v2-list-row"><dt>Organizzato da</dt><dd id="event-organizer"></dd></div>
+          <div id="event-area-row" class="fa-v2-list-row" hidden><dt id="event-area-label">Area</dt><dd id="event-area"></dd></div>
+          <div class="fa-v2-list-row"><dt>Data e ora</dt><dd id="when"></dd></div>
+          <div class="fa-v2-list-row"><dt>Luogo</dt><dd id="location"></dd></div>
+          <div class="fa-v2-list-row"><dt>Stato</dt><dd><span id="status" class="fa-v2-badge"></span><span id="status-editor" class="fa-v2-card-actions"><label for="status-select">Cambia stato:</label><select id="status-select" class="fa-v2-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-v2-button fa-v2-button--primary" type="button">Salva</button></span></dd></div>
+          <div id="event-visibility-row" class="fa-v2-list-row" hidden><dt id="event-visibility-label">Visibilità</dt><dd id="event-visibility"></dd></div>
+          <div id="participants-row" class="fa-v2-list-row"><dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="fa-v2-list"></dd></div>
+          <div id="event-interests-row" class="fa-v2-list-row" hidden><dt id="event-interests-label">Interessi</dt><dd id="event-interests" class="event-interests-view"></dd></div>
+          <div id="recurrence-row" class="fa-v2-list-row" hidden><dt id="recurrence-label">Ripetizione</dt><dd id="recurrence"></dd></div>
+          <div id="notes-row" class="fa-v2-list-row"><dt id="notes-label">Note</dt><dd id="notes"></dd></div>
+        </dl>
+        <p id="suggested-event-reason" class="fa-v2-notice fa-v2-notice--info" hidden></p>
+        <div id="suggested-event-actions" class="fa-v2-card-actions" hidden>
+          <button id="join-suggested-event" class="fa-v2-button fa-v2-button--primary" type="button">Partecipa</button>
+          <p id="join-suggested-message" class="fa-v2-status" aria-live="polite" hidden></p>
+        </div>
+      </section>
+    </div>
+    <form id="edit-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-section-heading"><h2>Modifica evento</h2></div>
+      <div><label for="edit-title">Titolo</label><input id="edit-title" class="fa-v2-input" required></div>
+      <div><label for="edit-notes">Note</label><textarea id="edit-notes" class="fa-v2-textarea"></textarea></div>
       <fieldset class="event-interests-fieldset">
         <legend>Interessi</legend>
         <p id="edit-event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
@@ -53,8 +59,8 @@
       <div class="event-time-section" aria-labelledby="edit-start-heading">
         <h3 id="edit-start-heading" class="event-form-section-title">Inizio</h3>
         <div id="edit-start-dates" class="event-dates event-start-dates">
-          <div><label for="edit-date">Data inizio</label><input id="edit-date" type="date" required></div>
-          <div id="edit-start-time-field"><label for="edit-start">Ora inizio</label><input id="edit-start" type="time"></div>
+          <div><label for="edit-date">Data inizio</label><input id="edit-date" class="fa-v2-input" type="date" required></div>
+          <div id="edit-start-time-field"><label for="edit-start">Ora inizio</label><input id="edit-start" class="fa-v2-input" type="time"></div>
         </div>
       </div>
       <div class="event-form-options">
@@ -64,8 +70,8 @@
       <div id="edit-end-section" class="event-time-section" aria-labelledby="edit-end-heading">
         <h3 id="edit-end-heading" class="event-form-section-title">Fine</h3>
         <div id="edit-end-dates" class="event-dates event-end-dates">
-          <div id="edit-end-date-field" hidden><label for="edit-end-date">Data fine</label><input id="edit-end-date" type="date"></div>
-          <div id="edit-end-time-field"><label for="edit-end">Ora fine</label><input id="edit-end" type="time"></div>
+          <div id="edit-end-date-field" hidden><label for="edit-end-date">Data fine</label><input id="edit-end-date" class="fa-v2-input" type="date"></div>
+          <div id="edit-end-time-field"><label for="edit-end">Ora fine</label><input id="edit-end" class="fa-v2-input" type="time"></div>
         </div>
       </div>
       <div class="event-form-options">
@@ -74,7 +80,7 @@
       <div id="edit-recurrence-fields" class="event-recurrence-fields" hidden>
         <div class="event-recurrence-interval">
           <label for="edit-recurrence-interval">Ogni</label>
-          <input id="edit-recurrence-interval" type="number" min="1" max="32767" step="1" value="1">
+          <input id="edit-recurrence-interval" class="fa-v2-input" type="number" min="1" max="32767" step="1" value="1">
           <span>settimana/e</span>
         </div>
         <fieldset class="event-recurrence-weekdays">
@@ -92,23 +98,20 @@
         <fieldset class="event-recurrence-end-mode">
           <legend>Fine ripetizione</legend>
           <label><input type="radio" name="edit-recurrence-end-mode" value="date" checked> Il</label>
-          <input id="edit-recurrence-until" type="date">
+          <input id="edit-recurrence-until" class="fa-v2-input" type="date">
           <label><input type="radio" name="edit-recurrence-end-mode" value="never"> Senza scadenza</label>
         </fieldset>
         <p id="edit-recurrence-error" class="event-recurrence-error" role="alert" hidden></p>
       </div>
-      <br><br>
-      <label for="edit-location">Luogo</label><input id="edit-location">
-      <br><br>
+      <div><label for="edit-location">Luogo</label><input id="edit-location" class="fa-v2-input"></div>
       <fieldset id="edit-calendar-private-fieldset" class="event-family-visibility" hidden>
         <legend>Calendario condiviso</legend>
         <label><input id="edit-calendar-private" type="checkbox"> Privato</label>
         <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
       </fieldset>
-      <br id="edit-calendar-private-spacing">
       <fieldset id="edit-participants-fieldset"><legend>Partecipanti</legend><div id="edit-participants"></div></fieldset>
-      <br>
-      <div class="form-actions"><button class="fa-button fa-button-primary" type="submit">Salva modifiche</button><button id="close-edit" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
+      <div id="edit-calendar-private-spacing" hidden></div>
+      <div class="fa-v2-card-actions"><button class="fa-v2-button fa-v2-button--primary" type="submit">Salva modifiche</button><button id="close-edit" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button></div>
     </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

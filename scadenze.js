@@ -20,14 +20,13 @@ async function openHomeItem(event) {
 function deadlineRow(deadline, isManaged, member) {
   const item = document.createElement('a');
   item.href = isManaged ? window.FamilAreaManagedContext.withMember(`scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`, member.id) : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
-  item.className = 'deadline-card deadline-card--with-item-thumbnail';
+  item.className = 'fa-v2-list-row fa-v2-list-row--media';
   const thumbnail = document.createElement('span');
-  thumbnail.className = 'deadline-item-thumbnail';
   const thumbnailName = deadline.deadline_item_name || deadline.title || 'Scadenza';
   thumbnail.setAttribute('aria-label', `Miniatura di ${thumbnailName}`);
   thumbnail.textContent = thumbnailName.trim().charAt(0).toLocaleUpperCase('it-IT');
   if (deadline.deadline_item_image_path) void deadlineItemImageService.render(thumbnail, deadline.deadline_item_image_path, `Foto di ${thumbnailName}`);
-  const copy = document.createElement('span'); copy.className = 'deadline-card-item-copy'; copy.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`;
+  const copy = document.createElement('span'); copy.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`;
   item.append(thumbnail, copy);
   return item;
 }

@@ -19,11 +19,36 @@
           <div class="fa-section-hero-title-row"><h1 id="list-title">Lista</h1>
         <div id="list-actions" class="contact-actions" hidden>
             <button id="edit-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica lista</button>
+            <button id="share-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Condividi</button>
             <button id="delete-list-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina lista</button>
           </div></div>
           <p id="list-description" class="list-description" hidden></p>
         </div>
       </header>
+      <section id="list-share-panel" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="list-share-title" hidden>
+        <div class="fa-v2-section-heading">
+          <h2 id="list-share-title">Condividi lista</h2>
+          <p id="list-share-state" class="fa-v2-status"></p>
+        </div>
+        <p id="list-share-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
+        <div class="fa-v2-page-stack">
+          <label for="list-share-search">Cerca persona</label>
+          <input id="list-share-search" class="fa-v2-input" type="search" placeholder="Cerca per nome o cognome" autocomplete="off">
+          <p id="list-share-search-status" class="fa-v2-status" aria-live="polite">Inserisci almeno 3 caratteri.</p>
+          <ul id="list-share-search-results" class="fa-v2-list" aria-label="Risultati ricerca"></ul>
+        </div>
+        <div class="fa-v2-page-stack">
+          <p class="fa-v2-list-heading">Inviti in attesa</p>
+          <ul id="list-share-pending" class="fa-v2-list" aria-label="Inviti in attesa" hidden></ul>
+          <p id="list-share-pending-empty" class="fa-v2-empty-state">Nessun invito in attesa.</p>
+        </div>
+        <div class="fa-v2-page-stack">
+          <p class="fa-v2-list-heading">Partecipanti</p>
+          <ul id="list-share-participants" class="fa-v2-list" aria-label="Partecipanti" hidden></ul>
+          <p id="list-share-participants-empty" class="fa-v2-empty-state">Nessun partecipante.</p>
+        </div>
+        <div class="form-actions"><button id="close-list-share-button" class="fa-v2-button fa-v2-button--secondary" type="button">Chiudi</button></div>
+      </section>
       <form id="add-item-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card">
         <label for="item-text">Aggiungi un elemento</label>
         <div class="list-add-item-controls"><input id="item-text" class="fa-v2-input" required><button id="add-item-button" class="fa-v2-button fa-v2-button--primary" type="submit">Aggiungi</button></div>

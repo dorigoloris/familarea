@@ -29,6 +29,39 @@
       && left.getDate() === right.getDate();
   }
 
+  function startOfLocalDay(value) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  function nextLocalDay(value) {
+    const next = startOfLocalDay(value);
+    next.setDate(next.getDate() + 1);
+    return next;
+  }
+
+  function intervalsOverlap(start, end, rangeStart, rangeEnd) {
+    return start < rangeEnd && end > rangeStart;
+  }
+
+  function eventInterval(item) {
+    const start = placementDate(item);
+    if (!start) return null;
+    const end = toValidDate(item.ends_at);
+    if (end && end > start) return { start, end };
+    return {
+      start,
+      end: item.is_all_day ? nextLocalDay(start) : new Date(start.getTime() + 30 * 60 * 1000)
+    };
+  }
+
+  function itemOccursOnDay(item, day) {
+    const start = placementDate(item);
+    if (!start) return false;
+    if (itemType(item) !== 'event') return sameLocalDay(start, day);
+    const interval = eventInterval(item);
+    return Boolean(interval && intervalsOverlap(interval.start, interval.end, startOfLocalDay(day), nextLocalDay(day)));
+  }
+
   function itemLink(item) {
     if (itemType(item) === 'deadline') {
       const link = new URL('scadenza.html', window.location.href);
@@ -146,10 +179,7 @@
       cell.appendChild(number);
 
       const dayItems = calendarItems
-        .filter((item) => {
-          const date = placementDate(item);
-          return date && date.getFullYear() === year && date.getMonth() === monthIndex && date.getDate() === day;
-        })
+        .filter((item) => itemOccursOnDay(item, new Date(year, monthIndex, day)))
         .sort((first, second) => placementDate(first) - placementDate(second));
       const shownItems = dayItems.slice(0, 2);
       shownItems.forEach((item) => cell.appendChild(createCalendarItem(item)));
@@ -229,10 +259,7 @@
       day.appendChild(heading);
 
       const dayItems = calendarItems
-        .filter((item) => {
-          const placement = placementDate(item);
-          return placement && sameLocalDay(placement, date);
-        })
+        .filter((item) => itemOccursOnDay(item, date))
         .sort((first, second) => placementDate(first) - placementDate(second));
 
       if (!dayItems.length) {
@@ -260,8 +287,8 @@
   }
 
   function itemEndDate(item, start) {
-    const value = itemType(item) === 'event' ? item.ends_at : item.occurrence_ends_at;
-    const end = toValidDate(value);
+    if (itemType(item) === 'event') return eventInterval(item)?.end || new Date(start.getTime() + 30 * 60 * 1000);
+    const end = toValidDate(item.occurrence_ends_at);
     if (end && end > start) return end;
     return new Date(start.getTime() + 30 * 60 * 1000);
   }
@@ -350,16 +377,25 @@
 
     const perDay = days.map(() => ({ allDay: [], outside: [], timed: [] }));
     items.forEach((item) => {
-      const date = placementDate(item);
-      if (!date) return;
-      const dayIndex = days.findIndex((day) => sameLocalDay(day, date));
-      if (dayIndex === -1) return;
-      if (item.is_all_day || itemType(item) === 'birthday') { perDay[dayIndex].allDay.push(item); return; }
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour);
-      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour);
-      const end = itemEndDate(item, date);
-      if (end <= dayStart || date >= dayEnd) { perDay[dayIndex].outside.push(item); return; }
-      perDay[dayIndex].timed.push({ item, start: date, end });
+      const itemStart = placementDate(item);
+      if (!itemStart) return;
+      const interval = itemType(item) === 'event' ? eventInterval(item) : null;
+      days.forEach((date, dayIndex) => {
+        if (!itemOccursOnDay(item, date)) return;
+        if (item.is_all_day || itemType(item) === 'birthday') {
+          perDay[dayIndex].allDay.push(item);
+          return;
+        }
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour);
+        const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour);
+        const start = interval?.start || itemStart;
+        const end = interval?.end || itemEndDate(item, itemStart);
+        if (end <= dayStart || start >= dayEnd) {
+          perDay[dayIndex].outside.push(item);
+          return;
+        }
+        perDay[dayIndex].timed.push({ item, start, end });
+      });
     });
 
     const createLane = (className, label, key, showTime) => {

@@ -5,6 +5,7 @@ const invitesSection = document.getElementById('invites-section');
 const invitesList = document.getElementById('invites-list');
 const invitesEmpty = document.getElementById('invites-empty');
 let pageMessageTimeout;
+const recentlyAcceptedLists = new Map();
 
 function setPageMessage(text = '', timeout = 0) {
   window.clearTimeout(pageMessageTimeout);
@@ -13,7 +14,7 @@ function setPageMessage(text = '', timeout = 0) {
 }
 
 function acceptedInviteMessage(kind) {
-  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
 }
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
@@ -57,7 +58,13 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
     ? { p_suggestion_id: invite.suggestion_id }
     : { p_invite_id: invite.invite_id };
   const { error } = await supabaseClient.rpc(rpcName, params);
-  if (error) { setCardBusy(card, false); setPageMessage(inviteErrorMessage(error)); return; }
+  if (error) {
+    setCardBusy(card, false);
+    setPageMessage(inviteErrorMessage(error));
+    await loadInvites();
+    return;
+  }
+  if (kind === 'list' && rpcName === 'accept_my_list_invite') recentlyAcceptedLists.set(invite.list_id, invite);
   if (await loadInvites()) {
     if (rpcName.startsWith('accept_')) setPageMessage(acceptedInviteMessage(kind), 3000);
     else setPageMessage('');
@@ -180,6 +187,72 @@ function createEventInviteCard(invite) {
   return article;
 }
 
+function listInviteCreatedLabel(invite) {
+  const createdAt = invite.created_at ? new Date(invite.created_at) : null;
+  if (!createdAt || Number.isNaN(createdAt.getTime())) return '';
+  return `Ricevuto ${new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' }).format(createdAt)}`;
+}
+
+function createListInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row list-invite-card';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  const title = document.createElement('h3');
+  const inviter = document.createElement('p');
+  const received = document.createElement('p');
+  const status = document.createElement('span');
+  type.className = 'section-kicker';
+  type.textContent = 'Lista';
+  title.textContent = invite.list_title || 'Lista FamilArea';
+  inviter.textContent = inviteSenderLabel(invite) || 'Invito a collaborare a una lista';
+  received.textContent = listInviteCreatedLabel(invite);
+  status.className = 'invite-status fa-status-badge invite-status-pending';
+  status.textContent = 'In attesa';
+  details.append(type, title, inviter);
+  if (received.textContent) details.append(received);
+  details.append(status);
+  article.append(details);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'fa-button fa-button-secondary';
+  decline.textContent = 'Rifiuta';
+  decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_list_invite', article, 'list'));
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accetta';
+  accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_list_invite', article, 'list'));
+  actions.append(decline, accept);
+  article.append(actions);
+  return article;
+}
+
+function createAcceptedListCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row list-invite-card';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  const title = document.createElement('h3');
+  const status = document.createElement('span');
+  type.className = 'section-kicker';
+  type.textContent = 'Lista';
+  title.textContent = invite.list_title || 'Lista FamilArea';
+  status.className = 'invite-status fa-status-badge invite-status-accepted';
+  status.textContent = 'Accesso attivo';
+  details.append(type, title, status);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.textContent = 'Apri lista';
+  open.addEventListener('click', () => { location.href = `lista.html?list_id=${encodeURIComponent(invite.list_id)}`; });
+  actions.append(open);
+  article.append(details, actions);
+  return article;
+}
+
 function createContactSuggestionCard(suggestion) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row contact-suggestion-card';
@@ -203,16 +276,18 @@ function createContactSuggestionCard(suggestion) {
 }
 
 async function loadInvites() {
-  const [areaResult, familyResult, eventResult, suggestionResult] = await Promise.all([
+  const [areaResult, familyResult, eventResult, suggestionResult, listResult] = await Promise.all([
     supabaseClient.rpc('get_my_area_invites'),
     supabaseClient.rpc('get_my_family_invites'),
     supabaseClient.rpc('get_my_event_invites'),
-    supabaseClient.rpc('get_my_contact_suggestions')
+    supabaseClient.rpc('get_my_contact_suggestions'),
+    supabaseClient.rpc('get_my_list_invites')
   ]);
   if (areaResult.error) { setPageMessage(inviteErrorMessage(areaResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
   if (suggestionResult.error) console.error('get_my_contact_suggestions failed', suggestionResult.error);
+  if (listResult.error) console.error('get_my_list_invites failed', listResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleAreaInvites = (areaResult.data || [])
@@ -221,7 +296,11 @@ async function loadInvites() {
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleSuggestions = (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending');
-  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length > 0;
+  const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
+  const acceptedLists = [...recentlyAcceptedLists.values()];
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleListInvites.length + acceptedLists.length > 0;
+  acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));
+  visibleListInvites.forEach((invite) => invitesList.appendChild(createListInviteCard(invite)));
   visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
   visibleEventInvites.forEach((invite) => invitesList.appendChild(createEventInviteCard(invite)));
   visibleSuggestions.forEach((suggestion) => invitesList.appendChild(createContactSuggestionCard(suggestion)));
