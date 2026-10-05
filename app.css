@@ -1283,9 +1283,6 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
   background:#f1f4f2;
   color:var(--fa-v2-muted);
 }
-.deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-card{
-  gap:var(--fa-v2-space-3);
-}
 .deadline-management-page-view.fa-v2-app .deadline-v2-upcoming .deadline-list-toggle{margin-top:var(--fa-v2-space-1)}
 @media(max-width:700px){
   .fa-v2-app .deadline-management-category-card{min-height:100px;padding:var(--fa-v2-space-3)}

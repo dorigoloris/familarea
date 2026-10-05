@@ -51,7 +51,7 @@ async function suggestContact(contact) {
     : 'Suggerimento inviato.';
 }
 function contactRow(contact, isOrganization) {
-  const name = fullName(contact); const row = document.createElement('article'); row.className = 'contact-card contact-directory-row';
+  const name = fullName(contact); const row = document.createElement('article'); row.className = 'contact-card contact-directory-row fa-v2-list-row fa-v2-list-row--compact';
   const nameField = document.createElement('div'); nameField.className = 'contact-directory-field contact-directory-name';
   const avatar = document.createElement('span'); avatar.className = 'contact-directory-avatar'; showAvatarFallback(avatar, name);
   const open = document.createElement('a'); open.className = 'contact-directory-open'; open.href = `contatto.html?contact_id=${encodeURIComponent(contact.id)}`;
