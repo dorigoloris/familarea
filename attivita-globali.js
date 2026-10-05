@@ -62,41 +62,43 @@ function activityHierarchyLabel(event, occurrence) {
 
 function createSummaryCard({ title, details, href, fallback, label }) {
   const card = document.createElement('a');
-  card.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   card.href = href;
   card.setAttribute('aria-label', label);
 
-  const image = document.createElement('span');
-  image.className = 'deadline-management-item-image deadline-item-summary-image';
-  image.setAttribute('aria-hidden', 'true');
-  image.textContent = initials(title, fallback);
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = initials(title, fallback);
 
   const heading = document.createElement('h3');
-  heading.className = 'deadline-item-summary-name';
+  heading.className = 'fa-v2-card-title';
   heading.textContent = title;
-  const metadata = document.createElement('span');
-  metadata.className = 'deadline-item-summary-plate';
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  const metadata = document.createElement('div');
+  metadata.className = 'fa-v2-card-description';
   if (typeof details === 'string') metadata.textContent = details;
   else if (details) metadata.append(details);
+  content.append(heading, metadata);
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
   const action = document.createElement('span');
-  action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action';
+  action.className = 'fa-v2-button fa-v2-button--secondary';
   action.textContent = 'Apri';
-  card.append(image, heading, metadata, action);
+  actions.append(action);
+  card.append(visual, content, actions);
   return card;
 }
 
 function activityDetails(event, occurrence) {
-  const details = document.createElement('span');
-  details.className = 'deadline-item-summary-details';
+  const details = document.createElement('div');
   const hierarchy = activityHierarchyLabel(event, occurrence);
   const nextDate = occurrence ? `Prossima data: ${formatWhen(occurrence)}` : 'Prossima data non disponibile';
   const recurrence = recurrenceLabel(event);
 
-  [hierarchy, nextDate, recurrence ? `Ricorrenza: ${recurrence}` : ''].filter(Boolean).forEach((value, index) => {
-    const line = document.createElement('span');
-    line.className = index === 1
-      ? 'deadline-item-summary-meta deadline-item-summary-meta--schedule'
-      : 'deadline-item-summary-meta';
+  [hierarchy, nextDate, recurrence ? `Ricorrenza: ${recurrence}` : ''].filter(Boolean).forEach((value) => {
+    const line = document.createElement('div');
     line.textContent = value;
     details.append(line);
   });

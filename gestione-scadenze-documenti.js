@@ -49,29 +49,35 @@ async function renderDocumentThumbnail(record, image) {
 
 function documentRow(record) {
   const row = document.createElement('a');
-  row.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
+  row.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   row.href = documentHref(record.id);
   row.setAttribute('aria-label', `Apri ${personalDocumentLabels[record.document_type] || 'documento'} di ${holderName(record)}`);
 
   const documentLabel = personalDocumentLabels[record.document_type] || 'Altro documento';
   const image = document.createElement('span');
-  image.className = 'deadline-management-item-image deadline-item-summary-image';
+  image.className = 'fa-v2-card-visual';
   image.setAttribute('aria-hidden', 'true');
   image.textContent = (documentLabel.trim().charAt(0) || 'D').toLocaleUpperCase('it-IT');
   void renderDocumentThumbnail(record, image);
   const title = document.createElement('h2');
-  title.className = 'deadline-item-summary-name';
+  title.className = 'fa-v2-card-title';
   title.textContent = documentLabel;
   const details = document.createElement('span');
-  details.className = 'deadline-item-summary-plate';
+  details.className = 'fa-v2-card-description';
   details.textContent = [
     record.document_number ? `Numero: ${record.document_number}` : '',
     record.expiry_date ? `Scadenza: ${window.FamilAreaDateUtils.formatDateDisplay(record.expiry_date)}` : 'Nessuna scadenza'
   ].filter(Boolean).join(' · ');
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  content.append(title, details);
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
   const action = document.createElement('span');
-  action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action';
+  action.className = 'fa-button fa-button-secondary fa-button-compact';
   action.textContent = 'Apri';
-  row.append(image, title, details, action);
+  actions.append(action);
+  row.append(image, content, actions);
   return row;
 }
 

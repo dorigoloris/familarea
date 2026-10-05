@@ -29,19 +29,24 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   const card = document.createElement('a');
   const href = deadline ? (kind === 'vehicle_service' ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}` : `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`) : itemDeadlineCreateHref(presetTitle, kind);
   card.href = href;
-  card.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
-  const image = document.createElement('span'); image.className = 'deadline-management-item-image deadline-item-summary-image'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  const image = document.createElement('span'); image.className = 'fa-v2-card-visual'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
   if (deadline) void window.FamilAreaAttachmentPreview.renderTargetCardPreview({
     client: deadlineItemClient,
     targetType: 'deadline',
     targetId: deadline.id,
     container: image
   });
-  const type = document.createElement('p'); type.className = 'deadline-item-summary-type'; type.textContent = currentConfiguration?.label || '';
-  const heading = document.createElement('h2'); heading.className = 'deadline-item-summary-name'; heading.textContent = title;
-  const detail = document.createElement('span'); detail.className = 'deadline-item-summary-plate'; detail.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza';
-  const action = document.createElement('span'); action.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
-  card.append(image, type, heading, detail, action);
+  const heading = document.createElement('h2'); heading.className = 'fa-v2-card-title'; heading.textContent = title;
+  const detail = document.createElement('div'); detail.className = 'fa-v2-card-description';
+  const type = document.createElement('div'); type.textContent = currentConfiguration?.label || '';
+  const due = document.createElement('div'); due.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza';
+  detail.append(type, due);
+  const content = document.createElement('div'); content.className = 'fa-v2-card-content'; content.append(heading, detail);
+  const actions = document.createElement('span'); actions.className = 'fa-v2-card-actions';
+  const action = document.createElement('span'); action.className = 'fa-button fa-button-secondary fa-button-compact'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
+  actions.append(action);
+  card.append(image, content, actions);
   return card;
 }
 function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
@@ -53,11 +58,27 @@ function applyHomeV2() {
   document.querySelector('.deadline-management-page')?.classList.add('fa-v2-page', 'fa-v2-page-stack');
   document.getElementById('deadline-item-content')?.classList.add('fa-v2-page-stack');
   deadlineItemMessage.classList.add('fa-v2-status', 'fa-v2-stack-optional');
-  document.querySelector('.deadline-item-hero')?.classList.add('fa-v2-list-row');
+  const hero = document.querySelector('.deadline-item-hero');
+  const createButton = document.getElementById('deadline-item-create');
+  if (hero && createButton) {
+    hero.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
+    const content = document.createElement('div');
+    content.className = 'fa-section-hero-content';
+    const titleRow = document.createElement('div');
+    titleRow.className = 'fa-section-hero-title-row';
+    const title = document.createElement('h1');
+    title.id = 'deadline-item-page-title';
+    title.textContent = currentConfiguration.label;
+    titleRow.append(title, createButton);
+    const description = document.createElement('p');
+    description.textContent = 'Gestisci impianti, tributi e scadenze legate alla tua casa.';
+    content.append(titleRow, description);
+    hero.replaceChildren(content);
+    document.querySelector('.fa-visually-hidden#deadline-item-page-title')?.remove();
+  }
   const deadlinesSection = document.querySelector('.deadline-item-deadlines');
   deadlinesSection?.setAttribute('aria-label', 'Scadenze');
   document.getElementById('deadline-item-deadlines-title')?.remove();
-  const createButton = document.getElementById('deadline-item-create');
   createButton?.classList.remove('fa-button', 'fa-button-secondary', 'fa-button-compact');
   createButton?.classList.add('fa-v2-button', 'fa-v2-button--primary');
 }
@@ -94,10 +115,15 @@ async function loadDeadlineItem() {
     return;
   }
   currentDeadlineItem = data;
-  document.title = `${currentConfiguration.label} - Scadenze - FamilArea`; document.querySelector('.account-back-link a').href = currentConfiguration.backHref; document.getElementById('deadline-item-page-title').textContent = data.name; document.getElementById('deadline-item-title').textContent = data.name;
-  document.getElementById('deadline-item-type').textContent = data.category === 'vehicle' ? (data.item_type === 'car' ? 'Auto' : data.item_type === 'motorcycle' ? 'Moto' : 'Altro') : '';
-  document.getElementById('deadline-item-plate').textContent = data.plate || '';
-  const itemImage = document.getElementById('deadline-item-image'); itemImage.replaceChildren(); itemImage.textContent = (data.name.trim().charAt(0) || 'E').toLocaleUpperCase('it-IT'); itemImage.setAttribute('aria-label', `Foto di ${data.name}`); if (data.image_path) void deadlineItemImageService.render(itemImage, data.image_path, `Foto di ${data.name}`);
+  document.title = `${currentConfiguration.label} - Scadenze - FamilArea`; document.querySelector('.account-back-link a').href = currentConfiguration.backHref; document.getElementById('deadline-item-page-title').textContent = data.category === 'home' ? currentConfiguration.label : data.name;
+  const legacyTitle = document.getElementById('deadline-item-title');
+  const legacyType = document.getElementById('deadline-item-type');
+  const legacyPlate = document.getElementById('deadline-item-plate');
+  const itemImage = document.getElementById('deadline-item-image');
+  if (legacyTitle) legacyTitle.textContent = data.name;
+  if (legacyType) legacyType.textContent = data.category === 'vehicle' ? (data.item_type === 'car' ? 'Auto' : data.item_type === 'motorcycle' ? 'Moto' : 'Altro') : '';
+  if (legacyPlate) legacyPlate.textContent = data.plate || '';
+  if (itemImage) { itemImage.replaceChildren(); itemImage.textContent = (data.name.trim().charAt(0) || 'E').toLocaleUpperCase('it-IT'); itemImage.setAttribute('aria-label', `Foto di ${data.name}`); if (data.image_path) void deadlineItemImageService.render(itemImage, data.image_path, `Foto di ${data.name}`); }
   document.getElementById('deadline-item-image-label').textContent = currentConfiguration.imageLabel; document.getElementById('deadline-item-edit-title').textContent = `Modifica ${currentConfiguration.label.toLocaleLowerCase('it-IT')}`; deadlineItemImageEditor.reset(); void deadlineItemImageEditor.refresh();
   applyHomeV2();
   initialiseHomeAnnualCalendar();

@@ -21,7 +21,8 @@ function renderMethods() {
     const entries = methods
       .filter((method) => methodType(method) === type)
       .map((method) => {
-        const item = document.createElement('li');
+        const item = document.createElement('div');
+        item.className = 'fa-v2-list-row';
         item.textContent = method.value;
         return item;
       });
@@ -35,6 +36,8 @@ function renderInvitation(email) {
   if (!email) return;
 
   const invited = Boolean(contact.registration_invited_at);
+  section.classList.toggle('fa-v2-notice--info', !invited);
+  section.classList.toggle('fa-v2-notice--success', invited);
   $('contact-invite-title').textContent = invited ? 'Invito inviato' : 'Invita in FamilArea';
   $('contact-invite-description').textContent = invited
     ? `Abbiamo inviato un'email a ${email} con l'invito ad iscriversi a FamilArea.`
@@ -42,7 +45,7 @@ function renderInvitation(email) {
   $('send-contact-invite-button').hidden = invited;
   $('send-contact-invite-button').disabled = invited;
   $('contact-invite-feedback').hidden = true;
-  $('contact-invite-feedback').classList.remove('is-error');
+  $('contact-invite-feedback').classList.remove('fa-v2-notice', 'fa-v2-notice--danger');
 }
 
 function render() {
@@ -91,7 +94,7 @@ async function sendInvitation() {
 
   button.disabled = true;
   feedback.hidden = false;
-  feedback.classList.remove('is-error');
+  feedback.classList.remove('fa-v2-notice', 'fa-v2-notice--danger');
   $('contact-invite-status').textContent = 'Invio in corso…';
   $('contact-invite-message').textContent = '';
 
@@ -101,7 +104,7 @@ async function sendInvitation() {
 
   if (error) {
     console.error(error);
-    feedback.classList.add('is-error');
+    feedback.classList.add('fa-v2-notice', 'fa-v2-notice--danger');
     $('contact-invite-status').textContent = 'Non è stato possibile inviare l’invito.';
     $('contact-invite-message').textContent = 'Riprova tra poco.';
     button.disabled = false;

@@ -88,7 +88,7 @@ async function removeVehicle(vehicle) {
 
 function vehicleRow(vehicle) {
   const row = document.createElement('article');
-  row.className = 'deadline-item-summary-card fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-list-row';
+  row.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   row.tabIndex = 0;
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', `Apri veicolo ${vehicle.name}`);
@@ -100,25 +100,31 @@ function vehicleRow(vehicle) {
     openVehicle();
   });
   const image = document.createElement('span');
-  image.className = 'deadline-management-item-image deadline-item-summary-image';
+  image.className = 'fa-v2-card-visual';
   image.setAttribute('aria-label', `Foto di ${vehicle.name}`);
   image.textContent = (vehicle.name.trim().charAt(0) || 'V').toLocaleUpperCase('it-IT');
   if (vehicle.image_path) void vehicleImageService.render(image, vehicle.image_path, `Foto di ${vehicle.name}`);
   const title = document.createElement('h2');
-  title.className = 'deadline-item-summary-name';
+  title.className = 'fa-v2-card-title';
   title.textContent = vehicle.name;
   const plate = document.createElement('span');
-  plate.className = 'deadline-item-summary-plate';
+  plate.className = 'fa-v2-card-description';
   plate.textContent = vehicle.plate || '';
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  content.append(title, plate);
+  const actions = document.createElement('div');
+  actions.className = 'fa-v2-card-actions';
   const edit = document.createElement('button');
-  edit.className = 'fa-button fa-button-secondary fa-button-compact deadline-item-summary-action';
+  edit.className = 'fa-button fa-button-secondary fa-button-compact';
   edit.type = 'button';
   edit.textContent = 'Modifica';
   edit.addEventListener('click', (event) => {
     event.stopPropagation();
     openForm(vehicle);
   });
-  row.append(image, title, plate, edit);
+  actions.append(edit);
+  row.append(image, content, actions);
   return row;
 }
 

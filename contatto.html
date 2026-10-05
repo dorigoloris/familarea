@@ -6,43 +6,44 @@
   <title>Scheda contatto - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="contact-detail-page-view">
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card contact-detail-page fa-page">
-    <p class="contact-back-link"><a href="contatti.html">Torna ai contatti</a></p>
-    <p id="message" aria-live="polite">Caricamento contatto...</p>
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack">
+    <p class="account-back-link"><a href="contatti.html">Torna ai Contatti</a></p>
+    <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento contatto...</p>
 
-    <div id="contact-view" hidden>
-      <header class="contact-detail-header fa-surface" aria-labelledby="contact-name">
-        <div class="contact-detail-heading">
-          <span class="fa-icon-badge contact-detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
-          <div><p class="eyebrow">CONTATTO</p><h1 id="contact-name">Contatto</h1><p id="contact-birth-date" class="contact-birth-date" hidden></p></div>
+    <div id="contact-view" class="fa-v2-page-stack" hidden>
+      <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="contact-name">
+        <div class="fa-section-hero-content">
+          <p class="eyebrow">CONTATTO</p>
+          <div class="fa-section-hero-title-row">
+            <h1 id="contact-name">Contatto</h1>
+            <div class="fa-v2-card-actions"><button id="edit-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica</button><button id="delete-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina contatto</button></div>
+          </div>
+          <p id="contact-birth-date" hidden></p>
         </div>
-        <div class="contact-actions"><button id="edit-button" type="button">Modifica</button><button id="delete-button" type="button" class="member-remove-button">Elimina contatto</button></div>
       </header>
 
-      <div class="contact-methods-grid">
-        <section class="contact-methods-section fa-surface">
-          <div class="contact-methods-heading"><span class="fa-icon-badge contact-method-email-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 6 9 6 9-6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg></span><h2>Email</h2></div>
-          <ul id="email-list" class="contact-method-list"></ul>
-        </section>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="email-heading">
+        <div class="fa-v2-section-heading"><h2 id="email-heading">Email</h2></div>
+        <div id="email-list" class="fa-v2-list" aria-label="Email"></div>
+      </section>
 
-        <section class="contact-methods-section fa-surface">
-          <div class="contact-methods-heading"><span class="fa-icon-badge contact-method-phone-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h4l2 5-3 2c1.4 2.8 2.8 4.2 5.6 5.6l2-3 5 2v4c0 1.1-.9 2-2 2C10.4 20.2 3.8 13.6 3.8 5c0-1.1.9-2 2.2-2Z"/></svg></span><h2>Cellulari</h2></div>
-          <ul id="phone-list" class="contact-method-list"></ul>
-        </section>
-      </div>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="phone-heading">
+        <div class="fa-v2-section-heading"><h2 id="phone-heading">Cellulari</h2></div>
+        <div id="phone-list" class="fa-v2-list" aria-label="Cellulari"></div>
+      </section>
 
-      <section id="contact-invite-section" class="contact-invite-section fa-surface" hidden>
-        <div>
+      <section id="contact-invite-section" class="fa-v2-notice fa-v2-notice--info fa-v2-page-stack" hidden>
+        <div class="fa-v2-section-heading">
           <h2 id="contact-invite-title">Invita in FamilArea</h2>
           <p id="contact-invite-description"></p>
         </div>
-        <div class="contact-invite-actions">
-          <button id="send-contact-invite-button" type="button" class="fa-button fa-button-primary">Invia invito</button>
-          <div id="contact-invite-feedback" class="contact-invite-feedback" hidden aria-live="polite">
+        <div class="fa-v2-card-actions">
+          <button id="send-contact-invite-button" type="button" class="fa-v2-button fa-v2-button--primary">Invia invito</button>
+          <div id="contact-invite-feedback" class="fa-v2-status" hidden aria-live="polite">
             <strong id="contact-invite-status"></strong>
             <p id="contact-invite-message"></p>
           </div>
@@ -50,16 +51,16 @@
       </section>
     </div>
 
-    <form id="edit-form" class="contact-edit-form fa-surface" hidden>
-      <p class="eyebrow">RUBRICA CONTATTI</p><h1>Modifica contatto</h1>
-      <div class="contact-form-grid">
-        <div><label for="edit-first-name">Nome *</label><input id="edit-first-name" type="text" required autocomplete="given-name"></div>
-        <div><label for="edit-last-name">Cognome</label><input id="edit-last-name" type="text" autocomplete="family-name"></div>
-        <div><label for="edit-email">Email</label><input id="edit-email" type="email" autocomplete="email"></div>
-        <div><label for="edit-phone">Cellulare</label><input id="edit-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
-        <div><label for="edit-birth-date">Data di nascita</label><input id="edit-birth-date" type="date"></div>
+    <form id="edit-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-section-heading"><p class="eyebrow">RUBRICA CONTATTI</p><h2>Modifica contatto</h2></div>
+      <div class="fa-v2-page-stack">
+        <label for="edit-first-name">Nome *<input id="edit-first-name" class="fa-v2-input" type="text" required autocomplete="given-name"></label>
+        <label for="edit-last-name">Cognome<input id="edit-last-name" class="fa-v2-input" type="text" autocomplete="family-name"></label>
+        <label for="edit-email">Email<input id="edit-email" class="fa-v2-input" type="email" autocomplete="email"></label>
+        <label for="edit-phone">Cellulare<input id="edit-phone" class="fa-v2-input" type="tel" inputmode="tel" autocomplete="tel"></label>
+        <label for="edit-birth-date">Data di nascita<input id="edit-birth-date" class="fa-v2-input" type="date"></label>
       </div>
-      <div class="form-actions"><button id="edit-save-button" type="submit">Salva modifiche</button><button id="edit-cancel-button" type="button" class="secondary-button">Annulla</button></div>
+      <div class="fa-v2-card-actions"><button id="edit-save-button" class="fa-v2-button fa-v2-button--primary" type="submit">Salva modifiche</button><button id="edit-cancel-button" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button></div>
     </form>
   </main>
 
