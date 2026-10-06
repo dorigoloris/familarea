@@ -15,13 +15,20 @@
     <div id="list-view" class="fa-v2-page-stack" hidden>
       <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="list-title">
         <div class="fa-section-hero-content">
-          <p class="section-kicker" id="area-name">Area</p>
-          <div class="fa-section-hero-title-row"><h1 id="list-title">Lista</h1>
-        <div id="list-actions" class="contact-actions" hidden>
-            <button id="edit-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica lista</button>
-            <button id="share-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Condividi</button>
-            <button id="delete-list-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina lista</button>
-          </div></div>
+          <p class="section-kicker" id="area-name" hidden>Area</p>
+          <div class="fa-v2-card-content">
+            <div class="fa-section-hero-title-row"><h1 id="list-title">Lista</h1>
+              <div id="list-actions" class="contact-actions" hidden>
+                <button id="edit-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Modifica lista</button>
+                <button id="share-list-button" class="fa-v2-button fa-v2-button--secondary" type="button">Condividi</button>
+                <button id="delete-list-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina lista</button>
+              </div>
+            </div>
+            <div id="list-sharing-summary" class="contact-directory-name" hidden>
+              <span id="list-sharing-status" class="fa-v2-status">Personale</span>
+              <div id="list-sharing-avatars" class="fa-v2-card-actions" aria-label="Persone con cui condividi questa lista"></div>
+            </div>
+          </div>
           <p id="list-description" class="list-description" hidden></p>
         </div>
       </header>
@@ -35,7 +42,7 @@
           <label for="list-share-search">Cerca persona</label>
           <input id="list-share-search" class="fa-v2-input" type="search" placeholder="Cerca per nome o cognome" autocomplete="off">
           <p id="list-share-search-status" class="fa-v2-status" aria-live="polite">Inserisci almeno 3 caratteri.</p>
-          <ul id="list-share-search-results" class="fa-v2-list" aria-label="Risultati ricerca"></ul>
+          <ul id="list-share-search-results" class="fa-v2-list" aria-label="Risultati ricerca" hidden></ul>
         </div>
         <div class="fa-v2-page-stack">
           <p class="fa-v2-list-heading">Inviti in attesa</p>

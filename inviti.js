@@ -4,6 +4,7 @@ const pageMessage = document.getElementById('page-message');
 const invitesSection = document.getElementById('invites-section');
 const invitesList = document.getElementById('invites-list');
 const invitesEmpty = document.getElementById('invites-empty');
+const invitesPendingBadge = document.getElementById('invites-pending-badge');
 let pageMessageTimeout;
 const recentlyAcceptedLists = new Map();
 
@@ -197,19 +198,16 @@ function createListInviteCard(invite) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row list-invite-card';
   const details = document.createElement('div');
-  const type = document.createElement('p');
   const title = document.createElement('h3');
   const inviter = document.createElement('p');
   const received = document.createElement('p');
   const status = document.createElement('span');
-  type.className = 'section-kicker';
-  type.textContent = 'Lista';
   title.textContent = invite.list_title || 'Lista FamilArea';
   inviter.textContent = inviteSenderLabel(invite) || 'Invito a collaborare a una lista';
   received.textContent = listInviteCreatedLabel(invite);
   status.className = 'invite-status fa-status-badge invite-status-pending';
   status.textContent = 'In attesa';
-  details.append(type, title, inviter);
+  details.append(title, inviter);
   if (received.textContent) details.append(received);
   details.append(status);
   article.append(details);
@@ -297,6 +295,13 @@ async function loadInvites() {
   const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleSuggestions = (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending');
   const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
+  const pendingCount = visibleAreaInvites.filter((invite) => invite.status === 'pending').length
+    + visibleFamilyInvites.length
+    + visibleEventInvites.length
+    + visibleSuggestions.length
+    + visibleListInvites.length;
+  invitesPendingBadge.hidden = pendingCount === 0;
+  if (pendingCount > 0) invitesPendingBadge.textContent = String(pendingCount);
   const acceptedLists = [...recentlyAcceptedLists.values()];
   invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleListInvites.length + acceptedLists.length > 0;
   acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));

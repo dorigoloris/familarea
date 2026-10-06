@@ -19,6 +19,9 @@ const sharePendingEmpty = document.getElementById('list-share-pending-empty');
 const shareParticipants = document.getElementById('list-share-participants');
 const shareParticipantsEmpty = document.getElementById('list-share-participants-empty');
 const closeShareButton = document.getElementById('close-list-share-button');
+const sharingSummary = document.getElementById('list-sharing-summary');
+const sharingStatus = document.getElementById('list-sharing-status');
+const sharingAvatars = document.getElementById('list-sharing-avatars');
 let list;
 let editable = false;
 let canManageList = false;
@@ -47,6 +50,40 @@ function renderAvatar(avatar, avatarPath, name) {
   });
 }
 
+function personName(person) {
+  return person?.display_name || [person?.first_name, person?.last_name].filter(Boolean).join(' ') || 'Utente FamilArea';
+}
+
+function renderSharingSummary(data) {
+  const participants = data.participants || [];
+  const people = [data.owner, ...participants].filter((person) => person?.account_id && person.account_id !== data.viewer_account_id);
+  const personalList = list.area_id === null;
+  const sharedPersonalList = personalList && participants.length > 0;
+  sharingSummary.hidden = !personalList;
+  sharingStatus.textContent = sharedPersonalList ? 'Condivisa' : 'Personale';
+  sharingAvatars.replaceChildren();
+  if (!sharedPersonalList || people.length === 0) return;
+
+  const visiblePeople = people.slice(0, people.length > 3 ? 2 : 3);
+  visiblePeople.forEach((person) => {
+    const avatar = document.createElement('span');
+    const name = personName(person);
+    avatar.className = 'contact-directory-avatar';
+    avatar.title = name;
+    avatar.setAttribute('aria-label', name);
+    renderAvatar(avatar, person.avatar_path, name);
+    sharingAvatars.appendChild(avatar);
+  });
+  if (people.length > 3) {
+    const remainder = document.createElement('span');
+    remainder.className = 'contact-directory-avatar';
+    remainder.textContent = `+${people.length - 2}`;
+    remainder.title = `${people.length - 2} altre persone`;
+    remainder.setAttribute('aria-label', remainder.title);
+    sharingAvatars.appendChild(remainder);
+  }
+}
+
 function setShareMessage(text = '') {
   shareMessage.textContent = text;
 }
@@ -61,23 +98,28 @@ function shareButton(text, variant, onClick) {
   return button;
 }
 
-function shareRow(person, status, action) {
+function shareRow(person, status, action, compact = false) {
   const row = document.createElement('li');
   const identity = document.createElement('div');
   const avatar = document.createElement('span');
   const name = document.createElement('strong');
   const details = document.createElement('div');
   const actions = document.createElement('div');
-  row.className = 'fa-v2-list-row fa-v2-contact-summary-row';
-  identity.className = 'contact-directory-name';
   avatar.className = 'contact-directory-avatar';
   name.textContent = person.display_name || 'Utente FamilArea';
   renderAvatar(avatar, person.avatar_path, name.textContent);
+  actions.className = 'contact-directory-actions';
+  actions.appendChild(action);
+  if (compact) {
+    row.className = 'fa-v2-list-row fa-v2-list-row--media';
+    row.append(avatar, name, actions);
+    return row;
+  }
+  row.className = 'fa-v2-list-row fa-v2-contact-summary-row';
+  identity.className = 'contact-directory-name';
   identity.append(avatar, name);
   details.className = 'fa-v2-status';
   details.textContent = status;
-  actions.className = 'contact-directory-actions';
-  actions.appendChild(action);
   row.append(identity, details, actions);
   return row;
 }
@@ -86,9 +128,9 @@ function renderShareManagement(data) {
   const pending = data?.pending_invites || [];
   const participants = data?.participants || [];
   const shared = data?.list?.sharing_status === 'shared';
-  shareState.textContent = shared ? 'Condivisa' : 'Privata';
+  shareState.textContent = shared ? 'Condivisa' : 'Personale';
   sharePending.replaceChildren(...pending.map((invite) => shareRow(invite, 'In attesa', shareButton('Revoca', 'secondary', () => { void revokeInvite(invite); }))));
-  shareParticipants.replaceChildren(...participants.map((participant) => shareRow(participant, 'Partecipante', shareButton('Rimuovi', 'danger', () => { void removeParticipant(participant); }))));
+  shareParticipants.replaceChildren(...participants.map((participant) => shareRow(participant, '', shareButton('Rimuovi', 'danger', () => { void removeParticipant(participant); }), true)));
   sharePending.hidden = pending.length === 0;
   shareParticipants.hidden = participants.length === 0;
   sharePendingEmpty.hidden = pending.length > 0;
@@ -110,6 +152,7 @@ async function searchShareAccounts() {
   const query = shareSearch.value.trim();
   const request = ++shareSearchRequest;
   shareSearchResults.replaceChildren();
+  shareSearchResults.hidden = true;
   if (query.length < 3) {
     shareSearchStatus.textContent = 'Inserisci almeno 3 caratteri.';
     return;
@@ -123,6 +166,7 @@ async function searchShareAccounts() {
   }
   const results = data || [];
   shareSearchResults.replaceChildren(...results.map((person) => shareRow(person, '', shareButton('Invita', 'primary', () => { void invitePerson(person); }))));
+  shareSearchResults.hidden = results.length === 0;
   shareSearchStatus.textContent = results.length ? '' : 'Nessuna persona disponibile trovata.';
 }
 
@@ -390,6 +434,11 @@ async function load() {
     return;
   }
   list = data.list;
+  const areaName = document.getElementById('area-name');
+  const isAreaList = Boolean(list.area_id);
+  areaName.hidden = !isAreaList;
+  if (isAreaList) areaName.textContent = 'Area';
+  renderSharingSummary(data);
   editable = data.can_edit_items === true;
   canManageList = data.can_manage_list === true;
   canShareList = canManageList && list.area_id === null;
