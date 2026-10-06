@@ -1342,6 +1342,24 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
   .fa-v2-contact-summary-row{grid-template-columns:1fr}
   .fa-v2-contact-summary-row .contact-directory-actions{grid-column:1;grid-row:2;justify-self:stretch;display:block}
   .fa-v2-contact-summary-row .contact-directory-actions .fa-button{width:100%}
+  .fa-v2-list-surface .list-items > .list-item{
+    grid-template-columns:auto minmax(0,1fr) auto auto;
+    align-items:center;
+    gap:var(--fa-v2-space-1);
+    min-width:0;
+  }
+  .fa-v2-list-surface .list-items > .list-item .list-item-text{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .fa-v2-list-surface .list-items > .list-item .fa-v2-button{
+    min-height:32px;
+    margin:0;
+    padding:0 var(--fa-v2-space-2);
+    font-size:12px;
+  }
 }
 .fa-v2-section-card--dense{padding-block:var(--fa-v2-space-2)}
 .fa-v2-list-heading{
