@@ -398,9 +398,8 @@
   const copyright = document.createElement('p');
   copyright.className = 'shared-site-footer-copyright';
   copyright.textContent = `© ${new Date().getFullYear()} FamilArea`;
-  links.append(document.createTextNode(' · '), copyright);
+  links.appendChild(copyright);
   footer.append(identity, links);
-  body.classList.add('has-shared-footer');
   document.body.appendChild(footer);
 
   if (!areaId) return;

@@ -104,16 +104,21 @@ function shareButton(text, variant, onClick) {
 }
 
 function shareRow(person, status, action, compact = false) {
-  const row = document.createElement('li');
+  const row = document.createElement('div');
   const identity = document.createElement('div');
   const avatar = document.createElement('span');
   const name = document.createElement('strong');
-  const details = document.createElement('div');
   const actions = document.createElement('div');
   avatar.className = 'contact-directory-avatar';
   name.textContent = person.display_name || 'Utente FamilArea';
   renderAvatar(avatar, person.avatar_path, name.textContent);
-  actions.className = 'contact-directory-actions';
+  actions.className = status ? 'fa-v2-card-actions contact-directory-actions' : 'contact-directory-actions';
+  if (status) {
+    const badge = document.createElement('span');
+    badge.className = 'fa-status-badge invite-status-pending';
+    badge.textContent = status;
+    actions.appendChild(badge);
+  }
   actions.appendChild(action);
   if (compact) {
     row.className = 'fa-v2-list-row fa-v2-list-row--media';
@@ -123,9 +128,7 @@ function shareRow(person, status, action, compact = false) {
   row.className = 'fa-v2-list-row fa-v2-contact-summary-row';
   identity.className = 'contact-directory-name';
   identity.append(avatar, name);
-  details.className = 'fa-v2-status';
-  details.textContent = status;
-  row.append(identity, details, actions);
+  row.append(identity, actions);
   return row;
 }
 
@@ -134,7 +137,7 @@ function renderShareManagement(data) {
   const participants = data?.participants || [];
   const shared = data?.list?.sharing_status === 'shared';
   shareState.textContent = shared ? 'Condivisa' : 'Personale';
-  sharePending.replaceChildren(...pending.map((invite) => shareRow(invite, 'In attesa', shareButton('Revoca', 'secondary', () => { void revokeInvite(invite); }))));
+  sharePending.replaceChildren(...pending.map((invite) => shareRow(invite, 'In attesa', shareButton('Revoca', 'secondary', () => { void revokeInvite(invite); }), true)));
   shareParticipants.replaceChildren(...participants.map((participant) => shareRow(participant, '', shareButton('Rimuovi', 'danger', () => { void removeParticipant(participant); }), true)));
   sharePending.hidden = pending.length === 0;
   shareParticipants.hidden = participants.length === 0;
