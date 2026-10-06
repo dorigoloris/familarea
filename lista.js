@@ -5,10 +5,15 @@ const m = document.getElementById('message');
 const itemInput = document.getElementById('item-text');
 const backLink = document.querySelector('.account-back-link > a');
 const editListButton = document.getElementById('edit-list-button');
-const shareListButton = document.getElementById('share-list-button');
 const deleteListButton = document.getElementById('delete-list-button');
 const listActions = document.getElementById('list-actions');
-const sharePanel = document.getElementById('list-share-panel');
+const managementPanel = document.getElementById('list-management-panel');
+const listEditForm = document.getElementById('list-edit-form');
+const listEditTitle = document.getElementById('list-edit-title');
+const listEditDescription = document.getElementById('list-edit-description');
+const saveListButton = document.getElementById('save-list-button');
+const cancelListEditButton = document.getElementById('cancel-list-edit-button');
+const sharingManagement = document.getElementById('list-sharing-management');
 const shareState = document.getElementById('list-share-state');
 const shareMessage = document.getElementById('list-share-message');
 const shareSearch = document.getElementById('list-share-search');
@@ -18,7 +23,6 @@ const sharePending = document.getElementById('list-share-pending');
 const sharePendingEmpty = document.getElementById('list-share-pending-empty');
 const shareParticipants = document.getElementById('list-share-participants');
 const shareParticipantsEmpty = document.getElementById('list-share-participants-empty');
-const closeShareButton = document.getElementById('close-list-share-button');
 const sharingSummary = document.getElementById('list-sharing-summary');
 const sharingStatus = document.getElementById('list-sharing-status');
 const sharingAvatars = document.getElementById('list-sharing-avatars');
@@ -30,6 +34,7 @@ let editingList = false;
 let shareSearchTimer;
 let shareSearchRequest = 0;
 let shareActionPending = false;
+let listDraft;
 
 const back = () => areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
 
@@ -153,8 +158,8 @@ async function searchShareAccounts() {
   const request = ++shareSearchRequest;
   shareSearchResults.replaceChildren();
   shareSearchResults.hidden = true;
-  if (query.length < 3) {
-    shareSearchStatus.textContent = 'Inserisci almeno 3 caratteri.';
+  if (!query) {
+    shareSearchStatus.textContent = '';
     return;
   }
   shareSearchStatus.textContent = 'Ricerca in corso...';
@@ -334,95 +339,89 @@ async function updateItem(x, text, status) {
   return true;
 }
 
-function restoreListHeader() {
+function renderListHeader() {
   const title = document.getElementById('list-title');
   const description = document.getElementById('list-description');
-
+  const note = (list.description || '').trim();
   title.textContent = list.title;
-  title.hidden = false;
-  description.textContent = list.description || '';
-  description.hidden = !list.description;
-  listActions.replaceChildren(editListButton, shareListButton, deleteListButton);
-  editingList = false;
+  description.replaceChildren();
+  if (!note) {
+    description.hidden = true;
+    return;
+  }
+  const label = document.createElement('strong');
+  label.textContent = 'Note:';
+  description.append(label, document.createTextNode(` ${note}`));
+  description.hidden = false;
 }
 
-function beginListEdit() {
-  if (!canManageList || editingList) return;
+function resetListManagement() {
+  listEditTitle.value = list.title;
+  listEditDescription.value = list.description || '';
+  listEditTitle.setCustomValidity('');
+}
 
-  const title = document.getElementById('list-title');
-  const description = document.getElementById('list-description');
-  const titleInput = document.createElement('input');
-  const descriptionInput = document.createElement('textarea');
-  const save = document.createElement('button');
-  const cancel = document.createElement('button');
-  const header = title.closest('header');
-
-  titleInput.type = 'text';
-  titleInput.value = list.title;
-  titleInput.required = true;
-  titleInput.className = 'fa-v2-input';
-  titleInput.setAttribute('aria-label', 'Titolo lista');
-  descriptionInput.value = list.description || '';
-  descriptionInput.className = 'fa-v2-textarea';
-  descriptionInput.setAttribute('aria-label', 'Descrizione lista');
-  save.type = 'button';
-  save.textContent = 'Salva modifiche';
-  save.className = 'fa-v2-button fa-v2-button--primary';
-  cancel.type = 'button';
-  cancel.textContent = 'Annulla';
-  cancel.className = 'fa-v2-button fa-v2-button--secondary';
-  const listDraft = FamilAreaUnsavedChanges.register({
-    root: header,
-    getState: () => ({ title: titleInput.value, description: descriptionInput.value }),
-    isActive: () => editingList,
-    onDiscard: () => cancel.click()
-  });
-
-  const saveList = async () => {
-    const titleValue = titleInput.value.trim();
-    if (!titleValue) {
-      titleInput.setCustomValidity('Inserisci un titolo per la lista.');
-      titleInput.reportValidity();
-      return;
-    }
-    titleInput.setCustomValidity('');
-    const { data, error } = await c.rpc('update_list', {
-      p_list_id: listId,
-      p_title: titleValue,
-      p_description: descriptionInput.value.trim() || null
-    });
-    if (error || !data) {
-      m.hidden = false;
-      m.textContent = 'Impossibile aggiornare la lista.';
-      return;
-    }
-    list = data;
-    m.textContent = '';
-    m.hidden = true;
-    FamilAreaUnsavedChanges.markSaved(listDraft);
-    titleInput.remove();
-    descriptionInput.remove();
-    restoreListHeader();
-    FamilAreaUnsavedChanges.dispose(listDraft);
-  };
-
-  title.hidden = true;
-  description.hidden = true;
-  title.after(titleInput);
-  description.after(descriptionInput);
-  listActions.replaceChildren(save, cancel);
-  editingList = true;
-  titleInput.focus();
-  titleInput.select();
-  titleInput.oninput = () => titleInput.setCustomValidity('');
-  save.onclick = saveList;
-  cancel.onclick = () => {
-    titleInput.remove();
-    descriptionInput.remove();
-    restoreListHeader();
+function closeListManagement() {
+  managementPanel.hidden = true;
+  editingList = false;
+  shareSearch.value = '';
+  shareSearchResults.replaceChildren();
+  shareSearchResults.hidden = true;
+  shareSearchStatus.textContent = '';
+  shareSearchRequest += 1;
+  if (listDraft) {
     FamilAreaUnsavedChanges.reset(listDraft);
     FamilAreaUnsavedChanges.dispose(listDraft);
-  };
+    listDraft = undefined;
+  }
+  editListButton.focus();
+}
+
+async function openListManagement() {
+  if (!canManageList || editingList) return;
+  editingList = true;
+  resetListManagement();
+  managementPanel.hidden = false;
+  sharingManagement.hidden = !canShareList;
+  listDraft = FamilAreaUnsavedChanges.register({
+    root: managementPanel,
+    getState: () => ({ title: listEditTitle.value, description: listEditDescription.value }),
+    isActive: () => editingList,
+    onDiscard: closeListManagement
+  });
+  listEditTitle.focus();
+  listEditTitle.select();
+  if (canShareList) {
+    setShareMessage('');
+    await loadShareManagement();
+  }
+}
+
+async function saveListManagement() {
+  if (!listEditForm.reportValidity()) return;
+  const titleValue = listEditTitle.value.trim();
+  if (!titleValue) {
+    listEditTitle.setCustomValidity('Inserisci un titolo per la lista.');
+    listEditTitle.reportValidity();
+    return;
+  }
+  listEditTitle.setCustomValidity('');
+  const { data, error } = await c.rpc('update_list', {
+    p_list_id: listId,
+    p_title: titleValue,
+    p_description: listEditDescription.value.trim() || null
+  });
+  if (error || !data) {
+    m.hidden = false;
+    m.textContent = 'Impossibile aggiornare la lista.';
+    return;
+  }
+  list = data;
+  renderListHeader();
+  m.textContent = '';
+  m.hidden = true;
+  FamilAreaUnsavedChanges.markSaved(listDraft);
+  closeListManagement();
 }
 
 async function load() {
@@ -443,13 +442,10 @@ async function load() {
   canManageList = data.can_manage_list === true;
   canShareList = canManageList && list.area_id === null;
   backLink.href = back();
-  document.getElementById('list-title').textContent = list.title;
-  const description = document.getElementById('list-description');
-  description.textContent = list.description || '';
-  description.hidden = !list.description;
+  renderListHeader();
   listActions.hidden = !canManageList;
-  shareListButton.hidden = !canShareList;
-  if (!canShareList) sharePanel.hidden = true;
+  sharingManagement.hidden = !canShareList;
+  if (!canManageList) managementPanel.hidden = true;
   document.getElementById('add-item-form').hidden = !editable;
   document.getElementById('items-list').replaceChildren(...(data.items || []).map(row));
   document.getElementById('list-view').hidden = false;
@@ -472,32 +468,27 @@ document.getElementById('add-item-form').onsubmit = async (e) => {
 };
 
 editListButton.onclick = () => {
-  FamilAreaUnsavedChanges.attempt(beginListEdit, { discardActive: true });
+  FamilAreaUnsavedChanges.attempt(() => { void openListManagement(); }, { discardActive: true });
 };
 
-deleteListButton.onclick = async () => {
+async function deleteList() {
   if (canManageList && await FamilAreaConfirm.confirm({ variant: 'danger', title: 'Eliminare la lista?', message: 'La lista verrà eliminata definitivamente.', confirmText: 'Elimina' })) {
     await c.rpc('delete_list', { p_list_id: listId });
     location.href = back();
   }
+}
+
+deleteListButton.onclick = () => {
+  FamilAreaUnsavedChanges.attempt(() => { void deleteList(); }, { discardActive: true });
 };
 
-shareListButton.onclick = async () => {
-  if (!canShareList) return;
-  sharePanel.hidden = false;
-  setShareMessage('');
-  shareSearch.focus();
-  await loadShareManagement();
+listEditForm.onsubmit = (event) => {
+  event.preventDefault();
+  void saveListManagement();
 };
-
-closeShareButton.onclick = () => {
-  sharePanel.hidden = true;
-  shareSearch.value = '';
-  shareSearchResults.replaceChildren();
-  shareSearchStatus.textContent = 'Inserisci almeno 3 caratteri.';
-  shareSearchRequest += 1;
-  shareListButton.focus();
-};
+saveListButton.onclick = () => { void saveListManagement(); };
+cancelListEditButton.onclick = closeListManagement;
+listEditTitle.oninput = () => listEditTitle.setCustomValidity('');
 
 shareSearch.oninput = () => {
   window.clearTimeout(shareSearchTimer);
