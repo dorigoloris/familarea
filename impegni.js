@@ -12,6 +12,9 @@ function formatDate(value) {
 function formatEventWhen(event) {
   const start = new Date(event.starts_at);
   const date = start.toLocaleDateString('it-IT');
+  if (event.ends_at && formatDate(event.starts_at) !== formatDate(event.ends_at)) {
+    return `${date} → ${formatDate(event.ends_at)}`;
+  }
   if (event.is_all_day) return date;
   const startTime = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   const endTime = event.ends_at
@@ -61,13 +64,10 @@ function standaloneDeadlineCard(deadline) {
 }
 
 function commitmentEventCard(event) {
-  const isMultiDay = Boolean(event.ends_at) && formatDate(event.starts_at) !== formatDate(event.ends_at);
   return createCommitmentRow({
     title: event.title,
-    when: isMultiDay
-      ? `${formatDate(event.starts_at)} → ${formatDate(event.ends_at)}`
-      : formatEventWhen(event),
-    detail: isMultiDay ? 'Più giorni' : 'Appuntamento',
+    when: formatEventWhen(event),
+    detail: 'Impegno',
     href: `evento.html?event_id=${encodeURIComponent(event.id || event.event_id)}`,
     label: `Apri impegno ${event.title}`
   });
@@ -90,6 +90,8 @@ async function loadCommitments() {
     return;
   }
 
+  // Le deadline storiche restano visibili finché non verranno trattate separatamente.
+  // Nuovi Impegni sono invece sempre eventi con event_kind = commitment.
   const standaloneDeadlines = (deadlinesResult.data || []).filter((deadline) => (
     !deadline.deadline_item_id
     && !deadline.family_member_id

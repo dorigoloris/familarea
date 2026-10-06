@@ -83,7 +83,7 @@ function createInterestChip(interest) {
 
 function createCustomInterestForm(group) {
   const form = document.createElement('form');
-  form.className = 'interest-custom-form';
+  form.className = 'interest-custom-form fa-v2-form-card fa-v2-card';
   form.hidden = true;
   const label = document.createElement('label');
   const inputId = `interest-name-${group.id}`;
@@ -91,21 +91,22 @@ function createCustomInterestForm(group) {
   label.textContent = 'Nome interesse';
   const input = document.createElement('input');
   input.id = inputId;
+  input.className = 'fa-v2-input';
   input.type = 'text';
   input.maxLength = 120;
   input.autocomplete = 'off';
   input.required = true;
   input.placeholder = 'Es. Sci alpinismo';
   const actions = document.createElement('div');
-  actions.className = 'interest-custom-actions';
+  actions.className = 'interest-custom-actions fa-v2-card-actions';
   const cancel = document.createElement('button');
   cancel.type = 'button';
-  cancel.className = 'fa-button fa-button-secondary fa-button-compact';
+  cancel.className = 'fa-v2-button fa-v2-button--secondary';
   cancel.textContent = 'Annulla';
   cancel.addEventListener('click', () => { form.hidden = true; input.value = ''; });
   const submit = document.createElement('button');
   submit.type = 'submit';
-  submit.className = 'fa-button fa-button-primary fa-button-compact';
+  submit.className = 'fa-v2-button fa-v2-button--primary';
   submit.textContent = 'Aggiungi';
   actions.append(cancel, submit);
   form.append(label, input, actions);
@@ -140,7 +141,7 @@ function createCategory(group) {
   group.selected.filter((interest) => !catalogIds.has(interest.interest_id)).forEach((interest) => chips.appendChild(createInterestChip(interest)));
   const addButton = document.createElement('button');
   addButton.type = 'button';
-  addButton.className = 'fa-button fa-button-compact fa-action-primary fa-action-primary--compact';
+  addButton.className = 'fa-v2-button fa-v2-button--primary';
   addButton.textContent = '+ Aggiungi interesse';
   const { form, input } = createCustomInterestForm(group);
   addButton.addEventListener('click', () => { form.hidden = false; input.focus(); });

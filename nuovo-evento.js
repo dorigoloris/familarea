@@ -2,7 +2,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const eventQuery = new URLSearchParams(location.search);
 const areaId = eventQuery.get('area_id');
 const eventKind = eventQuery.get('event_kind') === 'commitment' ? 'commitment' : null;
-const commitmentMode = eventQuery.get('commitment_mode');
 const form = document.getElementById('event-form');
 const backLink = document.getElementById('back-link');
 const message = document.getElementById('message');
@@ -20,9 +19,56 @@ const endDateField = document.getElementById('end-date-field');
 const endSection = document.getElementById('event-end-section');
 const endDates = document.getElementById('event-end-dates');
 let isPersonalAccount = false;
+let commitmentRecurrenceWeekdaysEdited = false;
 
-function isCommitmentMultiDay() {
-  return commitmentMode === 'multiday' || commitmentMode === 'multi-day';
+function commitmentWhen() {
+  return document.querySelector('input[name="commitment-when"]:checked')?.value || 'date';
+}
+
+function syncCommitmentWhenLayout() {
+  if (eventKind !== 'commitment') return;
+  const mode = commitmentWhen();
+  const isPeriod = mode === 'period';
+  const isTimed = mode === 'date-time' || isPeriod;
+  startDateInput.closest('div').querySelector('label').textContent = isPeriod ? 'Data inizio' : 'Data';
+  startTimeField.hidden = !isTimed;
+  endDateField.hidden = !isPeriod;
+  endTimeField.hidden = !isTimed;
+  endSection.hidden = !isTimed;
+  endDates.classList.toggle('is-multi-day', isPeriod);
+  endDates.classList.toggle('is-all-day', !isTimed);
+  allDayInput.checked = mode === 'date';
+  multiDayInput.checked = isPeriod;
+  if (isPeriod && !endDateInput.value) endDateInput.value = startDateInput.value;
+}
+
+function buildCommitmentInterval() {
+  const mode = commitmentWhen();
+  const startDate = startDateInput.value;
+  const startTime = startTimeInput.value;
+  const endDate = endDateInput.value;
+  const endTime = endTimeInput.value;
+  if (!startDate) throw new Error('Indica la data dell’impegno.');
+
+  if (mode === 'date') {
+    const startsAt = localIso(startDate);
+    return { startsAt, endsAt: startsAt, allDay: true };
+  }
+  if (mode === 'date-time') {
+    if (!startTime) throw new Error('Indica l’ora di inizio.');
+    const startsAt = localIso(startDate, startTime);
+    const endsAt = endTime ? localIso(startDate, endTime) : null;
+    if (endsAt && new Date(endsAt) <= new Date(startsAt)) throw new Error('L’ora di fine deve essere successiva all’inizio.');
+    return { startsAt, endsAt, allDay: false };
+  }
+
+  if (!endDate) throw new Error('Indica la data di fine.');
+  if (endDate <= startDate) throw new Error('La data di fine deve essere successiva alla data di inizio.');
+  if (!startTime && endTime) throw new Error('Indica prima l’ora di inizio.');
+  if (!startTime) return { startsAt: localIso(startDate), endsAt: localIso(endDate), allDay: true };
+  const startsAt = localIso(startDate, startTime);
+  const endsAt = localIso(endDate, endTime || startTime);
+  return { startsAt, endsAt, allDay: false };
 }
 
 function hideElement(selector) {
@@ -34,10 +80,8 @@ function configureCommitmentV2() {
 
   const page = document.querySelector('main.page-card');
   const legacyTitle = page.querySelector('h1');
-  const heading = isCommitmentMultiDay() ? 'Nuovo impegno' : 'Nuovo appuntamento';
-  const description = isCommitmentMultiDay()
-    ? 'Inserisci le date di inizio e fine del tuo impegno.'
-    : 'Inserisci data e orario del tuo appuntamento.';
+  const heading = 'Nuovo impegno';
+  const description = 'Scegli quando pianificare il tuo impegno.';
   const header = document.createElement('header');
   const headerContent = document.createElement('div');
   const title = document.createElement('h1');
@@ -54,7 +98,7 @@ function configureCommitmentV2() {
   });
   const submit = form.querySelector('[type="submit"]');
   submit?.classList.add('fa-v2-button', 'fa-v2-button--primary');
-  if (submit) submit.textContent = isCommitmentMultiDay() ? 'Crea impegno' : 'Crea appuntamento';
+  if (submit) submit.textContent = 'Crea impegno';
   form.querySelectorAll('br').forEach((element) => { element.hidden = true; });
 
   header.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
@@ -67,9 +111,8 @@ function configureCommitmentV2() {
   legacyTitle?.remove();
 
   hideElement('.event-interests-fieldset');
-  const optionGroups = [...document.querySelectorAll('.event-form-options')];
-  optionGroups.forEach((element) => { element.hidden = true; });
-  hideElement('#recurrence-fields');
+  document.getElementById('commitment-when-fieldset').hidden = false;
+  allDayInput.closest('.event-form-options').hidden = true;
   hideElement('#calendar-private-fieldset');
   hideElement('#calendar-private-spacing');
   hideElement('label[for="location"]');
@@ -78,18 +121,7 @@ function configureCommitmentV2() {
   hideElement('#event-end-heading');
   document.getElementById('recurrence-enabled').checked = false;
 
-  if (isCommitmentMultiDay()) {
-    optionGroups[0].hidden = false;
-    multiDayInput.closest('label').hidden = true;
-    multiDayInput.checked = true;
-    allDayInput.checked = true;
-    allDayInput.disabled = true;
-    startTimeInput.required = false;
-  } else {
-    multiDayInput.checked = false;
-    allDayInput.checked = false;
-    startTimeInput.required = true;
-  }
+  syncCommitmentWhenLayout();
 }
 
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
@@ -146,7 +178,16 @@ function selectInitialWeekday() {
   }
 }
 
+function syncCommitmentRecurrenceWeekday() {
+  if (eventKind !== 'commitment' || commitmentRecurrenceWeekdaysEdited || !startDateInput.value) return;
+  const initialDay = localIsoWeekday(startDateInput.value);
+  document.querySelectorAll('input[name="recurrence-weekday"]').forEach((input) => {
+    input.checked = Number(input.value) === initialDay;
+  });
+}
+
 function buildInterval() {
+  if (eventKind === 'commitment') return buildCommitmentInterval();
   const startDate = startDateInput.value;
   const startTime = startTimeInput.value;
   const endDate = multiDayInput.checked ? endDateInput.value : startDate;
@@ -202,7 +243,8 @@ async function load() {
   privateFieldset.hidden = eventKind === 'commitment' || !isPersonalAccount || Boolean(areaId);
   document.getElementById('calendar-private-spacing').hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
-  syncMultiDayLayout();
+  if (eventKind === 'commitment') syncCommitmentWhenLayout();
+  else syncMultiDayLayout();
   syncRecurrenceEndMode();
   form.hidden = false;
   message.textContent = '';
@@ -210,7 +252,10 @@ async function load() {
 
 document.getElementById('recurrence-enabled').addEventListener('change', (event) => {
   document.getElementById('recurrence-fields').hidden = !event.target.checked;
-  if (event.target.checked) selectInitialWeekday();
+  if (event.target.checked) {
+    if (eventKind === 'commitment') syncCommitmentRecurrenceWeekday();
+    else selectInitialWeekday();
+  }
   setRecurrenceError();
 });
 document.querySelectorAll('input[name="recurrence-end-mode"]').forEach((input) => input.addEventListener('change', () => {
@@ -219,12 +264,22 @@ document.querySelectorAll('input[name="recurrence-end-mode"]').forEach((input) =
 }));
 document.getElementById('recurrence-interval').addEventListener('input', () => setRecurrenceError());
 document.getElementById('recurrence-until').addEventListener('input', () => setRecurrenceError());
-document.querySelectorAll('input[name="recurrence-weekday"]').forEach((input) => input.addEventListener('change', () => setRecurrenceError()));
+document.querySelectorAll('input[name="recurrence-weekday"]').forEach((input) => input.addEventListener('change', () => {
+  if (eventKind === 'commitment' && document.getElementById('recurrence-enabled').checked) {
+    commitmentRecurrenceWeekdaysEdited = true;
+  }
+  setRecurrenceError();
+}));
 multiDayInput.addEventListener('change', syncMultiDayLayout);
 allDayInput.addEventListener('change', syncMultiDayLayout);
+document.querySelectorAll('input[name="commitment-when"]').forEach((input) => input.addEventListener('change', syncCommitmentWhenLayout));
 startDateInput.addEventListener('change', () => {
   if (multiDayInput.checked && !endDateInput.value) endDateInput.value = startDateInput.value;
-  selectInitialWeekday();
+  if (eventKind === 'commitment' && document.getElementById('recurrence-enabled').checked) {
+    syncCommitmentRecurrenceWeekday();
+  } else {
+    selectInitialWeekday();
+  }
 });
 startDateInput.addEventListener('keydown', focusOnEnter(() => allDayInput.checked ? (multiDayInput.checked ? endDateInput : null) : startTimeInput));
 startTimeInput.addEventListener('keydown', focusOnEnter(() => multiDayInput.checked ? endDateInput : endTimeInput));
@@ -269,7 +324,7 @@ form.addEventListener('submit', async (event) => {
     : window.FamilAreaEventInterests.selectedIds(eventInterestsSelector);
   const { data, error } = await supabaseClient.rpc('create_event_with_interests', payload);
   submit.disabled = false;
-  if (error || !data) { message.textContent = 'Impossibile creare l’evento.'; return; }
+  if (error || !data) { message.textContent = eventKind === 'commitment' ? 'Impossibile creare l’impegno.' : 'Impossibile creare l’evento.'; return; }
   if (eventKind === 'commitment') {
     location.href = 'impegni.html';
     return;

@@ -13,22 +13,14 @@
     <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="commitments-title">
       <div class="fa-section-hero-content">
         <h1 id="commitments-title">Impegni</h1>
-        <p>Organizza ci&ograve; che devi ricordare, gli appuntamenti e gli impegni che occupano uno o pi&ugrave; giorni.</p>
+        <p>Organizza i tuoi impegni scegliendo una data, data e ora oppure un periodo.</p>
       </div>
     </header>
 
     <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-list fa-v2-card fa-v2-card-grid--two" aria-label="Nuovo impegno">
-      <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuova-scadenza.html?mode=single&amp;context=commitment">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">R</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Da ricordare</h3><p>Per una data o una cosa da non dimenticare.</p></span>
-      </a>
-      <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuovo-evento.html?event_kind=commitment&amp;commitment_mode=appointment">
-        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">A</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Appuntamento</h3><p>Per un impegno con data e orario.</p></span>
-      </a>
-      <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuovo-evento.html?event_kind=commitment&amp;commitment_mode=multi-day">
+      <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuovo-evento.html?event_kind=commitment">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">+</span>
-        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Pi&ugrave; giorni</h3><p>Per viaggi, trasferte, tornei o altri impegni con inizio e fine.</p></span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Nuovo impegno</h3><p>Scegli una data, data e ora oppure un periodo.</p></span>
       </a>
       <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="liste.html">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">L</span>
@@ -43,7 +35,7 @@
       </div>
       <p id="commitments-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento impegni...</p>
       <div id="commitments-list" class="fa-v2-list" aria-label="I miei impegni"></div>
-      <p id="commitments-empty" class="fa-v2-empty-state" hidden><strong>Nessun impegno ancora.</strong><span>Usa una delle modalit&agrave; qui sopra per aggiungere il primo.</span></p>
+      <p id="commitments-empty" class="fa-v2-empty-state" hidden><strong>Nessun impegno ancora.</strong><span>Usa Nuovo impegno per aggiungere il primo.</span></p>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

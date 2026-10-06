@@ -140,6 +140,77 @@ function editElements() {
   };
 }
 
+function isCommitmentEvent() {
+  return eventData?.event_kind === 'commitment';
+}
+
+function commitmentWhenFromEvent() {
+  if (eventData.ends_at && localDate(eventData.starts_at) !== localDate(eventData.ends_at)) return 'period';
+  return eventData.is_all_day ? 'date' : 'date-time';
+}
+
+function editCommitmentWhen() {
+  return document.querySelector('input[name="edit-commitment-when"]:checked')?.value || 'date';
+}
+
+function syncCommitmentEditLayout() {
+  if (!isCommitmentEvent()) return;
+  const fields = editElements();
+  const mode = editCommitmentWhen();
+  const isPeriod = mode === 'period';
+  const isTimed = mode === 'date-time' || isPeriod;
+  document.getElementById('edit-date-label').textContent = isPeriod ? 'Data inizio' : 'Data';
+  fields.startTimeField.hidden = !isTimed;
+  fields.endDateField.hidden = !isPeriod;
+  fields.endTimeField.hidden = !isTimed;
+  fields.endSection.hidden = !isTimed;
+  fields.endDates.classList.toggle('is-multi-day', isPeriod);
+  fields.endDates.classList.toggle('is-all-day', !isTimed);
+  fields.allDay.checked = mode === 'date';
+  fields.multiDay.checked = isPeriod;
+  if (isPeriod && !fields.endDate.value) fields.endDate.value = fields.date.value;
+}
+
+function buildCommitmentEditInterval() {
+  const fields = editElements();
+  const mode = editCommitmentWhen();
+  const startDate = fields.date.value;
+  const startTime = fields.start.value;
+  const endDate = fields.endDate.value;
+  const endTime = fields.end.value;
+  if (!startDate) throw new Error('Indica la data dell’impegno.');
+  if (mode === 'date') {
+    const startsAt = localIso(startDate);
+    return { startsAt, endsAt: startsAt, allDay: true };
+  }
+  if (mode === 'date-time') {
+    if (!startTime) throw new Error('Indica l’ora di inizio.');
+    const startsAt = localIso(startDate, startTime);
+    const endsAt = endTime ? localIso(startDate, endTime) : null;
+    if (endsAt && new Date(endsAt) <= new Date(startsAt)) throw new Error('L’ora di fine deve essere successiva all’inizio.');
+    return { startsAt, endsAt, allDay: false };
+  }
+  if (!endDate) throw new Error('Indica la data di fine.');
+  if (endDate <= startDate) throw new Error('La data di fine deve essere successiva alla data di inizio.');
+  if (!startTime && endTime) throw new Error('Indica prima l’ora di inizio.');
+  if (!startTime) return { startsAt: localIso(startDate), endsAt: localIso(endDate), allDay: true };
+  return { startsAt: localIso(startDate, startTime), endsAt: localIso(endDate, endTime || startTime), allDay: false };
+}
+
+function configureCommitmentEditForm() {
+  const form = document.getElementById('edit-form');
+  const isCommitment = isCommitmentEvent();
+  document.getElementById('edit-commitment-when-fieldset').hidden = !isCommitment;
+  if (!isCommitment) return;
+  form.querySelector('.fa-v2-section-heading h2').textContent = 'Modifica impegno';
+  form.querySelector('.event-interests-fieldset').hidden = true;
+  document.getElementById('edit-all-day').closest('.event-form-options').hidden = true;
+  document.querySelector('label[for="edit-location"]').parentElement.hidden = true;
+  document.getElementById('edit-calendar-private-fieldset').hidden = true;
+  document.getElementById('edit-calendar-private-spacing').hidden = true;
+  syncCommitmentEditLayout();
+}
+
 function syncEditMultiDayLayout() {
   const fields = editElements();
   const multiDay = fields.multiDay.checked;
@@ -167,6 +238,7 @@ function selectInitialEditWeekday() {
 }
 
 function buildEditInterval() {
+  if (isCommitmentEvent()) return buildCommitmentEditInterval();
   const fields = editElements();
   const startDate = fields.date.value;
   const startTime = fields.start.value;
@@ -278,10 +350,6 @@ async function load() {
     return;
   }
 
-  document.getElementById('event-back').href = isArea
-    ? `eventi.html?area_id=${encodeURIComponent(areaId)}`
-    : cameFromSuggestion ? 'proposte.html' : 'eventi.html';
-  document.getElementById('event-back').textContent = isArea ? 'Torna al programma' : 'Torna agli eventi';
   const [{ data: event, error }, { data: account }] = await Promise.all([
     supabaseClient.rpc('get_event', { p_event_id: eventId }),
     supabaseClient.rpc('get_current_account')
@@ -293,6 +361,11 @@ async function load() {
   eventData = event;
   canManage = event.can_manage === true;
   isPersonalAccount = account?.account_type === 'personal';
+  const isCommitment = isCommitmentEvent();
+  document.getElementById('event-back').href = isCommitment
+    ? 'impegni.html'
+    : isArea ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : cameFromSuggestion ? 'proposte.html' : 'eventi.html';
+  document.getElementById('event-back').textContent = isCommitment ? 'Torna agli Impegni' : isArea ? 'Torna al programma' : 'Torna agli eventi';
   await render();
 }
 
@@ -309,23 +382,29 @@ async function openEdit() {
   document.getElementById('edit-all-day').checked = Boolean(eventData.is_all_day);
   document.getElementById('edit-multi-day').checked = Boolean(eventData.ends_at) && localDate(eventData.starts_at) !== localDate(eventData.ends_at);
   document.getElementById('edit-end-date').value = eventData.ends_at ? localDate(eventData.ends_at) : localDate(eventData.starts_at);
-  syncEditMultiDayLayout();
+  document.querySelector(`input[name="edit-commitment-when"][value="${commitmentWhenFromEvent()}"]`).checked = true;
+  if (isCommitmentEvent()) configureCommitmentEditForm();
+  else syncEditMultiDayLayout();
   document.getElementById('edit-location').value = eventData.location || '';
   const interestMessage = document.getElementById('edit-event-interests-message');
-  try {
-    const [categories, selectedInterests] = await Promise.all([
-      window.FamilAreaEventInterests.loadCatalog(),
-      window.FamilAreaEventInterests.loadEventTags(eventId)
-    ]);
-    window.FamilAreaEventInterests.renderSelector(
-      document.getElementById('edit-event-interests-selector'),
-      categories,
-      selectedInterests.map((interest) => interest.interest_id)
-    );
+  if (isCommitmentEvent()) {
     editInterestsLoaded = true;
-    interestMessage.hidden = true;
-  } catch (_) {
-    interestMessage.textContent = 'Non è stato possibile caricare gli Interessi dell’Evento.';
+  } else {
+    try {
+      const [categories, selectedInterests] = await Promise.all([
+        window.FamilAreaEventInterests.loadCatalog(),
+        window.FamilAreaEventInterests.loadEventTags(eventId)
+      ]);
+      window.FamilAreaEventInterests.renderSelector(
+        document.getElementById('edit-event-interests-selector'),
+        categories,
+        selectedInterests.map((interest) => interest.interest_id)
+      );
+      editInterestsLoaded = true;
+      interestMessage.hidden = true;
+    } catch (_) {
+      interestMessage.textContent = 'Non è stato possibile caricare gli Interessi dell’Evento.';
+    }
   }
   document.getElementById('edit-recurrence-enabled').checked = Boolean(recurrence.frequency);
   document.getElementById('edit-recurrence-fields').hidden = !recurrence.frequency;
@@ -392,6 +471,7 @@ document.getElementById('edit-recurrence-until').addEventListener('input', () =>
 document.querySelectorAll('input[name="edit-recurrence-weekday"]').forEach((input) => input.addEventListener('change', () => setEditRecurrenceError()));
 document.getElementById('edit-multi-day').addEventListener('change', syncEditMultiDayLayout);
 document.getElementById('edit-all-day').addEventListener('change', syncEditMultiDayLayout);
+document.querySelectorAll('input[name="edit-commitment-when"]').forEach((input) => input.addEventListener('change', syncCommitmentEditLayout));
 document.getElementById('edit-date').addEventListener('change', () => {
   const fields = editElements();
   if (fields.multiDay.checked && !fields.endDate.value) fields.endDate.value = fields.date.value;

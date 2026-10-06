@@ -6,58 +6,59 @@
   <title>Le mie impostazioni - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="account-page preferences-page-body">
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card account-page-shell preferences-page">
-    <header class="account-page-heading">
-      <span class="account-heading-icon account-heading-icon-settings" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5.3v-3h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3h-.2a1.7 1.7 0 0 0-1.5 1Z"></path></svg></span>
-      <div><h1>Le mie impostazioni</h1><p>Personalizza il funzionamento di FamilArea.</p></div>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="settings-title">
+      <div class="fa-section-hero-content"><p class="eyebrow">ACCOUNT</p><h1 id="settings-title">Le mie impostazioni</h1><p>Personalizza il funzionamento di FamilArea.</p></div>
     </header>
-    <section class="settings-card" aria-labelledby="preferences-title">
-    <h2 id="preferences-title">Preferenze</h2>
-    <p id="preferences-message" class="preferences-message" aria-live="polite">Caricamento impostazioni...</p>
-    <form id="preferences-form" hidden>
-      <div><label for="preference-language">Lingua</label><br><select id="preference-language"><option value="it">Italiano</option></select></div>
-      <div><label for="preference-date-format">Formato data</label><br><select id="preference-date-format"><option value="DD/MM/YYYY">31/12/2026</option><option value="YYYY-MM-DD">2026-12-31</option><option value="MM/DD/YYYY">12/31/2026</option></select></div>
-      <div><label for="preference-week-start">Primo giorno della settimana</label><br><select id="preference-week-start"><option value="1">Lunedì</option><option value="0">Domenica</option><option value="2">Martedì</option><option value="3">Mercoledì</option><option value="4">Giovedì</option><option value="5">Venerdì</option><option value="6">Sabato</option></select></div>
-      <div class="form-actions"><button id="preferences-save-button" type="submit">Salva impostazioni</button></div>
-    </form>
+    <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="preferences-title">
+      <div class="fa-v2-section-heading">
+        <h2 id="preferences-title">Preferenze</h2>
+      </div>
+      <p id="preferences-message" class="preferences-message fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento impostazioni...</p>
+      <form id="preferences-form" class="fa-v2-page-stack" hidden>
+      <div><label for="preference-language">Lingua</label><select id="preference-language" class="fa-v2-select"><option value="it">Italiano</option></select></div>
+      <div><label for="preference-date-format">Formato data</label><select id="preference-date-format" class="fa-v2-select"><option value="DD/MM/YYYY">31/12/2026</option><option value="YYYY-MM-DD">2026-12-31</option><option value="MM/DD/YYYY">12/31/2026</option></select></div>
+      <div><label for="preference-week-start">Primo giorno della settimana</label><select id="preference-week-start" class="fa-v2-select"><option value="1">Lunedì</option><option value="0">Domenica</option><option value="2">Martedì</option><option value="3">Mercoledì</option><option value="4">Giovedì</option><option value="5">Venerdì</option><option value="6">Sabato</option></select></div>
+      <div class="fa-v2-card-actions"><button id="preferences-save-button" class="fa-v2-button fa-v2-button--primary" type="submit">Salva impostazioni</button></div>
+      </form>
     </section>
-    <section id="organization-settings" class="settings-card" hidden aria-labelledby="organization-settings-title">
-      <div class="profile-avatar-section organization-identity-section">
+    <section id="organization-settings" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden aria-labelledby="organization-settings-title">
+      <div class="profile-avatar-section organization-identity-section fa-v2-section-card fa-v2-card">
         <div id="organization-avatar-fallback" class="profile-avatar profile-avatar-fallback" aria-hidden="true"></div>
         <img id="organization-avatar-image" class="profile-avatar profile-avatar-image" alt="" hidden>
-        <div class="profile-avatar-actions">
+        <div class="profile-avatar-actions fa-v2-page-stack">
           <p class="eyebrow">Organizzazione corrente</p>
           <h2 id="organization-settings-title"></h2>
-          <form id="organization-name-form" class="organization-name-form">
+          <form id="organization-name-form" class="organization-name-form fa-v2-page-stack">
             <label for="organization-name-input">Nome organizzazione</label>
-            <div class="organization-name-controls"><input id="organization-name-input" type="text" maxlength="120" required autocomplete="organization"><button id="organization-name-save-button" type="submit">Salva nome</button></div>
+            <div class="organization-name-controls"><input id="organization-name-input" class="fa-v2-input" type="text" maxlength="120" required autocomplete="organization"><button id="organization-name-save-button" class="fa-v2-button fa-v2-button--primary" type="submit">Salva nome</button></div>
           </form>
-          <p id="organization-name-message" class="preferences-message" aria-live="polite"></p>
+          <p id="organization-name-message" class="preferences-message fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
           <p>Logo dell'organizzazione: JPG, PNG o WebP, massimo 2 MB.</p>
           <input id="organization-avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          <label id="organization-avatar-upload-label" class="btn profile-avatar-upload" for="organization-avatar-file-input">Carica immagine</label>
-          <button id="organization-avatar-remove-button" class="secondary-button" type="button" hidden>Rimuovi immagine</button>
-          <p id="organization-avatar-message" class="preferences-message" aria-live="polite"></p>
+          <div class="fa-v2-card-actions"><label id="organization-avatar-upload-label" class="fa-v2-button fa-v2-button--secondary profile-avatar-upload" for="organization-avatar-file-input">Carica immagine</label><button id="organization-avatar-remove-button" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Rimuovi immagine</button></div>
+          <p id="organization-avatar-message" class="preferences-message fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
         </div>
       </div>
-      <div class="organization-cover-section">
+      <div class="organization-cover-section fa-v2-section-card fa-v2-card">
         <div id="organization-cover-preview" class="organization-cover-preview" hidden><img id="organization-cover-image" alt="Anteprima immagine di copertina Dashboard"></div>
-        <div class="organization-cover-actions">
+        <div class="organization-cover-actions fa-v2-page-stack">
           <h3>Immagine di copertina Dashboard</h3><p>Personalizza il riquadro principale della Dashboard. JPG, PNG o WebP, massimo 5 MB.</p>
           <input id="organization-cover-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          <label id="organization-cover-upload-label" class="btn profile-avatar-upload" for="organization-cover-file-input">Carica immagine</label>
-          <button id="organization-cover-remove-button" class="secondary-button" type="button" hidden>Rimuovi immagine</button>
-          <p id="organization-cover-message" class="preferences-message" aria-live="polite"></p>
+          <div class="fa-v2-card-actions"><label id="organization-cover-upload-label" class="fa-v2-button fa-v2-button--secondary profile-avatar-upload" for="organization-cover-file-input">Carica immagine</label><button id="organization-cover-remove-button" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Rimuovi immagine</button></div>
+          <p id="organization-cover-message" class="preferences-message fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
         </div>
       </div>
     </section>
-    <section class="settings-card security-settings-card" aria-labelledby="security-title">
-      <h2 id="security-title">Sicurezza</h2>
-      <p>Gestisci la sicurezza del tuo account.</p>
-      <a class="secondary-button" href="cambia-password.html">Cambia password</a>
+    <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="security-title">
+      <div class="fa-v2-section-heading">
+        <h2 id="security-title">Sicurezza</h2>
+        <p>Gestisci la sicurezza del tuo account.</p>
+      </div>
+      <div class="fa-v2-card-actions"><a class="fa-v2-button fa-v2-button--secondary" href="cambia-password.html">Cambia password</a></div>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

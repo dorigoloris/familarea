@@ -6,61 +6,69 @@
   <title>Il mio profilo - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="account-page profile-page-body">
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="page-card account-page-shell profile-page">
-    <div class="profile-page-heading account-page-heading">
-      <span class="account-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6"></path></svg></span>
-      <div>
-        <h1>Il mio profilo</h1>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="profile-title">
+      <div class="fa-section-hero-content">
+        <p class="eyebrow">ACCOUNT</p>
+        <h1 id="profile-title">Il mio profilo</h1>
         <p>Gestisci le informazioni del tuo account.</p>
       </div>
-    </div>
+    </header>
 
-    <p id="profile-message" class="profile-message" aria-live="polite">Caricamento profilo...</p>
+    <p id="profile-message" class="profile-message fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento profilo...</p>
 
-    <div id="profile-content" hidden>
-      <section class="profile-avatar-section" aria-labelledby="avatar-title">
+    <div id="profile-content" class="fa-v2-page-stack" hidden>
+      <section class="profile-avatar-section fa-v2-section-card fa-v2-card" aria-labelledby="avatar-title">
         <div id="avatar-fallback" class="profile-avatar profile-avatar-fallback" aria-hidden="true"></div>
         <img id="avatar-image" class="profile-avatar profile-avatar-image" alt="" hidden>
-        <div class="profile-avatar-actions">
-          <h2 id="avatar-title">Foto profilo</h2>
-          <p>JPG, PNG o WebP, massimo 2 MB.</p>
+        <div class="profile-avatar-actions fa-v2-page-stack">
+          <div class="fa-v2-section-heading">
+            <h2 id="avatar-title">Foto profilo</h2>
+            <p>JPG, PNG o WebP, massimo 2 MB.</p>
+          </div>
           <input id="avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          <label id="avatar-upload-label" class="btn profile-avatar-upload" for="avatar-file-input">Aggiungi foto</label>
-          <button id="avatar-remove-button" type="button" class="secondary-button" hidden>Rimuovi foto</button>
+          <div class="fa-v2-card-actions">
+            <label id="avatar-upload-label" class="fa-v2-button fa-v2-button--secondary profile-avatar-upload" for="avatar-file-input">Aggiungi foto</label>
+            <button id="avatar-remove-button" type="button" class="fa-v2-button fa-v2-button--secondary" hidden>Rimuovi foto</button>
+          </div>
         </div>
       </section>
 
-      <form id="profile-form" class="profile-form">
-        <div class="profile-first-name-field">
-          <label for="profile-first-name">Nome *</label><br>
-          <input id="profile-first-name" type="text" required autocomplete="given-name">
+      <form id="profile-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack">
+        <div class="fa-v2-section-heading">
+          <h2>Informazioni personali</h2>
+          <p>Aggiorna i dati associati al tuo account.</p>
         </div>
-        <div class="profile-last-name-field">
-          <label for="profile-last-name">Cognome</label><br>
-          <input id="profile-last-name" type="text" autocomplete="family-name">
+        <div>
+          <label for="profile-first-name">Nome *</label>
+          <input id="profile-first-name" class="fa-v2-input" type="text" required autocomplete="given-name">
         </div>
-        <div class="profile-email-field">
-          <label for="profile-email">Email</label><br>
-          <div class="profile-email-control">
-            <input id="profile-email" type="email" readonly aria-readonly="true" autocomplete="email">
-            <a class="fa-button fa-button-primary fa-button-compact" href="condividi-contatto.html">Condividi il mio contatto</a>
+        <div>
+          <label for="profile-last-name">Cognome</label>
+          <input id="profile-last-name" class="fa-v2-input" type="text" autocomplete="family-name">
+        </div>
+        <div class="fa-v2-page-stack">
+          <label for="profile-email">Email</label>
+          <div class="fa-v2-page-stack">
+            <input id="profile-email" class="fa-v2-input" type="email" readonly aria-readonly="true" autocomplete="email">
+            <a class="fa-v2-button fa-v2-button--secondary" href="condividi-contatto.html">Condividi il mio contatto</a>
           </div>
           <p class="field-help">L’email è gestita dal tuo account di accesso.</p>
         </div>
         <div hidden>
-          <label for="profile-phone">Cellulare</label><br>
-          <input id="profile-phone" type="tel" inputmode="tel" autocomplete="tel">
+          <label for="profile-phone">Cellulare</label>
+          <input id="profile-phone" class="fa-v2-input" type="tel" inputmode="tel" autocomplete="tel">
         </div>
-        <div class="profile-birth-date-field">
-          <label for="profile-birth-date">Data di nascita</label><br>
-          <input id="profile-birth-date" type="date" autocomplete="bday">
+        <div>
+          <label for="profile-birth-date">Data di nascita</label>
+          <input id="profile-birth-date" class="fa-v2-input" type="date" autocomplete="bday">
         </div>
-        <div class="form-actions">
-          <button id="profile-save-button" type="submit">Salva modifiche</button>
+        <div class="fa-v2-card-actions">
+          <button id="profile-save-button" class="fa-v2-button fa-v2-button--primary" type="submit">Salva modifiche</button>
         </div>
       </form>
     </div>

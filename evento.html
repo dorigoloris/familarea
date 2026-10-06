@@ -55,12 +55,20 @@
         <p id="edit-event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
         <div id="edit-event-interests-selector" class="event-interests-selector"></div>
       </fieldset>
+      <fieldset id="edit-commitment-when-fieldset" class="event-interests-fieldset" hidden>
+        <legend>Quando?</legend>
+        <div class="event-form-options">
+          <label class="event-form-option"><input type="radio" name="edit-commitment-when" value="date"><span>Una data</span></label>
+          <label class="event-form-option"><input type="radio" name="edit-commitment-when" value="date-time"><span>Data e ora</span></label>
+          <label class="event-form-option"><input type="radio" name="edit-commitment-when" value="period"><span>Periodo</span></label>
+        </div>
+      </fieldset>
       <br>
       <div class="event-time-section" aria-labelledby="edit-start-heading">
         <h3 id="edit-start-heading" class="event-form-section-title">Inizio</h3>
         <div id="edit-start-dates" class="event-dates event-start-dates">
-          <div><label for="edit-date">Data inizio</label><input id="edit-date" class="fa-v2-input" type="date" required></div>
-          <div id="edit-start-time-field"><label for="edit-start">Ora inizio</label><input id="edit-start" class="fa-v2-input" type="time"></div>
+          <div><label id="edit-date-label" for="edit-date">Data inizio</label><input id="edit-date" class="fa-v2-input" type="date" required></div>
+          <div id="edit-start-time-field"><label id="edit-start-time-label" for="edit-start">Ora inizio</label><input id="edit-start" class="fa-v2-input" type="time"></div>
         </div>
       </div>
       <div class="event-form-options">
@@ -70,8 +78,8 @@
       <div id="edit-end-section" class="event-time-section" aria-labelledby="edit-end-heading">
         <h3 id="edit-end-heading" class="event-form-section-title">Fine</h3>
         <div id="edit-end-dates" class="event-dates event-end-dates">
-          <div id="edit-end-date-field" hidden><label for="edit-end-date">Data fine</label><input id="edit-end-date" class="fa-v2-input" type="date"></div>
-          <div id="edit-end-time-field"><label for="edit-end">Ora fine</label><input id="edit-end" class="fa-v2-input" type="time"></div>
+          <div id="edit-end-date-field" hidden><label id="edit-end-date-label" for="edit-end-date">Data fine</label><input id="edit-end-date" class="fa-v2-input" type="date"></div>
+          <div id="edit-end-time-field"><label id="edit-end-time-label" for="edit-end">Ora fine</label><input id="edit-end" class="fa-v2-input" type="time"></div>
         </div>
       </div>
       <div class="event-form-options">
