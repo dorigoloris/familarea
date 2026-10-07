@@ -104,7 +104,7 @@ function setPersonalDocumentFileBusy(isBusy) {
 }
 
 function personalDocumentFilePath(file) {
-  const ownerAccountId = editingPersonalDocument?.owner_account_id;
+  const ownerAccountId = editingPersonalDocument?.storage_owner_account_id || editingPersonalDocument?.owner_account_id;
   if (!ownerAccountId || !editingPersonalDocument?.id) throw new Error('Documento non disponibile');
   const extensionByMimeType = {
     'application/pdf': 'pdf',
