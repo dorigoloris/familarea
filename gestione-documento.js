@@ -128,9 +128,9 @@ function renderPersonalDocumentAttachment() {
   }
 
   const row = document.createElement('div');
-  row.className = 'deadline-attachment';
+  row.className = 'fa-v2-list-row deadline-attachment';
   const info = document.createElement('div');
-  info.className = 'deadline-attachment-info';
+  info.className = 'fa-v2-card-content deadline-attachment-info';
   const name = document.createElement('strong');
   name.textContent = attachment.original_filename;
   const details = document.createElement('span');
@@ -138,20 +138,20 @@ function renderPersonalDocumentAttachment() {
   info.append(name, details);
 
   const actions = document.createElement('div');
-  actions.className = 'deadline-attachment-actions';
+  actions.className = 'fa-v2-card-actions deadline-attachment-actions';
   const view = document.createElement('button');
   view.type = 'button';
-  view.className = 'fa-button fa-button-secondary fa-button-compact';
+  view.className = 'fa-v2-button fa-v2-button--secondary';
   view.textContent = 'Visualizza';
   view.addEventListener('click', () => void viewPersonalDocumentAttachment(attachment, view));
   const download = document.createElement('button');
   download.type = 'button';
-  download.className = 'fa-button fa-button-secondary fa-button-compact';
+  download.className = 'fa-v2-button fa-v2-button--secondary';
   download.textContent = 'Scarica';
   download.addEventListener('click', () => void downloadPersonalDocumentAttachment(attachment, download));
   const remove = document.createElement('button');
   remove.type = 'button';
-  remove.className = 'fa-button fa-button-danger fa-button-compact';
+  remove.className = 'fa-v2-button fa-v2-button--danger';
   remove.textContent = 'Rimuovi';
   remove.addEventListener('click', () => void removePersonalDocumentAttachment(attachment));
   actions.append(view, download, remove);
@@ -425,12 +425,7 @@ personalDocumentForm.addEventListener('submit', async (event) => {
     setPersonalDocumentMessage('Impossibile salvare il documento. Riprova.', true);
     return;
   }
-  if (!editingPersonalDocument) {
-    window.location.assign(listHref());
-    return;
-  }
-  editingPersonalDocument = data;
-  setPersonalDocumentMessage('Modifiche salvate.', false, true);
+  window.location.assign(listHref());
 });
 
 async function initialisePersonalDocument() {

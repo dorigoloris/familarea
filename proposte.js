@@ -17,13 +17,12 @@ function eventLink(item) {
 
 function createCard(item) {
   const card = document.createElement('article');
-  card.className = 'proposal-row';
+  card.className = 'fa-v2-list-row proposal-row';
   const details = document.createElement('div');
   details.className = 'proposal-details';
   const title = document.createElement('h2');
   title.textContent = item.title;
   const date = document.createElement('p');
-  date.className = 'proposal-date';
   date.textContent = formatDate(item);
   const organizer = document.createElement('p');
   organizer.className = 'proposal-organizer';
@@ -31,7 +30,6 @@ function createCard(item) {
   details.append(title, date, organizer);
   if (item.area_name) {
     const area = document.createElement('p');
-    area.className = 'proposal-area';
     area.textContent = item.area_name;
     details.appendChild(area);
   }

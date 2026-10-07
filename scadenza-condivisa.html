@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scadenza condivisa - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack">
+    <p class="account-back-link"><a href="scadenze-condivise.html">Torna alle Scadenze condivise</a></p>
+    <p id="shared-deadline-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento Scadenza condivisa...</p>
+    <div id="shared-deadline-view" class="fa-v2-page-stack" hidden>
+      <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="shared-deadline-title">
+        <div class="fa-section-hero-content">
+          <p class="eyebrow">SCADENZA CONDIVISA</p>
+          <h1 id="shared-deadline-title">Scadenza</h1>
+          <p id="shared-deadline-owner"></p>
+        </div>
+      </header>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="shared-deadline-details-title">
+        <div class="fa-v2-section-heading"><h2 id="shared-deadline-details-title">Dettagli</h2></div>
+        <dl class="fa-v2-list">
+          <div class="fa-v2-list-row"><dt>Categoria</dt><dd id="shared-deadline-category"></dd></div>
+          <div class="fa-v2-list-row"><dt>Data</dt><dd id="shared-deadline-date"></dd></div>
+          <div class="fa-v2-list-row"><dt>Stato</dt><dd id="shared-deadline-status"></dd></div>
+        </dl>
+      </section>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="scadenza-condivisa.js"></script>
+</body>
+</html>

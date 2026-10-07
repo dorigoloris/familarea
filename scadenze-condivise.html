@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scadenze condivise - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack">
+    <p class="account-back-link"><a href="inviti.html">Torna a Condivisioni</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="shared-deadlines-title">
+      <div class="fa-section-hero-content">
+        <h1 id="shared-deadlines-title">Scadenze condivise</h1>
+        <p>Consulta le Scadenze che altre persone hanno condiviso con te.</p>
+      </div>
+    </header>
+    <p id="shared-deadlines-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento Scadenze condivise...</p>
+    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card fa-v2-page-stack" aria-labelledby="shared-deadlines-list-title">
+      <div class="fa-v2-section-heading"><h2 id="shared-deadlines-list-title">Condivise con te</h2></div>
+      <div id="shared-deadlines-list" class="fa-v2-list" aria-label="Scadenze condivise"></div>
+      <p id="shared-deadlines-empty" class="fa-v2-empty-state" hidden><strong>Nessuna Scadenza condivisa.</strong></p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="scadenze-condivise.js"></script>
+</body>
+</html>

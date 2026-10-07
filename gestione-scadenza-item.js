@@ -49,15 +49,12 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   card.append(image, content, actions);
   return card;
 }
-function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
+function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'fa-v2-list-row deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
 function renderItemDeadlines(rows) { const unmatchedRows = new Set(rows); const cards = currentConfiguration.templates.map((template) => { const deadline = rows.find((row) => unmatchedRows.has(row) && row.deadline_kind === template.kind); if (deadline) unmatchedRows.delete(deadline); return createDeadlineCard({ ...template, deadline }); }); deadlineItemPredefinedCards.replaceChildren(...cards); renderCustomDeadlines([...unmatchedRows]); }
 async function loadItemDeadlines() { const { data, error } = await deadlineItemClient.rpc('get_my_deadlines_for_item', { p_item_id: deadlineItemId }); if (error) { deadlineItemMessage.textContent = 'Impossibile caricare le scadenze dell’elemento.'; return; } renderItemDeadlines(data || []); }
 function applyHomeV2() {
   if (currentConfiguration?.label !== 'Casa') return;
-  document.body.classList.add('fa-v2-app', 'home-deadline-item');
-  document.querySelector('.deadline-management-page')?.classList.add('fa-v2-page', 'fa-v2-page-stack');
-  document.getElementById('deadline-item-content')?.classList.add('fa-v2-page-stack');
-  deadlineItemMessage.classList.add('fa-v2-status', 'fa-v2-stack-optional');
+  document.body.classList.add('home-deadline-item');
   const hero = document.querySelector('.deadline-item-hero');
   const createButton = document.getElementById('deadline-item-create');
   if (hero && createButton) {
@@ -74,12 +71,8 @@ function applyHomeV2() {
     description.textContent = 'Gestisci impianti, tributi e scadenze legate alla tua casa.';
     content.append(titleRow, description);
     hero.replaceChildren(content);
-    document.querySelector('.fa-visually-hidden#deadline-item-page-title')?.remove();
   }
-  const deadlinesSection = document.querySelector('.deadline-item-deadlines');
-  deadlinesSection?.setAttribute('aria-label', 'Scadenze');
-  document.getElementById('deadline-item-deadlines-title')?.remove();
-  createButton?.classList.remove('fa-button', 'fa-button-secondary', 'fa-button-compact');
+  createButton?.classList.remove('fa-v2-button--secondary');
   createButton?.classList.add('fa-v2-button', 'fa-v2-button--primary');
 }
 
@@ -116,11 +109,9 @@ async function loadDeadlineItem() {
   }
   currentDeadlineItem = data;
   document.title = `${currentConfiguration.label} - Scadenze - FamilArea`; document.querySelector('.account-back-link a').href = currentConfiguration.backHref; document.getElementById('deadline-item-page-title').textContent = data.category === 'home' ? currentConfiguration.label : data.name;
-  const legacyTitle = document.getElementById('deadline-item-title');
   const legacyType = document.getElementById('deadline-item-type');
   const legacyPlate = document.getElementById('deadline-item-plate');
   const itemImage = document.getElementById('deadline-item-image');
-  if (legacyTitle) legacyTitle.textContent = data.name;
   if (legacyType) legacyType.textContent = data.category === 'vehicle' ? (data.item_type === 'car' ? 'Auto' : data.item_type === 'motorcycle' ? 'Moto' : 'Altro') : '';
   if (legacyPlate) legacyPlate.textContent = data.plate || '';
   if (itemImage) { itemImage.replaceChildren(); itemImage.textContent = (data.name.trim().charAt(0) || 'E').toLocaleUpperCase('it-IT'); itemImage.setAttribute('aria-label', `Foto di ${data.name}`); if (data.image_path) void deadlineItemImageService.render(itemImage, data.image_path, `Foto di ${data.name}`); }

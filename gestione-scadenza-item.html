@@ -6,24 +6,22 @@
   <title>Elemento - Scadenze - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="deadline-management-page-view">
-  <script>if (new URLSearchParams(window.location.search).get('context') === 'home') document.body.classList.add('fa-v2-app', 'home-deadline-item');</script>
+<body class="deadline-management-page-view fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" data-deadline-management-content hidden>
+  <main class="page-card fa-page fa-page--wide fa-section-page fa-v2-page fa-v2-page-stack deadline-management-page" data-deadline-management-content hidden>
     <p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p>
-    <p id="deadline-item-message" class="deadline-management-message" aria-live="polite">Caricamento elemento...</p>
-    <div id="deadline-item-content" hidden>
-      <h1 id="deadline-item-page-title" class="fa-visually-hidden"></h1>
-      <header class="deadline-item-summary-card deadline-item-hero" aria-labelledby="deadline-item-page-title">
-        <span id="deadline-item-image" class="deadline-management-item-image deadline-item-summary-image" aria-label="Foto elemento">E</span><p id="deadline-item-type" class="deadline-item-summary-type"></p><h2 id="deadline-item-title" class="deadline-item-summary-name"></h2><span id="deadline-item-plate" class="deadline-item-summary-plate"></span><button id="deadline-item-create" class="fa-button fa-button-secondary fa-button-compact deadline-item-summary-action" type="button">+ Aggiungi scadenza</button>
+    <p id="deadline-item-message" class="deadline-management-message fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento elemento...</p>
+    <div id="deadline-item-content" class="fa-v2-page-stack" hidden>
+      <header class="fa-v2-deadline-card fa-v2-card-media-layout deadline-item-hero" aria-labelledby="deadline-item-page-title">
+        <span id="deadline-item-image" class="deadline-management-item-image fa-v2-card-visual" aria-label="Foto elemento">E</span><div class="fa-v2-card-content"><p id="deadline-item-type" class="fa-v2-card-description"></p><h1 id="deadline-item-page-title" class="fa-v2-card-title"></h1><span id="deadline-item-plate" class="fa-v2-card-description"></span></div><div class="fa-v2-card-actions"><button id="deadline-item-create" class="fa-v2-button fa-v2-button--secondary" type="button">+ Aggiungi scadenza</button></div>
       </header>
-      <section class="deadline-item-deadlines fa-surface" aria-labelledby="deadline-item-deadlines-title">
-        <h2 id="deadline-item-deadlines-title">Scadenze</h2>
+      <section class="deadline-item-deadlines fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="deadline-item-deadlines-title">
+        <div class="fa-v2-section-heading"><h2 id="deadline-item-deadlines-title">Scadenze</h2></div>
         <div id="deadline-item-predefined-cards" class="fa-v2-list fa-v2-card-grid--two" aria-label="Tipologie di scadenza dell'elemento"></div>
         <section id="deadline-item-custom-deadlines" hidden aria-labelledby="deadline-item-custom-deadlines-title">
           <h3 id="deadline-item-custom-deadlines-title">Altre scadenze</h3>
-          <div id="deadline-item-deadlines-list" class="deadline-management-list" aria-label="Altre scadenze dell'elemento"></div>
+          <div id="deadline-item-deadlines-list" class="fa-v2-list fa-v2-card-grid--two" aria-label="Altre scadenze dell'elemento"></div>
         </section>
       </section>
       <section id="home-annual-calendar" class="fa-v2-section-card fa-v2-card annual-deadline-calendar" aria-labelledby="home-annual-calendar-title" hidden>

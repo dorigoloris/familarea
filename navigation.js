@@ -40,6 +40,7 @@
     'contatti.html': 'contacts',
     'nuovo-contatto.html': 'contacts',
     'contatto.html': 'contacts',
+    'condividi-contatto.html': 'contacts',
     'inviti.html': 'invites',
     'admin.html': 'admin'
   };

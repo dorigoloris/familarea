@@ -6,20 +6,22 @@
   <title>Proposte - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="proposals-page-view">
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page proposals-page">
-    <header class="fa-section-hero" aria-labelledby="proposals-title">
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="proposals-title">
       <div class="fa-section-hero-content">
         <p class="eyebrow">SCOPERTA</p>
         <h1 id="proposals-title">Proposte</h1>
         <p>Eventi in linea con i tuoi Interessi.</p>
       </div>
     </header>
-    <p id="proposals-message" class="global-view-message" aria-live="polite">Caricamento proposte...</p>
-    <section id="proposals-list" class="proposals-list" aria-label="Eventi proposti" hidden></section>
-    <p id="proposals-empty" class="proposals-empty fa-empty-state" hidden><strong>Nessuna proposta al momento.</strong></p>
+    <p id="proposals-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento proposte...</p>
+    <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-label="Eventi proposti">
+      <div id="proposals-list" class="fa-v2-list" hidden></div>
+      <p id="proposals-empty" class="fa-v2-empty-state" hidden><strong>Nessuna proposta al momento.</strong></p>
+    </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>

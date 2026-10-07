@@ -15,7 +15,7 @@ function setPageMessage(text = '', timeout = 0) {
 }
 
 function acceptedInviteMessage(kind) {
-  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
 }
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
@@ -57,6 +57,8 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
   setPageMessage(rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…');
   const params = kind === 'suggestion'
     ? { p_suggestion_id: invite.suggestion_id }
+    : kind === 'deadline'
+      ? { p_collaboration_id: invite.collaboration_id }
     : { p_invite_id: invite.invite_id };
   const { error } = await supabaseClient.rpc(rpcName, params);
   if (error) {
@@ -227,6 +229,58 @@ function createListInviteCard(invite) {
   return article;
 }
 
+function deadlineInviteCategoryLabel(category) {
+  return ({
+    vehicle: 'Veicoli',
+    home: 'Casa',
+    personal_document: 'Documenti personali',
+    document: 'Documenti personali',
+    other: 'Altro'
+  })[category] || category || 'Scadenza';
+}
+
+function deadlineInviteDateLabel(invite) {
+  const dueOn = invite.first_due_on ? new Date(`${invite.first_due_on}T00:00:00`) : null;
+  if (!dueOn || Number.isNaN(dueOn.getTime())) return 'Data da definire';
+  return new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' }).format(dueOn);
+}
+
+function createDeadlineInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker';
+  type.textContent = 'Scadenza';
+  const title = document.createElement('h3');
+  title.textContent = invite.title || 'Scadenza FamilArea';
+  const inviter = document.createElement('p');
+  inviter.textContent = `Invitato da ${invite.inviter_display_name || 'un utente FamilArea'}`;
+  const category = document.createElement('p');
+  category.textContent = `Categoria: ${deadlineInviteCategoryLabel(invite.category)}`;
+  const date = document.createElement('p');
+  date.textContent = `Data: ${deadlineInviteDateLabel(invite)}`;
+  const status = document.createElement('span');
+  status.className = 'invite-status fa-status-badge invite-status-pending';
+  status.textContent = 'In attesa';
+  details.append(type, title, inviter, category, date, status);
+  article.append(details);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'fa-button fa-button-secondary';
+  decline.textContent = 'Rifiuta';
+  decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_deadline_collaboration', article, 'deadline'));
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accetta';
+  accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_deadline_collaboration', article, 'deadline'));
+  actions.append(decline, accept);
+  article.append(actions);
+  return article;
+}
+
 function createAcceptedListCard(invite) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row list-invite-card';
@@ -274,18 +328,20 @@ function createContactSuggestionCard(suggestion) {
 }
 
 async function loadInvites() {
-  const [areaResult, familyResult, eventResult, suggestionResult, listResult] = await Promise.all([
+  const [areaResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult] = await Promise.all([
     supabaseClient.rpc('get_my_area_invites'),
     supabaseClient.rpc('get_my_family_invites'),
     supabaseClient.rpc('get_my_event_invites'),
     supabaseClient.rpc('get_my_contact_suggestions'),
-    supabaseClient.rpc('get_my_list_invites')
+    supabaseClient.rpc('get_my_list_invites'),
+    supabaseClient.rpc('get_my_deadline_collaboration_invites')
   ]);
   if (areaResult.error) { setPageMessage(inviteErrorMessage(areaResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
   if (suggestionResult.error) console.error('get_my_contact_suggestions failed', suggestionResult.error);
   if (listResult.error) console.error('get_my_list_invites failed', listResult.error);
+  if (deadlineResult.error) console.error('get_my_deadline_collaboration_invites failed', deadlineResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleAreaInvites = (areaResult.data || [])
@@ -295,16 +351,19 @@ async function loadInvites() {
   const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleSuggestions = (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending');
   const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
+  const visibleDeadlineInvites = (deadlineResult.data || []).filter((invite) => invite.status === 'pending');
   const pendingCount = visibleAreaInvites.filter((invite) => invite.status === 'pending').length
     + visibleFamilyInvites.length
     + visibleEventInvites.length
     + visibleSuggestions.length
-    + visibleListInvites.length;
+    + visibleListInvites.length
+    + visibleDeadlineInvites.length;
   invitesPendingBadge.hidden = pendingCount === 0;
   if (pendingCount > 0) invitesPendingBadge.textContent = String(pendingCount);
   const acceptedLists = [...recentlyAcceptedLists.values()];
-  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleListInvites.length + acceptedLists.length > 0;
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleListInvites.length + visibleDeadlineInvites.length + acceptedLists.length > 0;
   acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));
+  visibleDeadlineInvites.forEach((invite) => invitesList.appendChild(createDeadlineInviteCard(invite)));
   visibleListInvites.forEach((invite) => invitesList.appendChild(createListInviteCard(invite)));
   visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
   visibleEventInvites.forEach((invite) => invitesList.appendChild(createEventInviteCard(invite)));

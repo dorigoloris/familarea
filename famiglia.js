@@ -318,7 +318,7 @@ async function load() {
     ? [createOwnerCard(familyOwner), ...people.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }))]
     : people.map((member) => createMemberCard(member, { isSelf: member.linked_profile_id === familyViewer?.profile_id, canManage }));
   $('family-members-list').replaceChildren(...peopleCards);
-  $('family-managed-members-list').replaceChildren(...managedMembers.map((member) => createMemberCard(member, { isSelf: false, canManage })));
+  $('family-managed-members-list').replaceChildren(...managedMembers.map((member) => createMemberCard(member, { isSelf: false, canManage: Boolean(member.viewer_is_manager) })));
   $('family-managed-members-section').hidden = managedMembers.length === 0;
   $('family-message').textContent = '';
 }

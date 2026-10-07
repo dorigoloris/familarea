@@ -22,6 +22,19 @@ const deadlineTypeChoice = document.getElementById('deadline-type-choice');
 const deadlineTypeNote = document.getElementById('deadline-type-note');
 const deadlineTypeInputs = [...document.querySelectorAll('input[name="deadline-type"]')];
 const deadlineAttachmentsSection = document.getElementById('deadline-attachments-section');
+const deadlineAttachmentInput = document.getElementById('deadline-attachment-input');
+const deadlineAttachmentUpload = document.getElementById('deadline-attachment-upload');
+const deadlineAttachmentsMessage = document.getElementById('deadline-attachments-message');
+const deadlineAttachmentsEmpty = document.getElementById('deadline-attachments-empty');
+const deadlineAttachmentsList = document.getElementById('deadline-attachments-list');
+const deadlineSharingSection = document.getElementById('deadline-sharing-section');
+const deadlineSharingMessage = document.getElementById('deadline-sharing-message');
+const deadlineSharingSearch = document.getElementById('deadline-sharing-search');
+const deadlineSharingSearchStatus = document.getElementById('deadline-sharing-search-status');
+const deadlineSharingSearchResults = document.getElementById('deadline-sharing-search-results');
+const deadlineSharingPending = document.getElementById('deadline-sharing-pending');
+const deadlineSharingCollaborators = document.getElementById('deadline-sharing-collaborators');
+const deadlineSharingEmpty = document.getElementById('deadline-sharing-empty');
 let otherOptionsToggle = null;
 let otherOptionsContent = null;
 let managedMember = null;
@@ -29,6 +42,12 @@ let deadlineItem = null;
 let editingDeadline = null;
 let headerDeadlineItem = null;
 let availableDeadlineItems = [];
+let draftDeadlineAttachments = null;
+let createdDeadlinePendingAttachments = null;
+let deadlineSharingSearchTimer;
+let deadlineSharingSearchRequest = 0;
+let deadlineSharingActionPending = false;
+let deadlineSharingInitialised = false;
 const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
@@ -300,16 +319,213 @@ function configureSingleDeadlineLayout() {
 async function loadDeadlineAttachments() {
   if (!editingDeadline) return;
   deadlineAttachmentsSection.hidden = false;
+  deadlineAttachmentInput.multiple = false;
+  deadlineAttachmentsEmpty.textContent = 'Nessun allegato.';
   const attachments = window.FamilAreaDeadlineAttachments.create({
     client: c,
     deadlineId: editingDeadline.id,
-    input: document.getElementById('deadline-attachment-input'),
-    uploadControl: document.getElementById('deadline-attachment-upload'),
-    message: document.getElementById('deadline-attachments-message'),
-    empty: document.getElementById('deadline-attachments-empty'),
-    list: document.getElementById('deadline-attachments-list')
+    input: deadlineAttachmentInput,
+    uploadControl: deadlineAttachmentUpload,
+    message: deadlineAttachmentsMessage,
+    empty: deadlineAttachmentsEmpty,
+    list: deadlineAttachmentsList
   });
   await attachments.load();
+}
+
+function initialiseDraftDeadlineAttachments() {
+  deadlineAttachmentsSection.hidden = false;
+  deadlineAttachmentInput.multiple = true;
+  deadlineAttachmentsEmpty.textContent = 'Nessun allegato selezionato.';
+  draftDeadlineAttachments = window.FamilAreaDeadlineAttachments.createDraft({
+    client: c,
+    input: deadlineAttachmentInput,
+    uploadControl: deadlineAttachmentUpload,
+    message: deadlineAttachmentsMessage,
+    empty: deadlineAttachmentsEmpty,
+    list: deadlineAttachmentsList
+  });
+}
+
+function deadlineSharingInitials(name) {
+  return (name || 'U').trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('it-IT') || 'U';
+}
+
+function renderDeadlineSharingAvatar(avatar, avatarPath, name) {
+  avatar.replaceChildren();
+  avatar.textContent = deadlineSharingInitials(name);
+  if (!avatarPath) return;
+  c.storage.from('profile-avatars').createSignedUrl(avatarPath, 3600).then(({ data, error }) => {
+    if (error || !data?.signedUrl || !avatar.isConnected) return;
+    const image = document.createElement('img');
+    image.alt = '';
+    image.onload = () => { if (avatar.isConnected) avatar.replaceChildren(image); };
+    image.src = `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  });
+}
+
+function setDeadlineSharingMessage(text = '') {
+  deadlineSharingMessage.textContent = text;
+}
+
+function deadlineSharingButton(text, variant, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `fa-v2-button fa-v2-button--${variant}`;
+  button.textContent = text;
+  button.disabled = deadlineSharingActionPending;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function deadlineSharingRow(person, action) {
+  const row = document.createElement('div');
+  const avatar = document.createElement('span');
+  const name = document.createElement('strong');
+  const actions = document.createElement('div');
+  const displayName = person.display_name || 'Utente FamilArea';
+  row.className = 'fa-v2-list-row fa-v2-list-row--media';
+  avatar.className = 'contact-directory-avatar';
+  avatar.title = displayName;
+  avatar.setAttribute('aria-label', displayName);
+  name.textContent = displayName;
+  actions.className = 'fa-v2-card-actions';
+  actions.append(action);
+  renderDeadlineSharingAvatar(avatar, person.avatar_path, displayName);
+  row.append(avatar, name, actions);
+  return row;
+}
+
+function renderDeadlineSharingManagement(data) {
+  const pending = data?.pending || [];
+  const collaborators = data?.collaborators || [];
+  deadlineSharingPending.replaceChildren(...pending.map((collaboration) => deadlineSharingRow(
+    collaboration,
+    deadlineSharingButton('Annulla', 'secondary', () => { void cancelDeadlineCollaboration(collaboration); })
+  )));
+  deadlineSharingCollaborators.replaceChildren(...collaborators.map((collaboration) => deadlineSharingRow(
+    collaboration,
+    deadlineSharingButton('Revoca', 'danger', () => { void revokeDeadlineCollaboration(collaboration); })
+  )));
+  deadlineSharingPending.hidden = pending.length === 0;
+  deadlineSharingCollaborators.hidden = collaborators.length === 0;
+  deadlineSharingEmpty.hidden = pending.length > 0 || collaborators.length > 0;
+}
+
+async function loadDeadlineSharingManagement() {
+  if (!editingDeadline || managedMember) return false;
+  const { data, error } = await c.rpc('get_deadline_collaboration_management', {
+    p_deadline_id: editingDeadline.id
+  });
+  if (error || !data) {
+    setDeadlineSharingMessage('Impossibile caricare la condivisione della scadenza.');
+    return false;
+  }
+  renderDeadlineSharingManagement(data);
+  return true;
+}
+
+async function searchInvitableDeadlineAccounts() {
+  const queryText = deadlineSharingSearch.value.trim();
+  const request = ++deadlineSharingSearchRequest;
+  deadlineSharingSearchResults.replaceChildren();
+  deadlineSharingSearchResults.hidden = true;
+  if (!queryText || !editingDeadline || managedMember) {
+    deadlineSharingSearchStatus.textContent = '';
+    return;
+  }
+  deadlineSharingSearchStatus.textContent = 'Ricerca in corso...';
+  const { data, error } = await c.rpc('search_invitable_deadline_accounts', {
+    p_deadline_id: editingDeadline.id,
+    p_query: queryText
+  });
+  if (request !== deadlineSharingSearchRequest) return;
+  if (error) {
+    deadlineSharingSearchStatus.textContent = 'Impossibile cercare una persona. Riprova.';
+    return;
+  }
+  const results = data || [];
+  deadlineSharingSearchResults.replaceChildren(...results.map((person) => deadlineSharingRow(
+    person,
+    deadlineSharingButton('Invita', 'primary', () => { void inviteDeadlineCollaborator(person); })
+  )));
+  deadlineSharingSearchResults.hidden = results.length === 0;
+  deadlineSharingSearchStatus.textContent = results.length ? '' : 'Nessuna persona disponibile trovata.';
+}
+
+async function inviteDeadlineCollaborator(person) {
+  if (deadlineSharingActionPending || !editingDeadline) return;
+  deadlineSharingActionPending = true;
+  setDeadlineSharingMessage('Invito in corso...');
+  const { error } = await c.rpc('create_deadline_collaboration', {
+    p_deadline_id: editingDeadline.id,
+    p_recipient_account_id: person.account_id
+  });
+  deadlineSharingActionPending = false;
+  if (error) {
+    setDeadlineSharingMessage('Non è stato possibile inviare l\'invito.');
+    return;
+  }
+  setDeadlineSharingMessage('Invito inviato.');
+  await loadDeadlineSharingManagement();
+  await searchInvitableDeadlineAccounts();
+}
+
+async function cancelDeadlineCollaboration(collaboration) {
+  if (deadlineSharingActionPending || !await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Annullare questo invito?',
+    message: 'La persona non potrà più accettare la richiesta.',
+    confirmText: 'Annulla invito'
+  })) return;
+  deadlineSharingActionPending = true;
+  setDeadlineSharingMessage('Annullamento in corso...');
+  const { error } = await c.rpc('cancel_deadline_collaboration', {
+    p_collaboration_id: collaboration.collaboration_id
+  });
+  deadlineSharingActionPending = false;
+  if (error) {
+    setDeadlineSharingMessage('Non è stato possibile annullare l\'invito.');
+    return;
+  }
+  setDeadlineSharingMessage('Invito annullato.');
+  await loadDeadlineSharingManagement();
+  await searchInvitableDeadlineAccounts();
+}
+
+async function revokeDeadlineCollaboration(collaboration) {
+  if (deadlineSharingActionPending || !await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Revocare l\'accesso?',
+    message: 'La persona non potrà più visualizzare questa scadenza.',
+    confirmText: 'Revoca'
+  })) return;
+  deadlineSharingActionPending = true;
+  setDeadlineSharingMessage('Revoca in corso...');
+  const { error } = await c.rpc('revoke_deadline_collaboration', {
+    p_collaboration_id: collaboration.collaboration_id
+  });
+  deadlineSharingActionPending = false;
+  if (error) {
+    setDeadlineSharingMessage('Non è stato possibile revocare l\'accesso.');
+    return;
+  }
+  setDeadlineSharingMessage('Accesso revocato.');
+  await loadDeadlineSharingManagement();
+  await searchInvitableDeadlineAccounts();
+}
+
+function initialiseDeadlineSharing() {
+  if (!editingDeadline || managedMember || isCommitmentContext || deadlineSharingInitialised) return;
+  deadlineSharingInitialised = true;
+  deadlineSharingSection.hidden = false;
+  deadlineSharingSearch.addEventListener('input', () => {
+    window.clearTimeout(deadlineSharingSearchTimer);
+    deadlineSharingSearchTimer = window.setTimeout(() => {
+      void searchInvitableDeadlineAccounts();
+    }, 250);
+  });
+  void loadDeadlineSharingManagement();
 }
 
 async function initialiseEditMode(account) {
@@ -348,6 +564,7 @@ async function initialiseEditMode(account) {
 
 async function initialiseCreateMode(account, context) {
   if (!isSingleDeadlineCreate) applyStandardCreateDefaults();
+  initialiseDraftDeadlineAttachments();
 
   if (context.member) {
     managedMember = context.member;
@@ -405,6 +622,7 @@ async function init() {
   if (!ready) return;
 
   f.hidden = false;
+  initialiseDeadlineSharing();
   if (editingDeadline || context.member || (!context.requested && !requestedDeadlineItemId) || deadlineItem) setFormMessage('');
   if (isCommitmentContext && !managedMember && !requestedDeadlineItemId) applyCommitmentReturn();
 }
@@ -440,11 +658,47 @@ async function transitionToEdit(deadlineId) {
   url.searchParams.set('deadline_id', deadlineId);
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   const ready = await initialiseEditMode();
-  if (ready) setFormMessage('Scadenza creata.');
+  if (ready) {
+    initialiseDeadlineSharing();
+    setFormMessage('Scadenza creata.');
+  }
+}
+
+async function finishDeadlineCreation(deadlineId, associatedItem) {
+  if (returnToAssociatedDeadlineItem(associatedItem?.id)) return;
+  if (isCommitmentContext) {
+    location.href = 'impegni.html';
+    return;
+  }
+  if (managedMember || isSingleDeadlineCreate) {
+    location.href = managedHref('scadenze.html');
+    return;
+  }
+  deadlineItem = associatedItem || null;
+  await transitionToEdit(deadlineId);
+}
+
+async function uploadDraftDeadlineAttachments() {
+  if (!createdDeadlinePendingAttachments || !draftDeadlineAttachments) return true;
+  submitButton.disabled = true;
+  const result = await draftDeadlineAttachments.uploadSelected(createdDeadlinePendingAttachments.id);
+  submitButton.disabled = false;
+  if (result.ok) return true;
+  submitButton.textContent = 'Completa caricamento';
+  setFormMessage(`Scadenza creata, ma ${result.failed} allegat${result.failed === 1 ? 'o non è stato caricato' : 'i non sono stati caricati'}. Riprova.`);
+  return false;
 }
 
 f.onsubmit = async (event) => {
   event.preventDefault();
+  if (createdDeadlinePendingAttachments) {
+    if (await uploadDraftDeadlineAttachments()) {
+      const { id, associatedItem } = createdDeadlinePendingAttachments;
+      createdDeadlinePendingAttachments = null;
+      await finishDeadlineCreation(id, associatedItem);
+    }
+    return;
+  }
   if (!updateTimeValidation(true)) return;
   const recurrenceValue = document.getElementById('deadline-recurrence').value;
   const reminderValue = document.getElementById('deadline-reminder').value;
@@ -498,18 +752,10 @@ f.onsubmit = async (event) => {
     setFormMessage('Impossibile creare la scadenza.');
     return;
   }
-
-  if (returnToAssociatedDeadlineItem(associatedItem?.id)) return;
-  if (isCommitmentContext) {
-    location.href = 'impegni.html';
-    return;
-  }
-  if (managedMember || isSingleDeadlineCreate) {
-    location.href = managedHref('scadenze.html');
-    return;
-  }
-  deadlineItem = associatedItem || null;
-  await transitionToEdit(data);
+  createdDeadlinePendingAttachments = { id: data, associatedItem };
+  if (!await uploadDraftDeadlineAttachments()) return;
+  createdDeadlinePendingAttachments = null;
+  await finishDeadlineCreation(data, associatedItem);
 };
 
 configureSingleDeadlineLayout();

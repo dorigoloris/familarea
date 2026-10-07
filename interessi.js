@@ -141,7 +141,7 @@ function createCategory(group) {
   group.selected.filter((interest) => !catalogIds.has(interest.interest_id)).forEach((interest) => chips.appendChild(createInterestChip(interest)));
   const addButton = document.createElement('button');
   addButton.type = 'button';
-  addButton.className = 'fa-v2-button fa-v2-button--primary';
+  addButton.className = 'fa-v2-button fa-v2-button--secondary';
   addButton.textContent = '+ Aggiungi interesse';
   const { form, input } = createCustomInterestForm(group);
   addButton.addEventListener('click', () => { form.hidden = false; input.focus(); });
