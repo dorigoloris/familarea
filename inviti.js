@@ -1,11 +1,16 @@
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const pageMessage = document.getElementById('page-message');
 const invitesSection = document.getElementById('invites-section');
 const invitesList = document.getElementById('invites-list');
 const invitesEmpty = document.getElementById('invites-empty');
 const invitesPendingBadge = document.getElementById('invites-pending-badge');
+const interestsSharingCard = document.getElementById('interests-sharing-card');
+const proposalsSharingCard = document.getElementById('proposals-sharing-card');
+const sharedDeadlinesCard = document.getElementById('shared-deadlines-card');
+const invitesDescription = document.getElementById('invites-description');
 let pageMessageTimeout;
+let currentAccount = null;
 const recentlyAcceptedLists = new Map();
 
 function setPageMessage(text = '', timeout = 0) {
@@ -15,7 +20,7 @@ function setPageMessage(text = '', timeout = 0) {
 }
 
 function acceptedInviteMessage(kind) {
-  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+  return ({ area: 'Invito Area accettato.', family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', contactShare: 'Contatto aggiunto alla tua rubrica.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
 }
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
@@ -57,6 +62,10 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
   setPageMessage(rpcName.startsWith('accept_') ? 'Accettazione invito in corso…' : 'Rifiuto invito in corso…');
   const params = kind === 'suggestion'
     ? { p_suggestion_id: invite.suggestion_id }
+    : kind === 'contactShare'
+      ? (rpcName === 'accept_my_contact_share'
+        ? { p_share_id: invite.share_id, p_existing_contact_id: null }
+        : { p_share_id: invite.share_id })
     : kind === 'deadline'
       ? { p_collaboration_id: invite.collaboration_id }
     : { p_invite_id: invite.invite_id };
@@ -64,12 +73,13 @@ async function respondToInvite(invite, rpcName, card, kind = 'area') {
   if (error) {
     setCardBusy(card, false);
     setPageMessage(inviteErrorMessage(error));
-    await loadInvites();
+    await loadInvites(currentAccount);
     return;
   }
   if (kind === 'list' && rpcName === 'accept_my_list_invite') recentlyAcceptedLists.set(invite.list_id, invite);
-  if (await loadInvites()) {
+  if (await loadInvites(currentAccount)) {
     if (rpcName.startsWith('accept_')) setPageMessage(acceptedInviteMessage(kind), 3000);
+    else if (kind === 'contactShare') setPageMessage('Invito rifiutato.', 3000);
     else setPageMessage('');
   }
   window.dispatchEvent(new CustomEvent('familarea:invites-changed'));
@@ -281,6 +291,44 @@ function createDeadlineInviteCard(invite) {
   return article;
 }
 
+function createContactShareInviteCard(share) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker';
+  type.textContent = 'Contatto';
+  const title = document.createElement('h3');
+  title.textContent = share.sender_display_name || fullName(share.sender_first_name, share.sender_last_name, 'Un utente FamilArea');
+  const description = document.createElement('p');
+  description.textContent = 'Vuole condividere il suo contatto con te.';
+  const sender = document.createElement('p');
+  sender.textContent = share.sender_email || '';
+  const expiry = document.createElement('p');
+  const expiresAt = share.expires_at ? new Date(share.expires_at) : null;
+  expiry.textContent = expiresAt && !Number.isNaN(expiresAt.getTime())
+    ? `Scade il ${new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' }).format(expiresAt)}`
+    : '';
+  details.append(type, title, description);
+  if (sender.textContent) details.append(sender);
+  if (expiry.textContent) details.append(expiry);
+  article.append(details);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'fa-button fa-button-secondary';
+  decline.textContent = 'Rifiuta';
+  decline.addEventListener('click', () => respondToInvite(share, 'decline_my_contact_share', article, 'contactShare'));
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accetta';
+  accept.addEventListener('click', () => respondToInvite(share, 'accept_my_contact_share', article, 'contactShare'));
+  actions.append(decline, accept);
+  article.append(actions);
+  return article;
+}
+
 function createAcceptedListCard(invite) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row list-invite-card';
@@ -327,15 +375,26 @@ function createContactSuggestionCard(suggestion) {
   return article;
 }
 
-async function loadInvites() {
-  const [areaResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult] = await Promise.all([
-    supabaseClient.rpc('get_my_area_invites'),
-    supabaseClient.rpc('get_my_family_invites'),
-    supabaseClient.rpc('get_my_event_invites'),
-    supabaseClient.rpc('get_my_contact_suggestions'),
-    supabaseClient.rpc('get_my_list_invites'),
+async function loadInvites(account) {
+  const isPersonal = account.account_type === 'personal';
+  const [contactShareResult, areaResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult] = await Promise.all([
+    supabaseClient.rpc('get_my_contact_share_invites'),
+    ...(isPersonal ? [
+      supabaseClient.rpc('get_my_area_invites'),
+      supabaseClient.rpc('get_my_family_invites'),
+      supabaseClient.rpc('get_my_event_invites'),
+      supabaseClient.rpc('get_my_contact_suggestions'),
+      supabaseClient.rpc('get_my_list_invites')
+    ] : [
+      Promise.resolve({ data: [] }),
+      Promise.resolve({ data: [] }),
+      Promise.resolve({ data: [] }),
+      Promise.resolve({ data: [] }),
+      Promise.resolve({ data: [] })
+    ]),
     supabaseClient.rpc('get_my_deadline_collaboration_invites')
   ]);
+  if (contactShareResult.error) { setPageMessage(inviteErrorMessage(contactShareResult.error)); return false; }
   if (areaResult.error) { setPageMessage(inviteErrorMessage(areaResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
   if (eventResult.error) console.error('get_my_event_invites failed', eventResult.error);
@@ -350,20 +409,23 @@ async function loadInvites() {
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleEventInvites = (eventResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleSuggestions = (suggestionResult.data || []).filter((suggestion) => suggestion.status === 'pending');
+  const visibleContactShares = (contactShareResult.data || []).filter((share) => share.status === 'pending');
   const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleDeadlineInvites = (deadlineResult.data || []).filter((invite) => invite.status === 'pending');
   const pendingCount = visibleAreaInvites.filter((invite) => invite.status === 'pending').length
     + visibleFamilyInvites.length
     + visibleEventInvites.length
     + visibleSuggestions.length
+    + visibleContactShares.length
     + visibleListInvites.length
     + visibleDeadlineInvites.length;
   invitesPendingBadge.hidden = pendingCount === 0;
   if (pendingCount > 0) invitesPendingBadge.textContent = String(pendingCount);
   const acceptedLists = [...recentlyAcceptedLists.values()];
-  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleListInvites.length + visibleDeadlineInvites.length + acceptedLists.length > 0;
+  invitesEmpty.hidden = visibleAreaInvites.length + visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleContactShares.length + visibleListInvites.length + visibleDeadlineInvites.length + acceptedLists.length > 0;
   acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));
   visibleDeadlineInvites.forEach((invite) => invitesList.appendChild(createDeadlineInviteCard(invite)));
+  visibleContactShares.forEach((share) => invitesList.appendChild(createContactShareInviteCard(share)));
   visibleListInvites.forEach((invite) => invitesList.appendChild(createListInviteCard(invite)));
   visibleFamilyInvites.forEach((invite) => invitesList.appendChild(createFamilyInviteCard(invite)));
   visibleEventInvites.forEach((invite) => invitesList.appendChild(createEventInviteCard(invite)));
@@ -373,10 +435,21 @@ async function loadInvites() {
 }
 
 async function loadPage() {
-  if (window.FamilAreaRequirePersonal && !await window.FamilAreaRequirePersonal()) return;
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
-  await loadInvites();
+  const account = window.FamilAreaCurrentAccount
+    ? await window.FamilAreaCurrentAccount
+    : (await supabaseClient.rpc('get_current_account')).data;
+  if (!account?.account_id) { setPageMessage('Impossibile caricare le condivisioni.'); return; }
+  currentAccount = account;
+  const isPersonal = account.account_type === 'personal';
+  interestsSharingCard.hidden = !isPersonal;
+  proposalsSharingCard.hidden = !isPersonal;
+  sharedDeadlinesCard.hidden = false;
+  invitesDescription.textContent = isPersonal
+    ? 'Gestisci gli inviti ricevuti per Scadenze, Liste, Aree, Eventi e Famiglia.'
+    : 'Gestisci gli inviti ricevuti per Scadenze e Contatti.';
+  await loadInvites(account);
   if (invitesSection.hidden === false) setPageMessage('');
 }
 

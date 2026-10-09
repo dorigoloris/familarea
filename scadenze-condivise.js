@@ -1,4 +1,4 @@
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const message = document.getElementById('shared-deadlines-message');
 const list = document.getElementById('shared-deadlines-list');
@@ -44,7 +44,6 @@ function sharedDeadlineRow(deadline) {
 }
 
 async function load() {
-  if (window.FamilAreaRequirePersonal && !await window.FamilAreaRequirePersonal()) return;
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
 

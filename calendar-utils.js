@@ -64,6 +64,9 @@
 
   function itemLink(item) {
     if (itemType(item) === 'deadline') {
+      if (item.calendar_deadline_access === 'shared') {
+        return `scadenza-condivisa.html?deadline_id=${encodeURIComponent(item.deadline_id)}`;
+      }
       const link = new URL('scadenza.html', window.location.href);
       link.searchParams.set('deadline_id', item.deadline_id);
       if (item.managed_member_id) link.searchParams.set('managed_member_id', item.managed_member_id);
@@ -146,6 +149,12 @@
       details.className = 'calendar-activity-details';
       details.textContent = [time, (item.status === 'completed' || (type === 'deadline' && item.is_completed)) ? 'Completata' : ''].filter(Boolean).join(' · ');
       link.appendChild(details);
+    }
+    if (type === 'deadline' && item.calendar_deadline_access === 'shared' && item.calendar_owner_display_name) {
+      const sharedBy = document.createElement('span');
+      sharedBy.className = 'calendar-activity-details';
+      sharedBy.textContent = `Condivisa da ${item.calendar_owner_display_name}`;
+      link.appendChild(sharedBy);
     }
     return link;
   }
@@ -309,6 +318,12 @@
       time.className = `${className}-time`;
       time.textContent = formatTime(item);
       link.appendChild(time);
+    }
+    if (type === 'deadline' && item.calendar_deadline_access === 'shared' && item.calendar_owner_display_name) {
+      const sharedBy = document.createElement('span');
+      sharedBy.className = `${className}-time`;
+      sharedBy.textContent = `Condivisa da ${item.calendar_owner_display_name}`;
+      link.appendChild(sharedBy);
     }
     return link;
   }

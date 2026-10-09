@@ -20,19 +20,29 @@ async function renderProfileAvatar(avatar, avatarPath, name) {
   image.onerror = () => { if (avatar.isConnected) showAvatarFallback(avatar, name); };
   image.src = `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}v=${Date.now()}`;
 }
+async function renderOrganizationAvatar(avatar, avatarPath, name) {
+  if (!avatarPath) return;
+  const { data, error } = await supabaseClient.storage.from('organization-avatars').createSignedUrl(avatarPath, 3600);
+  if (error || !data?.signedUrl) return;
+  const image = document.createElement('img'); image.alt = '';
+  image.onload = () => { if (avatar.isConnected) avatar.replaceChildren(image); };
+  image.onerror = () => { if (avatar.isConnected) showAvatarFallback(avatar, name); };
+  image.src = `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}v=${Date.now()}`;
+}
 async function renderMyContact(expectedAccountId) {
-  const { data: profile, error } = await supabaseClient.rpc('get_my_profile');
-  if (error || !profile) return;
+  const { data: identity, error } = await supabaseClient.rpc('get_my_contact_share_identity');
+  if (error || !identity) return;
   const { data: currentAccount, error: currentAccountError } = await supabaseClient.rpc('get_current_account');
   if (currentAccountError || !currentAccount || currentAccount.account_id !== expectedAccountId) {
     window.location.reload();
     return;
   }
-  const name = fullName(profile);
+  const name = identity.display_name || 'Contatto';
   myContactName.textContent = name;
   showAvatarFallback(myContactAvatar, name);
   myContact.hidden = false;
-  await renderProfileAvatar(myContactAvatar, profile.avatar_path, name);
+  if (identity.account_type === 'organization') await renderOrganizationAvatar(myContactAvatar, identity.avatar_path, name);
+  else await renderProfileAvatar(myContactAvatar, identity.avatar_path, name);
 }
 async function suggestContact(contact) {
   const recipientEmail = await FamilAreaConfirm.prompt({
@@ -80,8 +90,7 @@ async function load() {
   }
   const contacts = (data || []).map((contact) => contactRow(contact, isOrganization)); list.replaceChildren(...contacts.map((contact) => contact.row));
   void Promise.all(contacts.map((contact) => renderProfileAvatar(contact.avatar, contact.avatarPath, contact.name)));
-  if (isOrganization) myContact.hidden = true;
-  else void renderMyContact(initialAccount.account_id);
+  void renderMyContact(initialAccount.account_id);
   empty.hidden = contacts.length > 0; message.textContent = '';
 }
 load();

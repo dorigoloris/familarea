@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
   <title>Scadenza condivisa - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
@@ -27,6 +33,7 @@
           <div class="fa-v2-list-row"><dt>Data</dt><dd id="shared-deadline-date"></dd></div>
           <div class="fa-v2-list-row"><dt>Stato</dt><dd id="shared-deadline-status"></dd></div>
         </dl>
+        <div class="fa-v2-card-actions"><button id="shared-deadline-relinquish" class="fa-button fa-button-danger" type="button">Rinuncia alla condivisione</button></div>
       </section>
     </div>
   </main>
@@ -34,6 +41,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
-  <script src="scadenza-condivisa.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="scadenza-condivisa.js?v=20261009-organization-access"></script>
 </body>
 </html>

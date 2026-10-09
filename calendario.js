@@ -1,4 +1,4 @@
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const calendarUtils = window.FamilAreaCalendarUtils;
 const message = document.getElementById('calendar-message');
 const content = document.getElementById('calendar-content');
@@ -62,6 +62,7 @@ function bounds() {
 }
 
 function normalise(item) {
+  const isSharedDeadline = item.calendar_deadline_access === 'shared';
   const hasDeadlineItemSubject = Boolean(item.deadline_item_id && item.deadline_item_category === 'vehicle');
   const hasFamilyMemberSubject = Boolean(item.family_member_id);
   const familyMemberName = item.family_member_name || 'Membro della Famiglia';
@@ -75,13 +76,23 @@ function normalise(item) {
     calendar_avatar_title: hasDeadlineItemSubject ? deadlineItemName : (hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`),
     calendar_owner_avatar_url: hasDeadlineItemSubject ? (deadlineItemAvatarUrls.get(item.deadline_item_id) || '') : (hasFamilyMemberSubject ? (familyMemberAvatarUrls.get(item.family_member_id) || '') : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || '')),
     area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
-    can_open_details: item.calendar_owner_account_id === currentAccountId,
+    can_open_details: item.calendar_owner_account_id === currentAccountId || isSharedDeadline,
     managed_member_id: managedMember?.id || null,
     is_all_day: Boolean(item.all_day),
     occurrence_starts_at: item.starts_at,
     occurrence_ends_at: item.ends_at,
     occurs_on: item.occurs_on || item.due_on
   };
+}
+
+function mergeSharedDeadlineOccurrences(calendarOccurrences, sharedDeadlineOccurrences) {
+  const shared = sharedDeadlineOccurrences || [];
+  if (!shared.length) return calendarOccurrences || [];
+  const sharedDeadlineIds = new Set(shared.map((item) => item.deadline_id).filter(Boolean));
+  return [
+    ...(calendarOccurrences || []).filter((item) => !(item.deadline_id && sharedDeadlineIds.has(item.deadline_id))),
+    ...shared
+  ];
 }
 
 async function loadFamilyMemberAvatarUrls(occurrences) {
@@ -156,6 +167,14 @@ async function load() {
     areas = new Map((myAreasResult.data || []).map((area) => [area.id, area.name]));
     isPersonalAccount = account?.account_type === 'personal';
     currentAccountId = account?.account_id || null;
+    if (!error && account?.account_id) {
+      const sharedDeadlines = await supabaseClient.rpc('get_my_shared_deadline_calendar_occurrences', {
+        p_from: start.toISOString(),
+        p_to: end.toISOString()
+      });
+      if (sharedDeadlines.error) error = sharedDeadlines.error;
+      else data = mergeSharedDeadlineOccurrences(data, sharedDeadlines.data);
+    }
     await loadFamilyCalendarControls();
     if (isPersonalAccount && currentAccountId) {
       const { data: profile } = await supabaseClient.rpc('get_my_profile');

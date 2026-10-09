@@ -3,6 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
   <title>Condividi il mio contatto - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
@@ -10,38 +16,31 @@
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
-    <p class="account-back-link"><a href="profilo.html">Torna al Profilo</a></p>
+    <p class="account-back-link"><a id="share-contact-back" href="profilo.html">Torna al Profilo</a></p>
     <header class="fa-v2-header-card fa-v2-card" aria-labelledby="share-contact-title">
       <div class="fa-section-hero-content">
         <h1 id="share-contact-title">Condividi il mio contatto</h1>
-        <p>Crea un link personale per condividere nome, cognome ed email verificata.</p>
+        <p id="share-contact-description">Condividi nome, cognome ed email verificata con un altro account FamilArea.</p>
       </div>
     </header>
     <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="create-share-title">
       <div class="fa-v2-section-heading">
-        <h2 id="create-share-title">Crea link</h2>
+        <h2 id="create-share-title">Invia invito</h2>
       </div>
       <form id="share-form" class="fa-v2-page-stack">
         <div>
           <label for="recipient-email">Email del destinatario</label>
-          <input id="recipient-email" class="fa-v2-input" type="email" required autocomplete="email">
-        </div>
-        <div class="fa-v2-card-actions">
-          <button class="fa-v2-button fa-v2-button--primary" type="submit">Crea link</button>
+          <div class="fa-v2-content-action-row">
+            <input id="recipient-email" class="fa-v2-input" type="email" required autocomplete="email">
+            <button class="fa-v2-button fa-v2-button--primary" type="submit">Invia invito</button>
+          </div>
         </div>
       </form>
       <p id="message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
-      <section id="created" class="fa-v2-notice fa-v2-notice--success fa-v2-page-stack" hidden aria-label="Link creato">
-        <p>Link creato. Puoi inviarlo alla persona con cui vuoi condividere il tuo contatto.</p>
-        <input id="share-link" class="fa-v2-input" readonly>
-        <div class="fa-v2-card-actions">
-          <button id="copy-link" class="fa-v2-button fa-v2-button--secondary" type="button">Copia link</button>
-        </div>
-      </section>
     </section>
     <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="pending-shares-title">
       <div class="fa-v2-section-heading">
-        <h2 id="pending-shares-title">Link in attesa</h2>
+        <h2 id="pending-shares-title">Inviti inviati</h2>
       </div>
       <div id="pending" class="fa-v2-list" aria-live="polite">Caricamento…</div>
     </section>

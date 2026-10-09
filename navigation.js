@@ -81,9 +81,9 @@
   const topNav = document.createElement('nav');
   topNav.className = 'shared-top-nav fa-v2-top-nav';
   topNav.setAttribute('aria-label', 'Navigazione principale');
-  let personalInvitesLink;
+  let invitesLink;
   function renderNavigation(accountType) {
-    personalInvitesLink = null;
+    invitesLink = null;
     topNav.replaceChildren();
     const sharedItems = [
       { label: 'Dashboard', href: 'dashboard.html', active: isPrimaryNavActive('dashboard') },
@@ -93,6 +93,7 @@
       { label: 'Impegni', href: 'impegni.html', active: isPrimaryNavActive('commitments') },
       { label: 'Contatti', href: 'contatti.html', active: isPrimaryNavActive('contacts') }
     ];
+    const sharingItem = { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') };
     const items = accountType === 'personal'
       ? [
         sharedItems[0],
@@ -101,10 +102,10 @@
         sharedItems[3],
         sharedItems[1],
         sharedItems[4],
-        { id: 'invites', label: 'Condivisioni', href: 'inviti.html', active: isPrimaryNavActive('invites') },
+        sharingItem,
         sharedItems[5]
       ]
-      : [sharedItems[0], sharedItems[2], sharedItems[3], sharedItems[1], sharedItems[4], sharedItems[5]];
+      : [sharedItems[0], sharedItems[2], sharedItems[3], sharedItems[1], sharedItems[4], sharingItem, sharedItems[5]];
     items.forEach((item) => {
       const link = document.createElement('a');
       link.className = `top-nav-link${item.active}`;
@@ -113,7 +114,7 @@
       if (item.active) link.setAttribute('aria-current', 'page');
       if (item.id === 'invites') {
         link.classList.add('top-nav-invites-link');
-        personalInvitesLink = link;
+        invitesLink = link;
       }
       topNav.appendChild(link);
     });
@@ -201,7 +202,11 @@
   preferencesLink.href = 'impostazioni.html';
   preferencesLink.textContent = 'Impostazioni';
   preferencesLink.setAttribute('role', 'menuitem');
-  accountPanel.append(profileLink, preferencesLink);
+  const myContactLink = document.createElement('a');
+  myContactLink.href = 'condividi-contatto.html';
+  myContactLink.textContent = 'Il mio contatto';
+  myContactLink.setAttribute('role', 'menuitem');
+  accountPanel.append(profileLink, myContactLink, preferencesLink);
   if (logoutButton) {
     logoutButton.classList.add('account-menu-logout');
     logoutButton.setAttribute('role', 'menuitem');
@@ -324,7 +329,7 @@
   }
 
   loadAccountIdentity().catch(() => {});
-  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html', 'inviti.html']);
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html']);
   if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;
@@ -340,7 +345,7 @@
   let invitesBadgeRequestVersion = 0;
 
   async function refreshInvitesBadge() {
-    if (!personalInvitesLink) return;
+    if (!invitesLink) return;
     const requestVersion = ++invitesBadgeRequestVersion;
     const { data, error } = await client.rpc('get_my_pending_invites_count');
     if (requestVersion !== invitesBadgeRequestVersion) return;
@@ -352,9 +357,9 @@
 
     const pendingCount = Math.max(0, Number(data) || 0);
 
-    personalInvitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
+    invitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
     if (pendingCount === 0) {
-      personalInvitesLink.removeAttribute('aria-label');
+      invitesLink.removeAttribute('aria-label');
       return;
     }
 
@@ -362,12 +367,12 @@
     badge.className = 'top-nav-invites-badge fa-v2-pending-count';
     badge.textContent = pendingCount >= 10 ? '9+' : String(pendingCount);
     badge.setAttribute('aria-hidden', 'true');
-    personalInvitesLink.appendChild(badge);
-    personalInvitesLink.setAttribute('aria-label', `Condivisioni, ${pendingCount} in attesa`);
+    invitesLink.appendChild(badge);
+    invitesLink.setAttribute('aria-label', `Condivisioni, ${pendingCount} in attesa`);
   }
 
   accountPromise.then((account) => {
-    if (account?.account_type === 'personal') refreshInvitesBadge().catch(() => {});
+    if (account?.account_id) refreshInvitesBadge().catch(() => {});
   }).catch(() => {});
   window.addEventListener('familarea:invites-changed', () => {
     refreshInvitesBadge().catch(() => {});

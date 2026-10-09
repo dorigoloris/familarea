@@ -48,6 +48,7 @@ let deadlineSharingSearchTimer;
 let deadlineSharingSearchRequest = 0;
 let deadlineSharingActionPending = false;
 let deadlineSharingInitialised = false;
+let deadlineSharingManagement = { pending: [], collaborators: [] };
 const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
@@ -351,11 +352,12 @@ function deadlineSharingInitials(name) {
   return (name || 'U').trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('it-IT') || 'U';
 }
 
-function renderDeadlineSharingAvatar(avatar, avatarPath, name) {
+function renderDeadlineSharingAvatar(avatar, avatarPath, name, accountType) {
   avatar.replaceChildren();
   avatar.textContent = deadlineSharingInitials(name);
   if (!avatarPath) return;
-  c.storage.from('profile-avatars').createSignedUrl(avatarPath, 3600).then(({ data, error }) => {
+  const bucket = accountType === 'organization' ? 'organization-avatars' : 'profile-avatars';
+  c.storage.from(bucket).createSignedUrl(avatarPath, 3600).then(({ data, error }) => {
     if (error || !data?.signedUrl || !avatar.isConnected) return;
     const image = document.createElement('img');
     image.alt = '';
@@ -381,31 +383,48 @@ function deadlineSharingButton(text, variant, onClick) {
 function deadlineSharingRow(person, action) {
   const row = document.createElement('div');
   const avatar = document.createElement('span');
+  const copy = document.createElement('div');
+  const nameLine = document.createElement('span');
   const name = document.createElement('strong');
   const actions = document.createElement('div');
   const displayName = person.display_name || 'Utente FamilArea';
   row.className = 'fa-v2-list-row fa-v2-list-row--media';
+  copy.className = 'fa-v2-card-content';
   avatar.className = 'contact-directory-avatar';
   avatar.title = displayName;
   avatar.setAttribute('aria-label', displayName);
   name.textContent = displayName;
+  nameLine.append(name);
+  if (person.status === 'pending') {
+    const status = document.createElement('span');
+    status.className = 'fa-status-badge invite-status invite-status-pending';
+    status.textContent = 'In attesa di accettazione';
+    const description = document.createElement('p');
+    description.className = 'fa-v2-card-description';
+    description.textContent = "L'invito è stato inviato. Il contatto non ha ancora accettato.";
+    nameLine.append(' ', status);
+    copy.append(nameLine, description);
+  } else {
+    copy.append(nameLine);
+  }
   actions.className = 'fa-v2-card-actions';
   actions.append(action);
-  renderDeadlineSharingAvatar(avatar, person.avatar_path, displayName);
-  row.append(avatar, name, actions);
+  renderDeadlineSharingAvatar(avatar, person.avatar_path, displayName, person.account_type);
+  row.append(avatar, copy, actions);
   return row;
 }
 
 function renderDeadlineSharingManagement(data) {
   const pending = data?.pending || [];
   const collaborators = data?.collaborators || [];
+  deadlineSharingManagement = { pending, collaborators };
   deadlineSharingPending.replaceChildren(...pending.map((collaboration) => deadlineSharingRow(
     collaboration,
     deadlineSharingButton('Annulla', 'secondary', () => { void cancelDeadlineCollaboration(collaboration); })
   )));
   deadlineSharingCollaborators.replaceChildren(...collaborators.map((collaboration) => deadlineSharingRow(
     collaboration,
-    deadlineSharingButton('Revoca', 'danger', () => { void revokeDeadlineCollaboration(collaboration); })
+    deadlineSharingButton('Revoca condivisione', 'danger', () => { void revokeDeadlineCollaboration(collaboration); })
   )));
   deadlineSharingPending.hidden = pending.length === 0;
   deadlineSharingCollaborators.hidden = collaborators.length === 0;
@@ -441,7 +460,7 @@ async function searchInvitableDeadlineAccounts() {
   });
   if (request !== deadlineSharingSearchRequest) return;
   if (error) {
-    deadlineSharingSearchStatus.textContent = 'Impossibile cercare una persona. Riprova.';
+    deadlineSharingSearchStatus.textContent = 'Impossibile cercare un contatto. Riprova.';
     return;
   }
   const results = data || [];
@@ -450,7 +469,19 @@ async function searchInvitableDeadlineAccounts() {
     deadlineSharingButton('Invita', 'primary', () => { void inviteDeadlineCollaborator(person); })
   )));
   deadlineSharingSearchResults.hidden = results.length === 0;
-  deadlineSharingSearchStatus.textContent = results.length ? '' : 'Nessuna persona disponibile trovata.';
+  if (results.length) {
+    deadlineSharingSearchStatus.textContent = '';
+    return;
+  }
+  const normalizedQuery = queryText.toLocaleLowerCase('it-IT');
+  const matchesQuery = (person) => (person.display_name || '').toLocaleLowerCase('it-IT').includes(normalizedQuery);
+  if (deadlineSharingManagement.pending.some(matchesQuery)) {
+    deadlineSharingSearchStatus.textContent = 'Questo contatto ha già un invito in attesa.';
+  } else if (deadlineSharingManagement.collaborators.some(matchesQuery)) {
+    deadlineSharingSearchStatus.textContent = 'Questo contatto ha già accesso a questa scadenza.';
+  } else {
+    deadlineSharingSearchStatus.textContent = 'Nessun contatto disponibile trovato.';
+  }
 }
 
 async function inviteDeadlineCollaborator(person) {

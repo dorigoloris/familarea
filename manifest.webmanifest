@@ -1,0 +1,22 @@
+{
+  "name": "FamilArea",
+  "short_name": "FamilArea",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f9fb",
+  "theme_color": "#0d2b4f",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
