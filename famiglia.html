@@ -82,6 +82,17 @@
       <p class="eyebrow">La mia Famiglia</p><h2 id="family-member-edit-title">Modifica membro</h2><p id="family-member-edit-intro">Aggiorna le informazioni del membro.</p><p id="family-member-edit-message" class="family-member-form-message" aria-live="polite"></p>
       <div id="family-member-linked-contact" class="family-member-linked-contact" hidden><strong id="family-member-linked-name"></strong><span>Contatto collegato</span><p>Nome e cognome provengono dai tuoi Contatti.</p></div>
       <form id="family-member-edit-form" class="family-member-form">
+        <div id="family-member-edit-avatar-field" class="family-member-form-actions fa-v2-list-row fa-v2-list-row--media" hidden>
+          <span id="family-member-edit-avatar-preview" class="family-member-avatar" aria-hidden="true"></span>
+          <div><strong>Foto</strong><p id="family-member-edit-avatar-description" class="fa-v2-status">Aggiungi una foto del profilo gestito.</p></div>
+          <div class="fa-v2-card-actions">
+            <label id="family-member-edit-avatar-upload" class="fa-v2-button fa-v2-button--secondary" for="family-member-edit-avatar-input">Aggiungi foto</label>
+            <button id="family-member-edit-avatar-confirm" class="fa-v2-button fa-v2-button--primary" type="button" hidden>Conferma foto</button>
+            <button id="family-member-edit-avatar-cancel" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Annulla</button>
+            <button id="family-member-edit-avatar-remove" class="fa-v2-button fa-v2-button--danger" type="button" hidden>Rimuovi foto</button>
+            <input id="family-member-edit-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+        </div>
         <div id="family-member-edit-first-name-field"><label for="family-member-edit-first-name">Nome *</label><input id="family-member-edit-first-name" type="text" required autocomplete="off"></div>
         <div id="family-member-edit-last-name-field"><label for="family-member-edit-last-name">Cognome</label><input id="family-member-edit-last-name" type="text" autocomplete="off"></div>
         <div><label for="family-member-edit-relationship">Relazione *</label><select id="family-member-edit-relationship" required></select></div>

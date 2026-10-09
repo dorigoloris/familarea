@@ -27,7 +27,7 @@ function itemDeadlineHref(path) { const url = new URL(path, window.location.href
 function itemDeadlineCreateHref(title = '', kind = '') { const url = new URL(itemDeadlineHref('nuova-scadenza.html'), window.location.href); if (title) url.searchParams.set('preset_title', title); if (kind) url.searchParams.set('preset_kind', kind); return `${url.pathname.split('/').pop()}${url.search}`; }
 function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }) {
   const card = document.createElement('a');
-  const href = deadline ? (kind === 'vehicle_service' ? `gestione-tagliando.html?deadline_id=${encodeURIComponent(deadline.id)}` : `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`) : itemDeadlineCreateHref(presetTitle, kind);
+  const href = deadline ? `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}` : itemDeadlineCreateHref(presetTitle, kind);
   card.href = href;
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   const image = document.createElement('span'); image.className = 'fa-v2-card-visual'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;

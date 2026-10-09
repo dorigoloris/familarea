@@ -67,9 +67,8 @@
       if (item.calendar_deadline_access === 'shared') {
         return `scadenza-condivisa.html?deadline_id=${encodeURIComponent(item.deadline_id)}`;
       }
-      const link = new URL('scadenza.html', window.location.href);
+      const link = new URL('nuova-scadenza.html', window.location.href);
       link.searchParams.set('deadline_id', item.deadline_id);
-      if (item.managed_member_id) link.searchParams.set('managed_member_id', item.managed_member_id);
       return `${link.pathname.split('/').pop()}${link.search}`;
     }
     if (itemType(item) === 'birthday') {

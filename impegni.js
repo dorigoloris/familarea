@@ -58,7 +58,7 @@ function standaloneDeadlineCard(deadline) {
     title: deadline.title,
     when: formatDate(deadline.first_due_on),
     detail: 'Da ricordare',
-    href: `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`,
+    href: `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`,
     label: `Apri impegno da ricordare ${deadline.title}`
   });
 }

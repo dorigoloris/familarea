@@ -12,12 +12,12 @@
   <title>Amministrazione - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="admin-page-view">
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
 
-  <main class="admin-page fa-page fa-page--wide fa-section-page">
-    <header class="fa-section-hero">
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <header class="fa-v2-header-card fa-v2-card">
       <div class="fa-section-hero-content">
         <p class="eyebrow">AMMINISTRAZIONE DI SISTEMA</p>
         <div class="fa-section-hero-title-row"><h1>Admin</h1></div>
@@ -25,45 +25,47 @@
       </div>
     </header>
 
-    <p id="admin-message" class="admin-message" aria-live="polite">Verifica autorizzazione…</p>
+    <p id="admin-message" class="fa-v2-status" aria-live="polite">Verifica autorizzazione…</p>
 
-    <div id="admin-content" hidden>
-      <section class="admin-section" aria-labelledby="admin-dashboard-title">
-        <div class="section-heading"><div><p class="eyebrow">PANORAMICA</p><h2 id="admin-dashboard-title">Dati FamilArea</h2></div></div>
-        <div id="admin-metrics" class="admin-metrics" aria-live="polite"></div>
+    <div id="admin-content" class="fa-v2-page-stack" hidden>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="admin-dashboard-title">
+        <div class="fa-v2-section-heading"><div><p class="eyebrow">PANORAMICA</p><h2 id="admin-dashboard-title">Dati FamilArea</h2></div></div>
+        <div id="admin-metrics" class="fa-v2-metric-grid" aria-live="polite"></div>
       </section>
 
-      <section class="admin-section" aria-labelledby="admin-accounts-title">
-        <div class="admin-section-heading">
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="admin-accounts-title">
+        <div class="fa-v2-section-heading fa-v2-content-action-row">
           <div><p class="eyebrow">UTENTI</p><h2 id="admin-accounts-title">Account</h2></div>
-          <form id="admin-search-form" class="admin-search-form">
-            <label class="sr-only" for="admin-search">Cerca utente</label>
-            <input id="admin-search" type="search" autocomplete="off" placeholder="Cerca nome, email o organizzazione">
-            <button class="fa-button fa-button-secondary" type="submit">Cerca</button>
+          <form id="admin-search-form" class="fa-v2-content-action-row">
+            <div>
+              <label class="sr-only" for="admin-search">Cerca utente</label>
+              <input id="admin-search" class="fa-v2-input" type="search" autocomplete="off" placeholder="Cerca nome, email o organizzazione">
+            </div>
+            <button class="fa-v2-button fa-v2-button--secondary" type="submit">Cerca</button>
           </form>
         </div>
-        <p id="admin-accounts-summary" class="admin-subtle"></p>
-        <div id="admin-accounts-list" class="admin-accounts-list"></div>
+        <p id="admin-accounts-summary" class="fa-v2-status"></p>
+        <div id="admin-accounts-list" class="fa-v2-list"></div>
       </section>
 
-      <section class="admin-section" aria-labelledby="admin-interests-title">
-        <div class="admin-section-heading"><div><p class="eyebrow">CATALOGO</p><h2 id="admin-interests-title">Interessi e categorie</h2></div></div>
-        <div class="admin-interest-grid">
-          <section><h3>Categorie</h3><div id="admin-interest-categories" class="admin-catalog-list"></div></section>
-          <section><h3>Interessi</h3><div id="admin-interests-list" class="admin-catalog-list"></div></section>
-          <section><h3>Proposte categorie</h3><div id="admin-interest-proposals" class="admin-catalog-list"></div></section>
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="admin-interests-title">
+        <div class="fa-v2-section-heading"><div><p class="eyebrow">CATALOGO</p><h2 id="admin-interests-title">Interessi e categorie</h2></div></div>
+        <div class="fa-v2-page-stack">
+          <section class="fa-v2-page-stack"><h3>Categorie</h3><div id="admin-interest-categories" class="fa-v2-list"></div></section>
+          <section class="fa-v2-page-stack"><h3>Interessi</h3><div id="admin-interests-list" class="fa-v2-list"></div></section>
+          <section class="fa-v2-page-stack"><h3>Proposte categorie</h3><div id="admin-interest-proposals" class="fa-v2-list"></div></section>
         </div>
       </section>
 
-      <section id="admin-account-detail" class="admin-section" aria-labelledby="admin-account-detail-title" hidden>
-        <div class="admin-section-heading">
+      <section id="admin-account-detail" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="admin-account-detail-title" hidden>
+        <div class="fa-v2-section-heading fa-v2-content-action-row">
           <div><p class="eyebrow">DIAGNOSTICA DIPENDENZE</p><h2 id="admin-account-detail-title">Dettaglio utente</h2></div>
-          <button id="admin-detail-close" class="fa-button fa-button-secondary" type="button">Chiudi dettaglio</button>
+          <button id="admin-detail-close" class="fa-v2-button fa-v2-button--secondary" type="button">Chiudi dettaglio</button>
         </div>
-        <div id="admin-account-summary" class="admin-detail-summary"></div>
-        <section id="admin-account-editor" class="admin-account-editor" hidden></section>
-        <section id="admin-account-delete" class="admin-account-delete" hidden></section>
-        <div id="admin-account-dependencies" class="admin-dependencies"></div>
+        <div id="admin-account-summary" class="fa-v2-list"></div>
+        <section id="admin-account-editor" class="fa-v2-page-stack" hidden></section>
+        <section id="admin-account-delete" class="fa-v2-notice fa-v2-notice--danger fa-v2-page-stack" hidden></section>
+        <div id="admin-account-dependencies" class="fa-v2-list"></div>
       </section>
     </div>
   </main>

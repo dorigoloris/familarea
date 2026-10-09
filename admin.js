@@ -18,7 +18,7 @@
   let currentAdminUserId = null;
 
   if (!client) {
-    message.textContent = 'Impossibile inizializzare l’area amministrativa.';
+    setMessage('Impossibile inizializzare l’area amministrativa.', true);
     return;
   }
 
@@ -31,7 +31,8 @@
 
   function setMessage(text, isError = false) {
     message.textContent = text || '';
-    message.classList.toggle('is-error', isError);
+    message.hidden = !text;
+    message.className = isError ? 'fa-v2-notice fa-v2-notice--danger' : 'fa-v2-status';
   }
 
   function getRpcErrorMessage(error, fallback) {
@@ -47,10 +48,10 @@
   }
 
   function showDeletionError(error) {
-    let errorBox = accountDelete.querySelector('.admin-account-delete-error');
+    let errorBox = accountDelete.querySelector('[role="alert"]');
     if (!errorBox) {
       errorBox = document.createElement('div');
-      errorBox.className = 'admin-account-delete-error';
+      errorBox.className = 'fa-v2-notice fa-v2-notice--danger fa-v2-page-stack';
       errorBox.setAttribute('role', 'alert');
       accountDelete.appendChild(errorBox);
     }
@@ -85,8 +86,11 @@
     metrics.replaceChildren();
     metricLabels.forEach(([key, label]) => {
       const card = document.createElement('article');
-      card.className = 'admin-metric-card';
-      card.append(makeText('span', label), makeText('strong', String(data?.[key] ?? 0)));
+      card.className = 'fa-v2-metric';
+      card.append(
+        makeText('strong', String(data?.[key] ?? 0), 'fa-v2-metric-value'),
+        makeText('span', label, 'fa-v2-metric-label')
+      );
       metrics.appendChild(card);
     });
   }
@@ -96,47 +100,48 @@
     const items = result?.items || [];
     accountsSummary.textContent = `${result?.total ?? 0} account trovati.`;
     if (!items.length) {
-      accountsList.append(makeText('p', 'Nessun account corrisponde alla ricerca.', 'admin-empty'));
+      accountsList.append(makeText('p', 'Nessun account corrisponde alla ricerca.', 'fa-v2-empty-state'));
       return;
     }
     items.forEach((account) => {
       const row = document.createElement('article');
-      row.className = 'admin-account-row';
+      row.className = 'fa-v2-list-row fa-v2-content-action-row';
       const identity = document.createElement('div');
-      identity.className = 'admin-account-identity';
+      identity.className = 'fa-v2-page-stack';
       identity.append(
         makeText('h3', account.name || 'Account'),
         makeText('p', `${account.account_type === 'organization' ? 'Organizzazione' : 'Personale'} · ${account.email || 'Email non disponibile'}`)
       );
       if (account.organization_name && account.account_type !== 'organization') {
-        identity.append(makeText('p', `Organizzazione: ${account.organization_name}`, 'admin-subtle'));
+        identity.append(makeText('p', `Organizzazione: ${account.organization_name}`, 'fa-v2-status'));
       }
-      const metadata = makeText('p', `Creato il ${formatDate(account.created_at)}`, 'admin-subtle');
+      identity.append(makeText('p', `Creato il ${formatDate(account.created_at)}`, 'fa-v2-status'));
       const counts = document.createElement('div');
-      counts.className = 'admin-counts';
+      counts.className = 'fa-v2-status';
       const countData = account.counts || {};
       [['owned_areas', 'Aree'], ['activities', 'Attività'], ['events', 'Eventi'], ['contacts', 'Contatti'], ['area_memberships', 'Membership']].forEach(([key, label]) => {
         counts.append(makeText('span', `${label}: ${countData[key] ?? 0}`));
       });
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'fa-button fa-button-secondary';
+      button.className = 'fa-v2-button fa-v2-button--secondary';
       button.textContent = 'Apri dettaglio';
       button.addEventListener('click', () => {
         loadDetail(account.account_id).catch((error) => setMessage(getRpcErrorMessage(error, 'Impossibile caricare la diagnostica'), true));
       });
-      row.append(identity, metadata, counts, button);
+      identity.appendChild(counts);
+      row.append(identity, button);
       accountsList.appendChild(row);
     });
   }
 
   function appendDependencySection(label, entries, formatter) {
     const section = document.createElement('section');
-    section.className = 'admin-dependency-section';
+    section.className = 'fa-v2-list-row fa-v2-page-stack';
     section.append(makeText('h3', label));
     const list = entries || [];
     if (!list.length) {
-      section.append(makeText('p', 'Nessun elemento.', 'admin-subtle'));
+      section.append(makeText('p', 'Nessun elemento.', 'fa-v2-status'));
     } else {
       const ul = document.createElement('ul');
       list.forEach((entry) => ul.append(makeText('li', formatter(entry))));
@@ -185,7 +190,7 @@
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'area-delete-button';
+    button.className = 'fa-v2-button fa-v2-button--danger';
     button.textContent = 'Elimina account e dati';
     button.addEventListener('click', () => deleteAccount(account.account_id, name, account.email, button));
     accountDelete.append(
@@ -252,11 +257,11 @@
     accountEditor.hidden = false;
 
     const heading = document.createElement('div');
-    heading.className = 'admin-editor-heading';
+    heading.className = 'fa-v2-content-action-row';
     heading.append(makeText('h3', isOrganization ? 'Dati organizzazione' : 'Dati account'));
     const editButton = document.createElement('button');
     editButton.type = 'button';
-    editButton.className = 'fa-button fa-button-secondary';
+    editButton.className = 'fa-v2-button fa-v2-button--secondary';
     editButton.textContent = 'Modifica';
     editButton.addEventListener('click', () => renderAccountEditor(summary, true));
     if (!editing) heading.appendChild(editButton);
@@ -264,12 +269,12 @@
     let detailsContent;
     if (editing) {
       const form = document.createElement('form');
-      form.className = 'admin-account-form';
+      form.className = 'fa-v2-page-stack';
       const fields = [];
       const addField = (labelText, value, name, required = false) => {
         const field = document.createElement('div');
         const label = document.createElement('label'); label.textContent = labelText;
-        const input = document.createElement('input'); input.name = name; input.value = value || ''; input.required = required;
+        const input = document.createElement('input'); input.className = 'fa-v2-input'; input.name = name; input.value = value || ''; input.required = required;
         label.htmlFor = `admin-${name}`; input.id = label.htmlFor;
         field.append(label, input); form.appendChild(field); fields.push(input);
       };
@@ -279,9 +284,9 @@
         addField('Cognome', subject.last_name, 'last-name');
       }
       const actions = document.createElement('div');
-      actions.className = 'admin-account-form-actions';
-      const save = document.createElement('button'); save.type = 'submit'; save.className = 'fa-button fa-button-primary'; save.textContent = 'Salva';
-      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'fa-button fa-button-secondary'; cancel.textContent = 'Annulla';
+      actions.className = 'form-actions';
+      const save = document.createElement('button'); save.type = 'submit'; save.className = 'fa-v2-button fa-v2-button--primary'; save.textContent = 'Salva';
+      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'fa-v2-button fa-v2-button--secondary'; cancel.textContent = 'Annulla';
       cancel.addEventListener('click', () => renderAccountEditor(summary));
       actions.append(save, cancel); form.appendChild(actions);
       form.addEventListener('submit', (event) => {
@@ -294,10 +299,10 @@
       detailsContent = form;
     } else {
       const data = document.createElement('div');
-      data.className = 'admin-account-data';
+      data.className = 'fa-v2-list';
       const appendValue = (label, value) => {
         const row = document.createElement('p');
-        row.className = 'admin-account-data-row';
+        row.className = 'fa-v2-list-row';
         row.append(makeText('strong', `${label}:`), makeText('span', value || '—'));
         data.appendChild(row);
       };
@@ -310,15 +315,17 @@
     }
 
     const emailSection = document.createElement('section');
-    emailSection.className = 'admin-account-email';
-    emailSection.append(makeText('h3', 'Email di accesso'), makeText('p', account.email || 'Email non disponibile.'));
-    const emailButton = document.createElement('button'); emailButton.type = 'button'; emailButton.className = 'fa-button fa-button-secondary'; emailButton.textContent = 'Modifica email';
+    emailSection.className = 'fa-v2-content-action-row';
+    const emailCopy = document.createElement('div');
+    emailCopy.className = 'fa-v2-page-stack';
+    emailCopy.append(makeText('h3', 'Email di accesso'), makeText('p', account.email || 'Email non disponibile.'));
+    const emailButton = document.createElement('button'); emailButton.type = 'button'; emailButton.className = 'fa-v2-button fa-v2-button--secondary'; emailButton.textContent = 'Modifica email';
     const isCurrentAdminAccount = account.id === currentAccountId;
     emailButton.disabled = !account.email || isCurrentAdminAccount;
     emailButton.addEventListener('click', () => void changeAccountEmail(account.id, account.email, emailButton));
-    emailSection.appendChild(emailButton);
+    emailSection.append(emailCopy, emailButton);
     if (isCurrentAdminAccount) {
-      emailSection.append(makeText('p', 'Non puoi modificare l’email del tuo account System Admin da questa pagina.'));
+      emailCopy.append(makeText('p', 'Non puoi modificare l’email del tuo account System Admin da questa pagina.'));
     }
     accountEditor.append(heading, detailsContent, emailSection);
   }
@@ -328,9 +335,9 @@
     const subject = summary.profile || summary.organization || {};
     detailTitle.textContent = `Dettaglio: ${subject.first_name ? `${subject.first_name} ${subject.last_name || ''}`.trim() : subject.name || 'Account'}`;
     detailSummary.replaceChildren(
-      makeText('p', `Tipo account: ${account.account_type || '—'}`),
-      makeText('p', `Email: ${account.email || 'Non disponibile'}`),
-      makeText('p', `Creato il: ${formatDate(account.created_at)}`)
+      makeText('p', `Tipo account: ${account.account_type || '—'}`, 'fa-v2-list-row'),
+      makeText('p', `Email: ${account.email || 'Non disponibile'}`, 'fa-v2-list-row'),
+      makeText('p', `Creato il: ${formatDate(account.created_at)}`, 'fa-v2-list-row')
     );
     renderAccountEditor(summary);
     renderDeleteControl(summary, plan);
@@ -345,7 +352,7 @@
     const contactInfo = data.contacts || {};
     const other = data.other_dependencies || {};
     const counters = document.createElement('section');
-    counters.className = 'admin-dependency-section';
+    counters.className = 'fa-v2-list-row fa-v2-page-stack';
     counters.append(makeText('h3', 'Altre dipendenze'));
     const values = [
       ['Contatti', contactInfo.count], ['Metodi di contatto', contactInfo.contact_methods_count],
@@ -362,7 +369,7 @@
   }
 
   async function loadAccounts(query = '') {
-    accountsList.replaceChildren(makeText('p', 'Caricamento account…', 'admin-subtle'));
+    accountsList.replaceChildren(makeText('p', 'Caricamento account…', 'fa-v2-status'));
     const { data, error } = await client.rpc('admin_list_accounts', {
       p_limit: 50, p_offset: 0, p_query: query || null
     });
@@ -499,22 +506,26 @@
 
   const button = (label, action, variant = 'secondary') => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = `fa-button fa-button-${variant} fa-button-compact`; b.textContent = label;
+    b.type = 'button'; b.className = `fa-v2-button fa-v2-button--${variant}`; b.textContent = label;
     b.addEventListener('click', action); return b;
   };
   const status = (value) => {
     const s = document.createElement('span');
-    s.className = `admin-status is-${String(value || '').toLowerCase()}`; s.textContent = value || '—'; return s;
+    s.className = 'fa-v2-badge'; s.textContent = value || '—'; return s;
   };
-  const empty = (target, text) => { target.replaceChildren(Object.assign(document.createElement('p'), { className: 'admin-empty', textContent: text })); };
+  const empty = (target, text) => { target.replaceChildren(Object.assign(document.createElement('p'), { className: 'fa-v2-empty-state', textContent: text })); };
   const row = (title, details, state, actions) => {
-    const item = document.createElement('article'); item.className = 'admin-catalog-row';
-    const body = document.createElement('div'); const h = document.createElement('strong'); h.textContent = title;
+    const item = document.createElement('article'); item.className = 'fa-v2-list-row fa-v2-content-action-row';
+    const body = document.createElement('div'); body.className = 'fa-v2-page-stack'; const h = document.createElement('strong'); h.textContent = title;
     const p = document.createElement('p'); p.textContent = details; body.append(h, p);
-    const controls = document.createElement('div'); controls.className = 'admin-catalog-actions'; controls.append(...actions);
-    item.append(body, status(state), controls); return item;
+    const controls = document.createElement('div'); controls.className = 'form-actions'; controls.append(status(state), ...actions);
+    item.append(body, controls); return item;
   };
-  const fail = (error, fallback) => { message.textContent = error?.message || fallback; message.classList.add('is-error'); };
+  const fail = (error, fallback) => {
+    message.textContent = error?.message || fallback;
+    message.hidden = false;
+    message.className = 'fa-v2-notice fa-v2-notice--danger';
+  };
   const refresh = async () => {
     const [categoryResult, interestResult, proposalResult] = await Promise.all([
       client.rpc('admin_list_interest_categories'), client.rpc('admin_list_interests'), client.rpc('admin_list_interest_category_proposals')
@@ -522,7 +533,17 @@
     if (categoryResult.error || interestResult.error || proposalResult.error) throw categoryResult.error || interestResult.error || proposalResult.error;
     renderCategories(categoryResult.data || []); renderInterests(interestResult.data || []); renderProposals(proposalResult.data || []);
   };
-  const run = async (task) => { try { await task(); message.textContent = ''; message.classList.remove('is-error'); await refresh(); } catch (error) { fail(error, 'Operazione non riuscita.'); } };
+  const run = async (task) => {
+    try {
+      await task();
+      message.textContent = '';
+      message.hidden = true;
+      message.className = 'fa-v2-status';
+      await refresh();
+    } catch (error) {
+      fail(error, 'Operazione non riuscita.');
+    }
+  };
 
   function renderCategories(items) {
     if (!items.length) return empty(categories, 'Nessuna categoria.');

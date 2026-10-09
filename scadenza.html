@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="it">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0d2b4f"><title>Scadenza - FamilArea</title><link rel="stylesheet" href="app.css"></head>
-<body class="deadline-detail-page-view">
-  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page deadline-detail-page"><p class="account-back-link"><a id="deadline-back-link" href="scadenze.html">Torna alle Scadenze</a></p><div id="managed-context" hidden></div><p id="deadline-message" class="deadlines-message" aria-live="polite">Caricamento scadenza...</p>
-    <section id="deadline-content" hidden><header class="deadline-detail-header fa-surface"><div><p class="eyebrow">Scadenza</p><h1 id="deadline-title"></h1><p id="deadline-subtitle"></p></div></header><div class="deadline-detail-actions"><a id="edit-deadline" class="btn secondary-button" href="#">Modifica</a><button id="terminate-deadline" class="secondary-button" type="button">Termina scadenza</button><button id="delete-deadline" class="secondary-button list-item-delete" type="button">Elimina scadenza</button></div>
-      <section class="deadline-details fa-surface" aria-labelledby="deadline-details-title"><h2 id="deadline-details-title">Dettagli</h2><dl id="deadline-details-list" class="deadline-details-list"></dl></section>
-      <section class="deadline-attachments-section fa-surface" aria-labelledby="deadline-attachments-title"><div class="deadline-attachments-heading"><div><h2 id="deadline-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questa scadenza.</p></div><label id="deadline-attachment-upload" class="btn secondary-button deadline-attachment-upload" for="deadline-attachment-input">+ Aggiungi allegato</label><input id="deadline-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div><p id="deadline-attachments-message" class="deadline-attachments-message" aria-live="polite"></p><p id="deadline-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p><div id="deadline-attachments-list" class="deadline-attachments-list"></div></section>
-      <section class="deadline-occurrences-section" aria-labelledby="deadline-occurrences-title"><div class="deadlines-section-heading"><div><p class="section-kicker">Storico e futuro</p><h2 id="deadline-occurrences-title">Scadenze</h2></div></div><div id="deadline-occurrences-list" class="deadline-occurrences-list"></div></section>
-    </section>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="date-utils.js"></script><script src="managed-context.js"></script><script src="attachment-preview.js"></script><script src="deadline-attachments.js"></script><script src="scadenza.js"></script>
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Scadenza - FamilArea</title>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const deadlineId = params.get('deadline_id');
+    const target = new URL('nuova-scadenza.html', window.location.href);
+    if (deadlineId) target.searchParams.set('deadline_id', deadlineId);
+    window.location.replace(`${target.pathname.split('/').pop()}${target.search}${window.location.hash}`);
+  </script>
+</head>
+<body>
+  <p>Reindirizzamento a <a href="scadenze.html">Scadenze</a>&hellip;</p>
 </body>
 </html>

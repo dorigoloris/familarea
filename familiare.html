@@ -9,70 +9,13 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d2b4f">
-  <title>Gestisci famigliare - FamilArea</title>
+  <meta http-equiv="refresh" content="0; url=famiglia.html">
+  <title>Famiglia - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body class="managed-member-page-view">
-  <button class="logout-button" type="button" data-logout>Esci</button>
-  <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page">
-    <p class="account-back-link"><a href="famiglia.html">Torna alla Famiglia</a></p>
-    <div id="managed-context" hidden></div>
-    <p id="managed-member-message" class="family-message" aria-live="polite">Caricamento gestione famigliare...</p>
-    <div id="managed-member-home" hidden aria-labelledby="managed-member-title">
-      <header class="fa-section-hero">
-        <div class="fa-section-hero-content">
-          <p class="eyebrow">Gestione famigliare</p>
-          <div class="family-member-card-header">
-            <div class="managed-member-avatar-control">
-              <span id="managed-member-avatar" class="family-member-avatar" aria-hidden="true"></span>
-              <div class="managed-member-avatar-actions">
-                <label id="managed-member-avatar-upload" class="fa-button fa-button-secondary" for="managed-member-avatar-input">Aggiungi foto</label>
-                <button id="managed-member-avatar-confirm" class="fa-button fa-button-primary" type="button" hidden>Conferma foto</button>
-                <button id="managed-member-avatar-cancel" class="fa-button fa-button-secondary" type="button" hidden>Annulla</button>
-                <button id="managed-member-avatar-remove" class="fa-button fa-button-danger" type="button" hidden>Rimuovi foto</button>
-                <input id="managed-member-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-              </div>
-            </div>
-            <div class="family-member-identity">
-              <h1 id="managed-member-title"></h1>
-              <p id="managed-member-kind"></p>
-            </div>
-          </div>
-          <p id="managed-member-avatar-message" class="family-message" aria-live="polite" hidden></p>
-          <p>Stai organizzando le risorse riferite a questo famigliare.</p>
-        </div>
-      </header>
-      <div class="family-members-grid" aria-label="Funzioni disponibili">
-        <article class="family-member-card">
-          <div class="family-member-identity">
-            <p class="eyebrow">Attiva</p>
-            <h3>Scadenze</h3>
-            <p>Gestisci scadenze, visite e promemoria di <span id="managed-member-name-deadlines"></span>.</p>
-          </div>
-          <div class="family-member-actions">
-            <a id="managed-member-deadlines-link" class="fa-button fa-button-primary" href="scadenze.html">Apri Scadenze</a>
-          </div>
-        </article>
-        <article class="family-member-card">
-          <div class="family-member-identity">
-            <p class="eyebrow">Attiva</p>
-            <h3>Calendario</h3>
-            <p>Visualizza gli impegni e le scadenze di <span id="managed-member-name-calendar"></span>.</p>
-          </div>
-          <div class="family-member-actions">
-            <a id="managed-member-calendar-link" class="fa-button fa-button-primary" href="calendario.html">Apri Calendario</a>
-          </div>
-        </article>
-      </div>
-    </div>
+<body class="fa-v2-app">
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="fa-v2-status">Reindirizzamento alla <a href="famiglia.html">Famiglia</a>…</p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-public-config.js"></script>
-  <script src="logout.js"></script>
-  <script src="navigation.js"></script>
-  <script src="managed-context.js"></script>
-  <script src="family-member-avatar.js"></script>
-  <script src="familiare.js"></script>
 </body>
 </html>

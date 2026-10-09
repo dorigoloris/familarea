@@ -45,7 +45,7 @@ async function initialiseManagedContext() {
     backHref: 'calendario.html'
   });
   managedMemberHomeLink.hidden = false;
-  managedMemberHomeLink.querySelector('a').href = window.FamilAreaManagedContext.withMember('familiare.html', managedMember.id);
+  managedMemberHomeLink.querySelector('a').href = 'famiglia.html';
   document.getElementById('calendar-page-title').textContent = `Calendario di ${window.FamilAreaManagedContext.memberName(managedMember)}`;
   calendarHero.querySelector('.fa-section-hero-content > p:not(.eyebrow)').textContent = 'Impegni e scadenze riferiti a questo famigliare.';
   familySharingSection.hidden = true;

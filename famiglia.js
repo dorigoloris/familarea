@@ -7,6 +7,8 @@ let editingMember = null;
 let familyOwner = null;
 let familyViewer = null;
 let invitingMember = null;
+let pendingEditAvatarFile = null;
+let pendingEditAvatarObjectUrl = null;
 
 function showLoadError() { $('family-empty-state').hidden = true; $('family-content').hidden = true; $('family-message').textContent = 'Impossibile caricare la Famiglia.'; }
 function formMessage(text = '', isError = false) { const el = $('family-member-form-message'); el.textContent = text; el.hidden = !text; el.classList.toggle('is-error', isError); }
@@ -22,7 +24,150 @@ function resetMemberModal() {
 }
 function closeMemberModal() { $('family-member-modal').hidden = true; resetMemberModal(); }
 function editFormMessage(text = '', isError = false) { const el = $('family-member-edit-message'); el.textContent = text; el.hidden = !text; el.classList.toggle('is-error', isError); }
+function editAvatarMessage(text = '', isError = false) { editFormMessage(text, isError); }
 function isOwnerDuplicate(member) { return Boolean(member.linked_profile_id && member.linked_profile_id === familyOwner?.profile_id); }
+
+function isManagedMember(member) {
+  return member?.member_type === 'pet' || member?.member_type === 'assisted_person';
+}
+
+function canEditManagedMemberAvatar(member = editingMember) {
+  return isManagedMember(member) && member?.viewer_is_manager === true;
+}
+
+function clearEditAvatarPreview({ restoreSavedAvatar = false } = {}) {
+  if (pendingEditAvatarObjectUrl) URL.revokeObjectURL(pendingEditAvatarObjectUrl);
+  pendingEditAvatarFile = null;
+  pendingEditAvatarObjectUrl = null;
+  $('family-member-edit-avatar-input').value = '';
+  $('family-member-edit-avatar-confirm').hidden = true;
+  $('family-member-edit-avatar-cancel').hidden = true;
+  if (restoreSavedAvatar) renderEditAvatar();
+}
+
+function renderEditAvatar() {
+  const preview = $('family-member-edit-avatar-preview');
+  const upload = $('family-member-edit-avatar-upload');
+  const remove = $('family-member-edit-avatar-remove');
+  const description = $('family-member-edit-avatar-description');
+  const member = editingMember;
+  if (!member) return;
+
+  preview.classList.toggle('is-pet', member.member_type === 'pet');
+  preview.replaceChildren();
+  preview.textContent = memberInitials(member);
+  upload.textContent = member.avatar_path ? 'Sostituisci foto' : 'Aggiungi foto';
+  remove.hidden = !member.avatar_path;
+  description.textContent = member.avatar_path ? 'Puoi sostituire o rimuovere la foto attuale.' : 'Aggiungi una foto del profilo gestito.';
+
+  if (pendingEditAvatarObjectUrl) {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = pendingEditAvatarObjectUrl;
+    preview.replaceChildren(image);
+  } else if (member.avatar_path) {
+    void window.FamilAreaFamilyMemberAvatar.render(preview, member.avatar_path);
+  }
+}
+
+function setEditAvatarBusy(busy) {
+  $('family-member-edit-avatar-input').disabled = busy;
+  $('family-member-edit-avatar-upload').classList.toggle('is-disabled', busy);
+  $('family-member-edit-avatar-confirm').disabled = busy;
+  $('family-member-edit-avatar-cancel').disabled = busy;
+  $('family-member-edit-avatar-remove').disabled = busy;
+}
+
+function previewEditAvatar() {
+  const file = $('family-member-edit-avatar-input').files?.[0];
+  $('family-member-edit-avatar-input').value = '';
+  if (!file || !canEditManagedMemberAvatar()) return;
+  const avatarService = window.FamilAreaFamilyMemberAvatar;
+  if (!avatarService.allowedTypes.has(file.type)) {
+    editAvatarMessage('Scegli un’immagine JPG, PNG o WebP.', true);
+    return;
+  }
+  if (file.size > avatarService.maxBytes) {
+    editAvatarMessage('L’immagine deve pesare al massimo 2 MB.', true);
+    return;
+  }
+
+  clearEditAvatarPreview();
+  pendingEditAvatarFile = file;
+  pendingEditAvatarObjectUrl = URL.createObjectURL(file);
+  $('family-member-edit-avatar-upload').hidden = true;
+  $('family-member-edit-avatar-remove').hidden = true;
+  $('family-member-edit-avatar-confirm').hidden = false;
+  $('family-member-edit-avatar-cancel').hidden = false;
+  renderEditAvatar();
+  editAvatarMessage('Foto selezionata. Conferma per caricarla.');
+}
+
+async function uploadEditAvatar() {
+  if (!pendingEditAvatarFile || !canEditManagedMemberAvatar()) return;
+  const avatarService = window.FamilAreaFamilyMemberAvatar;
+  if (!family?.owner_account_id) {
+    editAvatarMessage('Impossibile verificare l’account della Famiglia.', true);
+    return;
+  }
+  const path = avatarService.storagePath(family.owner_account_id, editingMember.id);
+
+  setEditAvatarBusy(true);
+  editAvatarMessage('Caricamento foto in corso...');
+  const { error: uploadError } = await c.storage.from(avatarService.bucket).upload(path, pendingEditAvatarFile, {
+    upsert: true,
+    contentType: pendingEditAvatarFile.type
+  });
+  if (uploadError) {
+    setEditAvatarBusy(false);
+    editAvatarMessage('Impossibile caricare la foto. Riprova.', true);
+    return;
+  }
+
+  const { data, error } = await c.rpc('set_my_managed_family_member_avatar', {
+    p_member_id: editingMember.id,
+    p_avatar_path: path
+  });
+  setEditAvatarBusy(false);
+  if (error || !data) {
+    editAvatarMessage('Foto caricata, ma non è stato possibile associarla al famigliare.', true);
+    return;
+  }
+
+  editingMember.avatar_path = data.avatar_path;
+  clearEditAvatarPreview();
+  renderEditAvatar();
+  editAvatarMessage('Foto aggiornata.');
+  await load();
+}
+
+async function removeEditAvatar() {
+  if (!editingMember?.avatar_path || !canEditManagedMemberAvatar()) return;
+  const path = editingMember.avatar_path;
+  setEditAvatarBusy(true);
+  editAvatarMessage('Rimozione foto in corso...');
+  const { error: storageError } = await c.storage.from(window.FamilAreaFamilyMemberAvatar.bucket).remove([path]);
+  if (storageError) {
+    setEditAvatarBusy(false);
+    editAvatarMessage('Impossibile rimuovere la foto. Riprova.', true);
+    return;
+  }
+
+  const { data, error } = await c.rpc('set_my_managed_family_member_avatar', {
+    p_member_id: editingMember.id,
+    p_avatar_path: null
+  });
+  setEditAvatarBusy(false);
+  if (error || !data) {
+    editAvatarMessage('Foto rimossa, ma non è stato possibile aggiornare il famigliare.', true);
+    return;
+  }
+
+  editingMember.avatar_path = null;
+  renderEditAvatar();
+  editAvatarMessage('Foto rimossa.');
+  await load();
+}
 
 function updateMemberMode() {
   const memberType = $('family-member-type').value;
@@ -191,14 +336,16 @@ function createMemberCard(member, options = {}) {
     }
   }
   if (member.member_type === 'pet' || member.member_type === 'assisted_person') {
-    const manageButton = document.createElement('button');
-    manageButton.className = 'fa-button fa-button-secondary';
-    manageButton.type = 'button';
-    manageButton.textContent = 'Gestisci';
-    manageButton.onclick = () => {
-      location.href = `familiare.html?managed_member_id=${encodeURIComponent(member.id)}`;
-    };
-    actions.append(manageButton);
+    const memberQuery = `?managed_member_id=${encodeURIComponent(member.id)}`;
+    const deadlinesLink = document.createElement('a');
+    deadlinesLink.className = 'fa-v2-button fa-v2-button--secondary';
+    deadlinesLink.href = `scadenze.html${memberQuery}`;
+    deadlinesLink.textContent = 'Scadenze';
+    const calendarLink = document.createElement('a');
+    calendarLink.className = 'fa-v2-button fa-v2-button--secondary';
+    calendarLink.href = `calendario.html${memberQuery}`;
+    calendarLink.textContent = 'Calendario';
+    actions.append(deadlinesLink, calendarLink);
   }
   const editButton = document.createElement('button');
   editButton.className = 'fa-button fa-button-secondary family-member-edit';
@@ -286,14 +433,20 @@ function openEditMemberModal(member) {
   $('family-member-linked-contact').hidden = !linkedContact;
   $('family-member-linked-name').textContent = name;
   $('family-member-edit-intro').textContent = member.member_type === 'pet' ? 'Aggiorna le informazioni del tuo animale domestico.' : (member.member_type === 'assisted_person' ? 'Aggiorna le informazioni della persona assistita.' : 'Aggiorna le informazioni del membro.');
+  const canEditAvatar = canEditManagedMemberAvatar(member);
+  $('family-member-edit-avatar-field').hidden = !canEditAvatar;
+  clearEditAvatarPreview();
+  if (canEditAvatar) renderEditAvatar();
   editFormMessage('');
   $('family-member-edit-modal').hidden = false;
   $('family-member-edit-dialog').focus();
 }
 
 function closeEditMemberModal() {
+  clearEditAvatarPreview();
   $('family-member-edit-modal').hidden = true;
   $('family-member-edit-form').reset();
+  $('family-member-edit-avatar-field').hidden = true;
   editingMember = null;
   editFormMessage('');
 }
@@ -356,6 +509,13 @@ $('family-member-cancel-button').onclick = closeMemberModal;
 $('family-member-modal-close').onclick = closeMemberModal;
 $('family-member-edit-cancel').onclick = closeEditMemberModal;
 $('family-member-edit-close').onclick = closeEditMemberModal;
+$('family-member-edit-avatar-input').addEventListener('change', previewEditAvatar);
+$('family-member-edit-avatar-confirm').onclick = () => void uploadEditAvatar();
+$('family-member-edit-avatar-cancel').onclick = () => {
+  clearEditAvatarPreview({ restoreSavedAvatar: true });
+  editAvatarMessage('');
+};
+$('family-member-edit-avatar-remove').onclick = () => void removeEditAvatar();
 $('family-member-edit-form').onsubmit = async (event) => {
   event.preventDefault();
   if (!editingMember) return;

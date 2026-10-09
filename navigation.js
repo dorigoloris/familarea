@@ -6,7 +6,6 @@
   const primarySectionByPage = {
     'dashboard.html': 'dashboard',
     'famiglia.html': 'family',
-    'familiare.html': 'family',
     'mie-aree.html': 'areas',
     'crea-area.html': 'areas',
     'area.html': 'areas',
@@ -30,13 +29,11 @@
     'calendario.html': 'calendar',
     'scadenze.html': 'deadlines',
     'nuova-scadenza.html': 'deadlines',
-    'scadenza.html': 'deadlines',
     'gestione-scadenze.html': 'deadlines',
     'gestione-scadenze-veicoli.html': 'deadlines',
     'gestione-scadenze-casa.html': 'deadlines',
     'gestione-scadenza-item.html': 'deadlines',
     'gestione-scadenza-veicolo.html': 'deadlines',
-    'gestione-tagliando.html': 'deadlines',
     'contatti.html': 'contacts',
     'nuovo-contatto.html': 'contacts',
     'contatto.html': 'contacts',
@@ -329,7 +326,7 @@
   }
 
   loadAccountIdentity().catch(() => {});
-  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'familiare.html', 'interessi.html', 'proposte.html']);
+  const personalOnlyPages = new Set(['profilo.html', 'famiglia.html', 'interessi.html', 'proposte.html']);
   if (personalOnlyPages.has(path)) window.FamilAreaRequirePersonal().catch(() => {});
   window.addEventListener('familarea:profile-avatar-changed', (event) => {
     const profile = event.detail?.profile;

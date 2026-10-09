@@ -15,6 +15,10 @@ const cancelLink = document.getElementById('deadline-cancel-link');
 const formTitle = document.getElementById('deadline-form-title');
 const formIntro = document.getElementById('deadline-form-intro');
 const submitButton = document.getElementById('deadline-submit');
+const deleteButton = document.getElementById('deadline-delete');
+const occurrenceSection = document.getElementById('deadline-occurrence-section');
+const occurrenceStatus = document.getElementById('deadline-occurrence-status');
+const occurrenceToggle = document.getElementById('deadline-occurrence-toggle');
 const startTimeInput = document.getElementById('deadline-start-time');
 const endTimeInput = document.getElementById('deadline-end-time');
 const categoryInput = document.getElementById('deadline-category');
@@ -103,10 +107,6 @@ function returnToAssociatedDeadlineItem(itemId) {
   if (!itemId) return false;
   location.href = deadlineItemHref(itemId);
   return true;
-}
-
-function deadlineDetailHref(deadlineId) {
-  return `scadenza.html?deadline_id=${encodeURIComponent(deadlineId)}`;
 }
 
 function deadlineItemTemplateTitle(category, value) {
@@ -604,8 +604,9 @@ async function initialiseEditMode(account) {
   submitButton.textContent = 'Salva modifiche';
   referenceField.hidden = true;
   familyMemberField.hidden = true;
-  backLink.href = deadlineItem?.id ? deadlineItemHref(deadlineItem.id) : deadlineDetailHref(editingDeadline.id);
+  backLink.href = deadlineItem?.id ? deadlineItemHref(deadlineItem.id) : 'scadenze.html';
   cancelLink.href = backLink.href;
+  deleteButton.hidden = false;
   if (!await loadDeadlineItemSelector(editingDeadline.deadline_item_id || '')) {
     setFormMessage('Impossibile preparare il selettore degli elementi.');
     return false;
@@ -617,7 +618,39 @@ async function initialiseEditMode(account) {
     cancelLink.href = backLink.href;
   }
   await loadDeadlineAttachments();
+  await loadDeadlineOccurrence();
   return true;
+}
+
+function formatOccurrenceDate(value) {
+  return new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(new Date(`${value}T00:00:00`));
+}
+
+async function loadDeadlineOccurrence() {
+  if (!editingDeadline) return;
+  const { data, error } = await c.rpc('get_deadline_occurrence', {
+    p_deadline_id: editingDeadline.id,
+    p_occurrence_on: editingDeadline.first_due_on
+  });
+  if (error || !data) return;
+
+  occurrenceSection.hidden = false;
+  occurrenceStatus.textContent = `${data.completed ? 'Completata' : 'In scadenza'} il ${formatOccurrenceDate(data.occurrence_on)}.`;
+  occurrenceToggle.textContent = data.completed ? 'Annulla completamento' : 'Completa occorrenza';
+  occurrenceToggle.onclick = async () => {
+    occurrenceToggle.disabled = true;
+    const { error: completionError } = await c.rpc('complete_deadline_occurrence', {
+      p_deadline_id: editingDeadline.id,
+      p_occurrence_on: data.occurrence_on,
+      p_completed: !data.completed
+    });
+    occurrenceToggle.disabled = false;
+    if (completionError) {
+      setFormMessage('Impossibile aggiornare l’occorrenza.');
+      return;
+    }
+    await loadDeadlineOccurrence();
+  };
 }
 
 async function initialiseCreateMode(account, context) {
@@ -708,6 +741,25 @@ endTimeInput.addEventListener('keydown', (event) => {
   if (!isSingleDeadlineFlow || selectedDeadlineType() !== 'appointment' || event.key !== 'Enter') return;
   event.preventDefault();
   document.getElementById('deadline-notes').focus();
+});
+
+deleteButton.addEventListener('click', async () => {
+  if (!editingDeadline || !await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Eliminare la scadenza?',
+    message: 'La scadenza verrà eliminata definitivamente.',
+    confirmText: 'Elimina'
+  })) return;
+
+  deleteButton.disabled = true;
+  const { error } = await c.rpc('delete_deadline', { p_deadline_id: editingDeadline.id });
+  if (error) {
+    deleteButton.disabled = false;
+    setFormMessage('Impossibile eliminare la scadenza.');
+    return;
+  }
+  if (returnToAssociatedDeadlineItem(editingDeadline.deadline_item_id)) return;
+  location.href = 'scadenze.html';
 });
 
 async function transitionToEdit(deadlineId) {

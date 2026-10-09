@@ -17,9 +17,9 @@ async function openHomeItem(event) {
   location.href = `gestione-scadenza-item.html?item_id=${encodeURIComponent(data.id)}`;
 }
 
-function deadlineRow(deadline, isManaged, member) {
+function deadlineRow(deadline) {
   const item = document.createElement('a');
-  item.href = isManaged ? window.FamilAreaManagedContext.withMember(`scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`, member.id) : `scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
+  item.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`;
   item.className = 'fa-v2-list-row fa-v2-list-row--media';
   const thumbnail = document.createElement('span');
   const thumbnailName = deadline.deadline_item_name || deadline.title || 'Scadenza';
@@ -34,11 +34,7 @@ function deadlineRow(deadline, isManaged, member) {
 function renderDeadlineRows() {
   const isExpanded = deadlineListToggleButton.getAttribute('aria-expanded') === 'true';
   const visibleRows = isExpanded ? loadedDeadlines : loadedDeadlines.slice(0, initialDeadlineLimit);
-  list.replaceChildren(...visibleRows.map((deadline) => deadlineRow(
-    deadline,
-    loadedDeadlineContext.isManaged,
-    loadedDeadlineContext.member
-  )));
+  list.replaceChildren(...visibleRows.map((deadline) => deadlineRow(deadline)));
   deadlineListToggle.hidden = loadedDeadlines.length <= initialDeadlineLimit;
   deadlineListToggleButton.replaceChildren(
     document.createTextNode(isExpanded ? 'Mostra meno ' : 'Vedi tutte '),

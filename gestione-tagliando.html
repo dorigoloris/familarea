@@ -1,42 +1,24 @@
 <!DOCTYPE html>
 <html lang="it">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0d2b4f"><title>Tagliando - FamilArea</title><link rel="stylesheet" href="app.css"></head>
-<body class="deadline-management-page-view">
-  <button class="logout-button" type="button" data-logout>Esci</button><p id="logout-message" aria-live="polite"></p>
-  <main class="page-card fa-page fa-page--wide fa-section-page deadline-management-page" hidden data-service-content>
-    <p class="account-back-link"><a id="service-back-link" href="gestione-scadenze-veicoli.html">Torna al Veicolo</a></p>
-    <p id="service-message" class="deadline-management-message" aria-live="polite">Caricamento Tagliando...</p>
-    <div id="service-view" hidden>
-      <header class="deadline-context-heading"><span class="fa-icon-badge" aria-hidden="true">&#9200;</span><div><h1 id="service-deadline-title"></h1></div></header>
-      <section class="vehicle-service-next fa-surface"><h2>Prossima scadenza</h2><div id="service-next-deadline" class="deadline-management-section-row"></div></section>
-      <section class="deadline-attachments-section fa-surface" aria-labelledby="deadline-attachments-title">
-        <div class="deadline-attachments-heading"><div><h2 id="deadline-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questa scadenza.</p></div><label id="deadline-attachment-upload" class="btn secondary-button deadline-attachment-upload" for="deadline-attachment-input">+ Aggiungi allegato</label><input id="deadline-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>
-        <p id="deadline-attachments-message" class="deadline-attachments-message" aria-live="polite"></p>
-        <p id="deadline-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p>
-        <div id="deadline-attachments-list" class="deadline-attachments-list"></div>
-      </section>
-      <section class="vehicle-service-history fa-surface"><div class="vehicle-service-heading"><div><p class="section-kicker">Storico</p><h2>Tagliandi effettuati</h2></div><button id="service-create" class="fa-button fa-button-primary" type="button">+ Nuovo Tagliando</button></div>
-        <p id="service-empty">Nessun tagliando registrato.</p><div id="service-list" class="vehicle-service-list"></div>
-      </section>
-    </div>
-  </main>
-  <div id="service-form-modal" class="confirm-modal-overlay vehicle-service-modal" hidden>
-    <section id="service-form-dialog" class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="service-form-title" tabindex="-1">
-      <button id="service-modal-close" class="confirm-modal-close" type="button" aria-label="Chiudi form Tagliando">×</button>
-      <form id="service-form" class="vehicle-service-form">
-        <h2 id="service-form-title" class="confirm-modal-title">Nuovo Tagliando</h2>
-        <div class="deadline-management-form-grid"><div><label for="service-performed-at">Data intervento *</label><input id="service-performed-at" type="date" required></div><div><label for="service-mileage">Chilometraggio</label><input id="service-mileage" type="number" min="0" step="1"></div><div><label for="service-performed-by">Eseguito da</label><input id="service-performed-by" type="text"></div></div>
-        <fieldset id="service-tasks"><legend>Lavori eseguiti</legend><label><input type="checkbox" value="engine_oil"> Cambio olio motore</label><label><input type="checkbox" value="engine_oil_filter"> Cambio filtro olio motore</label><label><input type="checkbox" value="spark_plugs"> Cambio candele</label><label><input type="checkbox" value="wheel_balancing"> Equilibratura gomme</label></fieldset>
-        <div><label>Lavori personalizzati</label><div id="service-custom-tasks" class="vehicle-service-custom-tasks"></div><button id="service-add-custom-task" class="fa-button fa-button-secondary fa-button-compact" type="button">+ Aggiungi lavoro</button></div>
-        <div><label for="service-notes">Note</label><textarea id="service-notes" rows="3"></textarea></div><div class="form-actions"><button id="service-save" class="fa-button fa-button-primary" type="submit">Salva Tagliando</button><button id="service-cancel" class="fa-button fa-button-secondary" type="button">Annulla</button></div>
-      </form>
-    </section>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="date-utils.js"></script><script src="gestione-scadenze.js"></script><script src="attachment-preview.js"></script><script src="deadline-attachments.js"></script><script src="gestione-tagliando.js"></script>
-</body></html>
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Tagliando - FamilArea</title>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const deadlineId = params.get('deadline_id');
+    const target = new URL('nuova-scadenza.html', window.location.href);
+    if (deadlineId) target.searchParams.set('deadline_id', deadlineId);
+    window.location.replace(`${target.pathname.split('/').pop()}${target.search}${window.location.hash}`);
+  </script>
+</head>
+<body>
+  <p>Reindirizzamento a <a href="scadenze.html">Scadenze</a>&hellip;</p>
+</body>
+</html>
