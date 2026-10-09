@@ -18,6 +18,8 @@ const submitButton = document.getElementById('deadline-submit');
 const startTimeInput = document.getElementById('deadline-start-time');
 const endTimeInput = document.getElementById('deadline-end-time');
 const categoryInput = document.getElementById('deadline-category');
+const insuranceCompanyField = document.getElementById('deadline-insurance-company-field');
+const insuranceCompanyInput = document.getElementById('deadline-insurance-company');
 const deadlineTypeChoice = document.getElementById('deadline-type-choice');
 const deadlineTypeNote = document.getElementById('deadline-type-note');
 const deadlineTypeInputs = [...document.querySelectorAll('input[name="deadline-type"]')];
@@ -139,17 +141,40 @@ function configureDeadlineItemCreateForm(item) {
   const isTemplate = Boolean(template);
   document.getElementById('deadline-category').value = item.category;
   titleField.hidden = isTemplate;
-  categoryField.hidden = true;
   if (isTemplate) {
     deadlineItemKind = template.kind;
     document.getElementById('deadline-title').value = template.title;
   }
   setAssociatedDeadlineHeader(item, template?.title || document.getElementById('deadline-title').value);
+  updateDeadlineCategoryAndInsuranceFields();
   updateVehicleDeadlineTimeFields();
 }
 
 function selectedDeadlineItem() {
   return availableDeadlineItems.find((item) => item.id === deadlineItemSelector.value) || null;
+}
+
+function associatedDeadlineItem() {
+  return deadlineItem || selectedDeadlineItem();
+}
+
+function normalizedDeadlineTitle() {
+  return document.getElementById('deadline-title').value.trim().toLocaleLowerCase('it-IT');
+}
+
+function isVehicleInsuranceDeadline() {
+  const item = associatedDeadlineItem();
+  if (item?.category !== 'vehicle') return false;
+  return deadlineItemKind === 'vehicle_insurance'
+    || editingDeadline?.deadline_kind === 'vehicle_insurance'
+    || ['assicurazione rca', 'rca'].includes(normalizedDeadlineTitle());
+}
+
+function updateDeadlineCategoryAndInsuranceFields() {
+  const item = associatedDeadlineItem();
+  categoryField.hidden = Boolean(item);
+  if (item) categoryInput.value = item.category;
+  insuranceCompanyField.hidden = !isVehicleInsuranceDeadline();
 }
 
 function isVehicleDeadlineContext() {
@@ -178,6 +203,7 @@ function updateDeadlineItemAssociationFields() {
   }
   if (item) setAssociatedDeadlineHeader(item, document.getElementById('deadline-title').value);
   else if (!deadlineItem) clearAssociatedDeadlineHeader();
+  updateDeadlineCategoryAndInsuranceFields();
   updateVehicleDeadlineTimeFields();
 }
 
@@ -214,6 +240,7 @@ function populateEditForm(deadline) {
   document.getElementById('deadline-recurrence').value = deadline.recurrence_months || 'none';
   document.getElementById('deadline-reminder').value = deadline.reminder_days ?? '';
   document.getElementById('deadline-notes').value = deadline.notes || '';
+  insuranceCompanyInput.value = deadline.insurance_company || '';
   startTimeInput.value = String(deadline.start_time || '').slice(0, 5);
   endTimeInput.value = String(deadline.end_time || '').slice(0, 5);
   if (isSingleDeadlineFlow) setDeadlineType(deadline.start_time ? 'appointment' : 'deadline');
@@ -660,6 +687,7 @@ async function init() {
 
 document.getElementById('deadline-title').addEventListener('input', () => {
   if (headerDeadlineItem) setAssociatedDeadlineHeader(headerDeadlineItem, document.getElementById('deadline-title').value);
+  updateDeadlineCategoryAndInsuranceFields();
 });
 
 startTimeInput.addEventListener('input', () => updateTimeValidation());
@@ -746,6 +774,7 @@ f.onsubmit = async (event) => {
     p_recurrence_months: Number(recurrenceValue) || null,
     p_reminder_days: reminderValue ? Number(reminderValue) : null,
     p_notes: document.getElementById('deadline-notes').value.trim() || null,
+    p_insurance_company: isVehicleInsuranceDeadline() ? insuranceCompanyInput.value.trim() : null,
     p_start_time: !isVehicleDeadline && (!isSingleDeadlineFlow || selectedDeadlineType() === 'appointment') ? (startTimeInput.value || null) : null,
     p_end_time: !isVehicleDeadline && (!isSingleDeadlineFlow || selectedDeadlineType() === 'appointment') ? (endTimeInput.value || null) : null
   };
