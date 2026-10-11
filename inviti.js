@@ -388,7 +388,7 @@ async function loadInvites(account) {
     ] : [
       Promise.resolve({ data: [] }),
       Promise.resolve({ data: [] }),
-      Promise.resolve({ data: [] }),
+      supabaseClient.rpc('get_my_event_invites'),
       Promise.resolve({ data: [] }),
       Promise.resolve({ data: [] })
     ]),
@@ -448,7 +448,7 @@ async function loadPage() {
   sharedDeadlinesCard.hidden = false;
   invitesDescription.textContent = isPersonal
     ? 'Gestisci gli inviti ricevuti per Scadenze, Liste, Aree, Eventi e Famiglia.'
-    : 'Gestisci gli inviti ricevuti per Scadenze e Contatti.';
+    : 'Gestisci gli inviti ricevuti per Scadenze, Eventi e Contatti.';
   await loadInvites(account);
   if (invitesSection.hidden === false) setPageMessage('');
 }

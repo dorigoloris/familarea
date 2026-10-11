@@ -23,33 +23,57 @@ function formatEventWhen(event) {
   return `${date}, ${startTime}${endTime}`;
 }
 
-function createCommitmentRow({ title, when, detail, href, label }) {
+function eventIdOf(event) {
+  return event.id || event.event_id;
+}
+
+function eventHref(event) {
+  const query = new URLSearchParams({ event_id: eventIdOf(event) });
+  if (event.area_id) query.set('area_id', event.area_id);
+  return `evento.html?${query}`;
+}
+
+function statusLabel(status) {
+  return ({ active: 'Attivo', cancelled: 'Annullato' })[status] || status;
+}
+
+function createCommitmentRow({ title, when, type, status, href, label }) {
   const row = document.createElement('a');
-  row.className = 'deadline-card deadline-card--with-item-thumbnail';
+  row.className = 'fa-v2-list-row fa-v2-list-row--media';
   row.href = href;
   row.setAttribute('aria-label', label);
 
-  const thumbnail = document.createElement('span');
-  thumbnail.className = 'deadline-item-thumbnail';
-  thumbnail.setAttribute('aria-hidden', 'true');
-  thumbnail.textContent = (title || '').trim().charAt(0).toLocaleUpperCase('it-IT') || 'I';
-  const copy = document.createElement('span');
-  copy.className = 'deadline-card-main deadline-card-item-copy';
-  const heading = document.createElement('span');
-  heading.className = 'deadline-card-title';
-  heading.textContent = `${when} — ${title}`;
-  copy.append(heading);
-  if (detail) {
-    const metadata = document.createElement('span');
-    metadata.className = 'deadline-card-meta';
-    metadata.textContent = detail;
-    copy.append(metadata);
+  const visual = document.createElement('span');
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = (title || '').trim().charAt(0).toLocaleUpperCase('it-IT') || 'I';
+  const copy = document.createElement('div');
+  copy.className = 'fa-v2-card-content';
+  const heading = document.createElement('h3');
+  heading.className = 'fa-v2-card-title';
+  heading.textContent = title;
+  const date = document.createElement('p');
+  date.className = 'fa-v2-card-description';
+  date.textContent = when;
+  copy.append(heading, date);
+
+  const controls = document.createElement('div');
+  controls.className = 'fa-v2-card-actions';
+  const typeBadge = document.createElement('span');
+  typeBadge.className = 'fa-v2-badge';
+  typeBadge.textContent = type;
+  controls.appendChild(typeBadge);
+  if (status && status !== 'active') {
+    const stateBadge = document.createElement('span');
+    stateBadge.className = 'fa-v2-badge';
+    stateBadge.textContent = statusLabel(status);
+    controls.appendChild(stateBadge);
   }
 
   const action = document.createElement('span');
-  action.className = 'fa-button fa-button-secondary fa-button-compact';
+  action.className = 'fa-v2-button fa-v2-button--secondary';
   action.textContent = 'Apri';
-  row.append(thumbnail, copy, action);
+  controls.appendChild(action);
+  row.append(visual, copy, controls);
   return row;
 }
 
@@ -57,7 +81,8 @@ function standaloneDeadlineCard(deadline) {
   return createCommitmentRow({
     title: deadline.title,
     when: formatDate(deadline.first_due_on),
-    detail: 'Da ricordare',
+    type: 'Impegno',
+    status: deadline.status,
     href: `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}`,
     label: `Apri impegno da ricordare ${deadline.title}`
   });
@@ -67,9 +92,21 @@ function commitmentEventCard(event) {
   return createCommitmentRow({
     title: event.title,
     when: formatEventWhen(event),
-    detail: 'Impegno',
-    href: `evento.html?event_id=${encodeURIComponent(event.id || event.event_id)}`,
+    type: 'Impegno',
+    status: event.status,
+    href: eventHref(event),
     label: `Apri impegno ${event.title}`
+  });
+}
+
+function eventCard(event) {
+  return createCommitmentRow({
+    title: event.title,
+    when: formatEventWhen(event),
+    type: 'Evento',
+    status: event.status,
+    href: eventHref(event),
+    label: `Apri evento ${event.title}`
   });
 }
 
@@ -97,10 +134,18 @@ async function loadCommitments() {
     && !deadline.family_member_id
     && deadline.category !== 'personal_document'
   ));
-  const commitmentEvents = (eventsResult.data || []).filter((event) => event.event_kind === 'commitment');
+  const visibleEvents = [...new Map((eventsResult.data || [])
+    .map((event) => [eventIdOf(event), event]))
+    .values()];
+  const commitmentEvents = visibleEvents.filter((event) => event.event_kind === 'commitment');
+  const participantEvents = visibleEvents.filter((event) => (
+    event.event_kind !== 'commitment'
+    && ['owner', 'creator', 'participant'].includes(event.visibility_source)
+  ));
   const commitments = [
     ...standaloneDeadlines.map((deadline) => ({ when: `${deadline.first_due_on}T00:00:00`, card: standaloneDeadlineCard(deadline) })),
-    ...commitmentEvents.map((event) => ({ when: event.starts_at, card: commitmentEventCard(event) }))
+    ...commitmentEvents.map((event) => ({ when: event.starts_at, card: commitmentEventCard(event) })),
+    ...participantEvents.map((event) => ({ when: event.starts_at, card: eventCard(event) }))
   ].sort(sortByWhen);
 
   commitmentsList.replaceChildren(...commitments.map((commitment) => commitment.card));

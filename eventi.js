@@ -1,4 +1,10 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const requestedAreaId = new URLSearchParams(location.search).get('area_id');
+
+if (!requestedAreaId) {
+  document.body.classList.add('fa-v2-app');
+  document.querySelector('main')?.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
+}
 
 const statusLabels = {
   active: 'Attivo',
@@ -56,33 +62,31 @@ function createContextualCard(event, areaId) {
 
 function createGlobalRow(event) {
   const row = document.createElement('a');
-  row.className = 'global-activity-row';
+  row.className = 'fa-v2-list-row fa-v2-content-action-row';
   row.href = eventHref(event);
   row.setAttribute('aria-label', `Apri evento ${event.title}`);
 
   const main = document.createElement('div');
-  main.className = 'global-activity-main';
-  const title = document.createElement('h2');
+  main.className = 'fa-v2-card-content';
+  const title = document.createElement('h3');
+  title.className = 'fa-v2-card-title';
   title.textContent = event.title;
   const context = document.createElement('p');
-  context.className = 'global-activity-area';
+  context.className = 'fa-v2-card-description';
   context.textContent = event.area_id ? 'Area condivisa' : 'Personale';
   main.append(title, context);
 
   const details = document.createElement('div');
-  details.className = 'global-activity-details';
-  const date = document.createElement('span');
-  date.className = 'global-activity-date';
+  details.className = 'fa-v2-card-content';
+  const date = document.createElement('p');
+  date.className = 'fa-v2-card-description';
   date.textContent = `${when(event)}${event.location ? ` · ${event.location}` : ''}`;
   details.appendChild(date);
   if (event.status && event.status !== 'active') {
-    const badges = document.createElement('div');
-    badges.className = 'global-activity-badges';
     const status = document.createElement('span');
-    status.className = `global-activity-status global-activity-status-${event.status}`;
+    status.className = 'fa-v2-badge';
     status.textContent = statusLabels[event.status] || event.status;
-    badges.appendChild(status);
-    details.appendChild(badges);
+    details.appendChild(status);
   }
 
   row.append(main, details);
@@ -96,7 +100,7 @@ async function load() {
     return;
   }
 
-  const areaId = new URLSearchParams(location.search).get('area_id');
+  const areaId = requestedAreaId;
   const isGlobal = !areaId;
   const contextualContent = document.getElementById('contextual-events-content');
   const globalContent = document.getElementById('global-events-content');
@@ -104,8 +108,6 @@ async function load() {
   const list = document.getElementById(isGlobal ? 'global-events-list' : 'contextual-events-list');
 
   if (isGlobal) {
-    document.body.classList.add('global-activities-page-view');
-    globalContent.closest('main').classList.add('global-activities-page');
     contextualContent.hidden = true;
     globalContent.hidden = false;
   } else {

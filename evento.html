@@ -40,7 +40,6 @@
           <div class="fa-v2-list-row"><dt>Luogo</dt><dd id="location"></dd></div>
           <div class="fa-v2-list-row"><dt>Stato</dt><dd><span id="status" class="fa-v2-badge"></span><span id="status-editor" class="fa-v2-card-actions"><label for="status-select">Cambia stato:</label><select id="status-select" class="fa-v2-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select><button id="save-status" class="fa-v2-button fa-v2-button--primary" type="button">Salva</button></span></dd></div>
           <div id="event-visibility-row" class="fa-v2-list-row" hidden><dt id="event-visibility-label">Visibilità</dt><dd id="event-visibility"></dd></div>
-          <div id="participants-row" class="fa-v2-list-row"><dt id="participants-label">Partecipanti</dt><dd id="participant-list" class="fa-v2-list"></dd></div>
           <div id="event-interests-row" class="fa-v2-list-row" hidden><dt id="event-interests-label">Interessi</dt><dd id="event-interests" class="event-interests-view"></dd></div>
           <div id="recurrence-row" class="fa-v2-list-row" hidden><dt id="recurrence-label">Ripetizione</dt><dd id="recurrence"></dd></div>
           <div id="notes-row" class="fa-v2-list-row"><dt id="notes-label">Note</dt><dd id="notes"></dd></div>
@@ -51,16 +50,25 @@
           <p id="join-suggested-message" class="fa-v2-status" aria-live="polite" hidden></p>
         </div>
       </section>
+      <section id="participants-section" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="participants-title" hidden>
+        <div class="fa-v2-section-heading">
+          <h2 id="participants-title">Partecipanti e inviti</h2>
+          <p>Gestisci gli inviti all'Evento. La partecipazione non modifica la visibilit&agrave; del Calendario.</p>
+        </div>
+        <div id="participant-list" class="fa-v2-page-stack"></div>
+      </section>
     </div>
     <form id="edit-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
       <div class="fa-v2-section-heading"><h2>Modifica evento</h2></div>
       <div><label for="edit-title">Titolo</label><input id="edit-title" class="fa-v2-input" required></div>
       <div><label for="edit-notes">Note</label><textarea id="edit-notes" class="fa-v2-textarea"></textarea></div>
-      <fieldset class="event-interests-fieldset">
-        <legend>Interessi</legend>
-        <p id="edit-event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
-        <div id="edit-event-interests-selector" class="event-interests-selector"></div>
-      </fieldset>
+      <details id="edit-interests-details">
+        <summary>Interessi</summary>
+        <div class="event-interests-fieldset">
+          <p id="edit-event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
+          <div id="edit-event-interests-selector" class="event-interests-selector"></div>
+        </div>
+      </details>
       <fieldset id="edit-commitment-when-fieldset" class="event-interests-fieldset" hidden>
         <legend>Quando?</legend>
         <div class="event-form-options">
@@ -123,7 +131,6 @@
         <label><input id="edit-calendar-private" type="checkbox"> Privato</label>
         <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
       </fieldset>
-      <fieldset id="edit-participants-fieldset"><legend>Partecipanti</legend><div id="edit-participants"></div></fieldset>
       <div id="edit-calendar-private-spacing" hidden></div>
       <div class="fa-v2-card-actions"><button class="fa-v2-button fa-v2-button--primary" type="submit">Salva modifiche</button><button id="close-edit" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button></div>
     </form>

@@ -20,6 +20,7 @@ const endSection = document.getElementById('event-end-section');
 const endDates = document.getElementById('event-end-dates');
 let isPersonalAccount = false;
 let commitmentRecurrenceWeekdaysEdited = false;
+let genericEventOptionsSection = null;
 
 function commitmentWhen() {
   return document.querySelector('input[name="commitment-when"]:checked')?.value || 'date';
@@ -124,6 +125,104 @@ function configureCommitmentV2() {
   syncCommitmentWhenLayout();
 }
 
+function createGenericEventSection(titleText) {
+  const section = document.createElement('section');
+  const heading = document.createElement('div');
+  const title = document.createElement('h2');
+
+  section.className = 'fa-v2-card fa-v2-section-card fa-v2-form-card fa-v2-page-stack';
+  heading.className = 'fa-v2-section-heading';
+  title.textContent = titleText;
+  heading.append(title);
+  section.append(heading);
+  return section;
+}
+
+function createFieldGroup(label, field) {
+  const group = document.createElement('div');
+  group.append(label, field);
+  return group;
+}
+
+function configureGenericEventV2() {
+  if (eventKind || areaId) return;
+
+  const page = document.querySelector('main.page-card');
+  const legacyTitle = page.querySelector('h1');
+  const titleLabel = document.querySelector('label[for="title"]');
+  const titleInput = document.getElementById('title');
+  const notesLabel = document.querySelector('label[for="notes"]');
+  const notesInput = document.getElementById('notes');
+  const locationLabel = document.querySelector('label[for="location"]');
+  const locationInput = document.getElementById('location');
+  const interestsFieldset = document.querySelector('.event-interests-fieldset');
+  const commitmentWhenFieldset = document.getElementById('commitment-when-fieldset');
+  const startSection = document.querySelector('.event-time-section');
+  const allDayOptions = allDayInput.closest('.event-form-options');
+  const recurrenceOptions = document.getElementById('recurrence-enabled').closest('.event-form-options');
+  const recurrenceFields = document.getElementById('recurrence-fields');
+  const privateFieldset = document.getElementById('calendar-private-fieldset');
+  const privateSpacing = document.getElementById('calendar-private-spacing');
+  const submit = form.querySelector('[type="submit"]');
+  const header = document.createElement('header');
+  const headerContent = document.createElement('div');
+  const heading = document.createElement('h1');
+  const intro = document.createElement('p');
+
+  page.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
+  backLink.closest('p')?.classList.add('account-back-link');
+  backLink.removeAttribute('id');
+  backLink.textContent = 'Torna agli Impegni';
+  form.className = 'fa-v2-page-stack fa-v2-form-card';
+  form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach((field) => {
+    field.classList.add(field.tagName === 'TEXTAREA' ? 'fa-v2-textarea' : field.tagName === 'SELECT' ? 'fa-v2-select' : 'fa-v2-input');
+  });
+  submit?.classList.add('fa-v2-button', 'fa-v2-button--primary');
+
+  header.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
+  headerContent.className = 'fa-section-hero-content';
+  heading.textContent = 'Nuovo evento';
+  intro.textContent = 'Organizza un evento e definisci quando si svolgerà.';
+  headerContent.append(heading, intro);
+  header.append(headerContent);
+  page.insertBefore(header, message);
+  legacyTitle?.remove();
+
+  const mainSection = createGenericEventSection('Informazioni principali');
+  mainSection.append(
+    createFieldGroup(titleLabel, titleInput),
+    createFieldGroup(notesLabel, notesInput)
+  );
+
+  const interestsSection = createGenericEventSection('Interessi');
+  const interestsDetails = document.createElement('details');
+  const interestsSummary = document.createElement('summary');
+  interestsSummary.textContent = 'Seleziona gli interessi pertinenti';
+  interestsDetails.append(interestsSummary, interestsFieldset);
+  interestsSection.append(interestsDetails);
+
+  const timeSection = createGenericEventSection('Data e ora');
+  timeSection.append(startSection, allDayOptions, endSection, recurrenceOptions, recurrenceFields, commitmentWhenFieldset);
+
+  const locationSection = createGenericEventSection('Luogo');
+  locationSection.append(createFieldGroup(locationLabel, locationInput));
+
+  const participantsSection = createGenericEventSection('Partecipanti');
+  const participantsNote = document.createElement('p');
+  participantsNote.className = 'fa-v2-status';
+  participantsNote.textContent = 'Potrai invitare partecipanti dopo aver creato l’evento.';
+  participantsSection.append(participantsNote);
+
+  genericEventOptionsSection = createGenericEventSection('Opzioni');
+  genericEventOptionsSection.append(privateFieldset, privateSpacing);
+
+  const actions = document.createElement('div');
+  actions.className = 'fa-v2-card-actions';
+  actions.append(submit);
+
+  form.replaceChildren(mainSection, interestsSection, timeSection, locationSection, participantsSection, genericEventOptionsSection, actions);
+}
+
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
 function localIsoWeekday(dateValue) {
   const [year, month, day] = dateValue.split('-').map(Number);
@@ -225,9 +324,10 @@ function focusOnEnter(next) {
 async function load() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data.session) { location.href = 'login.html'; return; }
-  backLink.href = eventKind === 'commitment'
+  backLink.href = eventKind === 'commitment' || !areaId
     ? 'impegni.html'
-    : areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'eventi.html';
+    : `eventi.html?area_id=${encodeURIComponent(areaId)}`;
+  if (!eventKind && !areaId) backLink.textContent = 'Torna agli Impegni';
   const { data: account } = await supabaseClient.rpc('get_current_account');
   isPersonalAccount = account?.account_type === 'personal';
   if (eventKind !== 'commitment') {
@@ -241,7 +341,8 @@ async function load() {
   }
   const privateFieldset = document.getElementById('calendar-private-fieldset');
   privateFieldset.hidden = eventKind === 'commitment' || !isPersonalAccount || Boolean(areaId);
-  document.getElementById('calendar-private-spacing').hidden = privateFieldset.hidden;
+  document.getElementById('calendar-private-spacing').hidden = eventKind || areaId ? privateFieldset.hidden : true;
+  if (genericEventOptionsSection) genericEventOptionsSection.hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
   if (eventKind === 'commitment') syncCommitmentWhenLayout();
   else syncMultiDayLayout();
@@ -333,4 +434,5 @@ form.addEventListener('submit', async (event) => {
 });
 
 configureCommitmentV2();
+configureGenericEventV2();
 load();

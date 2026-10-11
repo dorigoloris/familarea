@@ -41,7 +41,18 @@
     'inviti.html': 'invites',
     'admin.html': 'admin'
   };
-  const primarySection = primarySectionByPage[path] || null;
+  // Eventi e Liste fuori da un'Area fanno parte del flusso Impegni. Le
+  // rispettive pagine Area mantengono invece la navigazione legacy dedicata.
+  const isCommitmentFlowOutsideArea = !areaId && [
+    'nuovo-evento.html',
+    'evento.html',
+    'liste.html',
+    'lista.html',
+    'nuova-lista.html'
+  ].includes(path);
+  const primarySection = isCommitmentFlowOutsideArea
+    ? 'commitments'
+    : primarySectionByPage[path] || null;
   const isPrimaryNavActive = (section) => primarySection === section ? ' is-active' : '';
   const isAreaNavActive = (names) => names.includes(path) ? ' is-active' : '';
   const isParticipantsView = path === 'area.html' && params.get('view') === 'participants';
@@ -431,7 +442,7 @@
     document.querySelector('#event-form button[type="submit"]').textContent = 'Aggiungi';
   }
   if (path === 'evento.html') {
-    document.querySelector('#back-link').textContent = 'Torna al programma';
+    document.querySelector('#event-back').textContent = 'Torna al programma';
     document.querySelector('#delete-button').textContent = 'Elimina';
     document.querySelector('#edit-form h2').textContent = 'Modifica';
   }

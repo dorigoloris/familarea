@@ -23,10 +23,14 @@
       </div>
     </header>
 
-    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-list fa-v2-card fa-v2-card-grid--two" aria-label="Nuovo impegno">
+    <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-list fa-v2-card fa-v2-card-grid--two" aria-label="Azioni Impegni">
       <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuovo-evento.html?event_kind=commitment">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">+</span>
         <span class="deadline-management-card-copy fa-item-card-copy"><h3>Nuovo impegno</h3><p>Scegli una data, data e ora oppure un periodo.</p></span>
+      </a>
+      <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="nuovo-evento.html">
+        <span class="area-card-icon fa-item-card-icon" aria-hidden="true">E</span>
+        <span class="deadline-management-card-copy fa-item-card-copy"><h3>Nuovo evento</h3><p>Organizza un evento e invita i partecipanti.</p></span>
       </a>
       <a class="area-card fa-item-card deadline-management-category-card fa-v2-deadline-card fa-v2-deadline-card--interactive" href="liste.html">
         <span class="area-card-icon fa-item-card-icon" aria-hidden="true">L</span>
@@ -36,12 +40,12 @@
 
     <section class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-card" aria-labelledby="my-commitments-title">
       <div class="fa-v2-section-heading">
-        <h2 id="my-commitments-title">I miei impegni</h2>
-        <p>Le cose da ricordare e gli impegni personali che hai pianificato.</p>
+        <h2 id="my-commitments-title">I miei impegni ed eventi</h2>
+        <p>Le cose da ricordare, gli impegni personali e gli eventi a cui partecipi.</p>
       </div>
       <p id="commitments-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento impegni...</p>
-      <div id="commitments-list" class="fa-v2-list" aria-label="I miei impegni"></div>
-      <p id="commitments-empty" class="fa-v2-empty-state" hidden><strong>Nessun impegno ancora.</strong><span>Usa Nuovo impegno per aggiungere il primo.</span></p>
+      <div id="commitments-list" class="fa-v2-list" aria-label="I miei impegni ed eventi"></div>
+      <p id="commitments-empty" class="fa-v2-empty-state" hidden><strong>Nessun impegno o evento.</strong><span>Usa Nuovo impegno per aggiungere il primo.</span></p>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
