@@ -15,86 +15,115 @@
 <body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card">
-    <p><a id="back-link" href="#">Torna agli eventi</a></p>
-    <h1>Nuovo evento</h1>
-    <p id="message" aria-live="polite">Caricamento...</p>
-    <form id="event-form" hidden>
-      <label for="title">Titolo</label><input id="title" required>
-      <br><br>
-      <label for="notes">Note</label><textarea id="notes"></textarea>
-      <br><br>
-      <fieldset class="event-interests-fieldset">
-        <legend>Interessi</legend>
-        <p id="event-interests-message" class="field-help" aria-live="polite">Caricamento interessi...</p>
-        <div id="event-interests-selector" class="event-interests-selector"></div>
-      </fieldset>
-      <fieldset id="commitment-when-fieldset" class="event-interests-fieldset" hidden>
-        <legend>Quando?</legend>
-        <div class="event-form-options">
-          <label class="event-form-option"><input type="radio" name="commitment-when" value="date" checked><span>Una data</span></label>
-          <label class="event-form-option"><input type="radio" name="commitment-when" value="date-time"><span>Data e ora</span></label>
-          <label class="event-form-option"><input type="radio" name="commitment-when" value="period"><span>Periodo</span></label>
-        </div>
-      </fieldset>
-      <br>
-      <div class="event-time-section" aria-labelledby="event-start-heading">
-        <h2 id="event-start-heading" class="event-form-section-title">Inizio</h2>
-        <div id="event-start-dates" class="event-dates event-start-dates">
-          <div><label id="start-date-label" for="start-date">Data inizio</label><input id="start-date" type="date" required></div>
-          <div id="start-time-field"><label id="start-time-label" for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
-        </div>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a id="back-link" href="impegni.html">Torna agli Impegni</a></p>
+    <header id="event-form-header" class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="event-form-title">
+      <div class="fa-section-hero-content">
+        <h1 id="event-form-title">Nuovo evento</h1>
+        <p id="event-form-intro">Organizza un evento e definisci quando si svolgerà.</p>
       </div>
-      <div class="event-form-options">
-        <label class="event-form-option"><input id="all-day" type="checkbox"><span>Tutto il giorno</span></label>
-        <label class="event-form-option"><input id="multi-day" type="checkbox"><span>Più giorni</span></label>
-      </div>
-      <div id="event-end-section" class="event-time-section" aria-labelledby="event-end-heading">
-        <h2 id="event-end-heading" class="event-form-section-title">Fine</h2>
-        <div id="event-end-dates" class="event-dates event-end-dates">
-          <div id="end-date-field" hidden><label id="end-date-label" for="end-date">Data fine</label><input id="end-date" type="date"></div>
-          <div id="end-time-field"><label id="end-time-label" for="end-time">Ora fine</label><input id="end-time" type="time"></div>
+    </header>
+    <p id="message" class="fa-v2-status" aria-live="polite">Caricamento...</p>
+    <form id="event-form" class="fa-v2-page-stack" hidden>
+      <section id="event-main-section" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-main-title">
+        <h2 id="event-main-title">Informazioni principali</h2>
+        <div class="fa-v2-page-stack">
+          <label for="title">Titolo</label>
+          <input id="title" class="fa-v2-input" required>
         </div>
-      </div>
-      <div class="event-form-options">
-        <label class="event-form-option"><input id="recurrence-enabled" type="checkbox"><span>Ripeti</span></label>
-      </div>
-      <div id="recurrence-fields" class="event-recurrence-fields" hidden>
-        <div class="event-recurrence-interval">
-          <label for="recurrence-interval">Ogni</label>
-          <input id="recurrence-interval" type="number" min="1" max="32767" step="1" value="1">
-          <span>settimana/e</span>
+        <div class="fa-v2-page-stack">
+          <label for="notes">Note</label>
+          <textarea id="notes" class="fa-v2-textarea"></textarea>
         </div>
-        <fieldset class="event-recurrence-weekdays">
-          <legend>Giorni</legend>
-          <div class="event-recurrence-weekday-list">
-            <label><input type="checkbox" name="recurrence-weekday" value="1"><span>Lun</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="2"><span>Mar</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="3"><span>Mer</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="4"><span>Gio</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="5"><span>Ven</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="6"><span>Sab</span></label>
-            <label><input type="checkbox" name="recurrence-weekday" value="7"><span>Dom</span></label>
+      </section>
+
+      <section id="interests-section" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" aria-labelledby="interests-title">
+        <h2 id="interests-title">Interessi</h2>
+        <fieldset class="event-interests-fieldset">
+          <legend class="fa-v2-status">Seleziona gli interessi pertinenti</legend>
+          <p id="event-interests-message" class="fa-v2-status" aria-live="polite">Caricamento interessi...</p>
+          <div id="event-interests-selector" class="event-interests-selector"></div>
+        </fieldset>
+      </section>
+
+      <section id="event-time-section-card" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-time-card-title">
+        <h2 id="event-time-card-title">Data e ora</h2>
+        <fieldset id="commitment-when-fieldset" class="event-interests-fieldset" hidden>
+          <legend>Quando?</legend>
+          <div class="event-form-options">
+            <label class="event-form-option"><input type="radio" name="commitment-when" value="date" checked><span>Una data</span></label>
+            <label class="event-form-option"><input type="radio" name="commitment-when" value="date-time"><span>Data e ora</span></label>
+            <label class="event-form-option"><input type="radio" name="commitment-when" value="period"><span>Periodo</span></label>
           </div>
         </fieldset>
-        <fieldset class="event-recurrence-end-mode">
-          <legend>Fine ripetizione</legend>
-          <label><input type="radio" name="recurrence-end-mode" value="date" checked> Il</label>
-          <input id="recurrence-until" type="date">
-          <label><input type="radio" name="recurrence-end-mode" value="never"> Senza scadenza</label>
+        <div class="event-time-section" aria-labelledby="event-start-heading">
+          <h2 id="event-start-heading" class="event-form-section-title">Inizio</h2>
+          <div id="event-start-dates" class="event-dates event-start-dates">
+            <div><label id="start-date-label" for="start-date">Data inizio</label><input id="start-date" class="fa-v2-input" type="date" required></div>
+            <div id="start-time-field"><label id="start-time-label" for="start-time">Ora inizio</label><input id="start-time" class="fa-v2-input" type="time"></div>
+          </div>
+        </div>
+        <div class="event-form-options">
+          <label class="event-form-option"><input id="all-day" type="checkbox"><span>Tutto il giorno</span></label>
+          <label class="event-form-option"><input id="multi-day" type="checkbox"><span>Più giorni</span></label>
+        </div>
+        <div id="event-end-section" class="event-time-section" aria-labelledby="event-end-heading">
+          <h2 id="event-end-heading" class="event-form-section-title">Fine</h2>
+          <div id="event-end-dates" class="event-dates event-end-dates">
+            <div id="end-date-field" hidden><label id="end-date-label" for="end-date">Data fine</label><input id="end-date" class="fa-v2-input" type="date"></div>
+            <div id="end-time-field"><label id="end-time-label" for="end-time">Ora fine</label><input id="end-time" class="fa-v2-input" type="time"></div>
+          </div>
+        </div>
+        <div class="event-form-options">
+          <label class="event-form-option"><input id="recurrence-enabled" type="checkbox"><span>Ripeti</span></label>
+        </div>
+        <div id="recurrence-fields" class="event-recurrence-fields fa-v2-page-stack" hidden>
+          <div class="event-recurrence-interval">
+            <label for="recurrence-interval">Ogni</label>
+            <input id="recurrence-interval" class="fa-v2-input" type="number" min="1" max="32767" step="1" value="1">
+            <span>settimana/e</span>
+          </div>
+          <fieldset class="event-recurrence-weekdays">
+            <legend>Giorni</legend>
+            <div class="event-recurrence-weekday-list">
+              <label><input type="checkbox" name="recurrence-weekday" value="1"><span>Lun</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="2"><span>Mar</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="3"><span>Mer</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="4"><span>Gio</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="5"><span>Ven</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="6"><span>Sab</span></label>
+              <label><input type="checkbox" name="recurrence-weekday" value="7"><span>Dom</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="event-recurrence-end-mode">
+            <legend>Fine ripetizione</legend>
+            <label><input type="radio" name="recurrence-end-mode" value="date" checked> Il</label>
+            <input id="recurrence-until" class="fa-v2-input" type="date">
+            <label><input type="radio" name="recurrence-end-mode" value="never"> Senza scadenza</label>
+          </fieldset>
+          <p id="recurrence-error" class="event-recurrence-error" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section id="location-section" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" aria-labelledby="location-title">
+        <h2 id="location-title">Luogo</h2>
+        <label for="location">Luogo</label>
+        <input id="location" class="fa-v2-input">
+      </section>
+
+      <section id="event-options-section" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-options-title">
+        <h2 id="event-options-title">Opzioni</h2>
+        <fieldset id="calendar-private-fieldset" class="event-family-visibility" hidden>
+          <legend>Calendario condiviso</legend>
+          <label><input id="calendar-private" type="checkbox"> Privato</label>
+          <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
         </fieldset>
-        <p id="recurrence-error" class="event-recurrence-error" role="alert" hidden></p>
+        <span id="calendar-private-spacing" hidden></span>
+      </section>
+
+      <div class="fa-v2-card-actions">
+        <button class="fa-v2-button fa-v2-button--primary" type="submit">Crea evento</button>
       </div>
-      <br><br>
-      <label for="location">Luogo</label><input id="location">
-      <br><br>
-      <fieldset id="calendar-private-fieldset" class="event-family-visibility" hidden>
-        <legend>Calendario condiviso</legend>
-        <label><input id="calendar-private" type="checkbox"> Privato</label>
-        <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
-      </fieldset>
-      <br id="calendar-private-spacing">
-      <button type="submit">Crea evento</button>
     </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

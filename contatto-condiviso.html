@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -12,32 +12,39 @@
   <title>Contatto condiviso - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
-  <main class="page-card">
-    <h1>Contatto condiviso</h1>
-    <p id="message" aria-live="polite">Caricamento…</p>
-    <section id="anonymous" hidden>
-      <p>Ti è stato condiviso un contatto tramite FamilArea.</p>
-      <a id="login-link" class="btn" href="login.html">Accedi</a>
-      <a id="signup-link" class="secondary-button" href="registrati.html">Registrati</a>
-    </section>
-    <section id="share" hidden>
-      <h2 id="name"></h2>
-      <p id="email"></p>
-      <fieldset id="contact-choice">
-        <legend>Dove vuoi aggiungere questo contatto?</legend>
-        <label><input type="radio" name="contact-target" value="new" checked> Aggiungi come nuovo contatto</label>
-        <label><input type="radio" name="contact-target" value="existing"> Collega a un contatto esistente</label>
-      </fieldset>
-      <div id="existing-contact-field" hidden>
-        <label for="existing-contact">Contatto esistente</label>
-        <select id="existing-contact"></select>
-        <p id="existing-contact-help" aria-live="polite" hidden></p>
+<body class="fa-v2-app">
+  <main class="fa-v2-page fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="shared-contact-title">
+      <div class="fa-section-hero-content">
+        <h1 id="shared-contact-title">Contatto condiviso</h1>
+        <p>Hai ricevuto un contatto tramite FamilArea.</p>
       </div>
-      <button id="accept" type="button">Aggiungi ai miei Contatti</button>
+    </header>
+    <p id="message" class="fa-v2-status" aria-live="polite">Caricamento…</p>
+    <section id="anonymous" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="shared-contact-access-title" hidden>
+      <div class="fa-v2-section-heading"><h2 id="shared-contact-access-title">Accedi per continuare</h2></div>
+      <p>Accedi o registrati per aggiungere questo contatto alla tua rubrica.</p>
+      <div class="fa-v2-card-actions"><a id="signup-link" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a><a id="login-link" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a></div>
     </section>
-    <section id="accepted" hidden>
-      <a id="contacts-link" class="btn" href="contatti.html">Vai ai miei Contatti</a>
+    <section id="share" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="name" hidden>
+      <div><h2 id="name"></h2><p id="email" class="fa-v2-status"></p></div>
+      <fieldset id="contact-choice" class="fa-choice-fieldset">
+        <legend>Dove vuoi aggiungere questo contatto?</legend>
+        <div class="fa-choice-options">
+          <label><input type="radio" name="contact-target" value="new" checked> Aggiungi come nuovo contatto</label>
+          <label><input type="radio" name="contact-target" value="existing"> Collega a un contatto esistente</label>
+        </div>
+      </fieldset>
+      <div id="existing-contact-field" class="fa-v2-page-stack" hidden>
+        <label for="existing-contact">Contatto esistente</label>
+        <select id="existing-contact" class="fa-v2-select"></select>
+        <p id="existing-contact-help" class="fa-v2-status" aria-live="polite" hidden></p>
+      </div>
+      <div class="fa-v2-card-actions"><button id="accept" class="fa-v2-button fa-v2-button--primary" type="button">Aggiungi ai miei Contatti</button></div>
+    </section>
+    <section id="accepted" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="shared-contact-accepted-title" hidden>
+      <div class="fa-v2-section-heading"><h2 id="shared-contact-accepted-title">Contatto aggiunto</h2></div>
+      <div class="fa-v2-card-actions"><a id="contacts-link" class="fa-v2-button fa-v2-button--primary" href="contatti.html">Vai ai miei Contatti</a></div>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

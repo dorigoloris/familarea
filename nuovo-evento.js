@@ -78,45 +78,24 @@ function hideElement(selector) {
 function configureCommitmentV2() {
   if (eventKind !== 'commitment') return;
 
-  const page = document.querySelector('main.page-card');
-  const legacyTitle = page.querySelector('h1');
-  const heading = 'Nuovo impegno';
-  const description = 'Scegli quando pianificare il tuo impegno.';
-  const header = document.createElement('header');
-  const headerContent = document.createElement('div');
-  const title = document.createElement('h1');
-  const intro = document.createElement('p');
+  const title = document.getElementById('event-form-title');
+  const intro = document.getElementById('event-form-intro');
 
-  document.body.classList.add('fa-v2-app');
-  page.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
-  backLink.closest('p')?.classList.add('account-back-link');
-  backLink.removeAttribute('id');
   backLink.textContent = 'Torna agli Impegni';
-  form.classList.add('fa-v2-card', 'fa-v2-section-card', 'fa-v2-form-card');
   form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach((field) => {
     field.classList.add(field.tagName === 'TEXTAREA' ? 'fa-v2-textarea' : field.tagName === 'SELECT' ? 'fa-v2-select' : 'fa-v2-input');
   });
   const submit = form.querySelector('[type="submit"]');
   submit?.classList.add('fa-v2-button', 'fa-v2-button--primary');
   if (submit) submit.textContent = 'Crea impegno';
-  form.querySelectorAll('br').forEach((element) => { element.hidden = true; });
+  title.textContent = 'Nuovo impegno';
+  intro.textContent = 'Scegli quando pianificare il tuo impegno.';
 
-  header.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
-  headerContent.className = 'fa-section-hero-content';
-  title.textContent = heading;
-  intro.textContent = description;
-  headerContent.append(title, intro);
-  header.append(headerContent);
-  page.insertBefore(header, message);
-  legacyTitle?.remove();
-
-  hideElement('.event-interests-fieldset');
+  hideElement('#interests-section');
   document.getElementById('commitment-when-fieldset').hidden = false;
   allDayInput.closest('.event-form-options').hidden = true;
-  hideElement('#calendar-private-fieldset');
-  hideElement('#calendar-private-spacing');
-  hideElement('label[for="location"]');
-  hideElement('#location');
+  hideElement('#location-section');
+  hideElement('#event-options-section');
   hideElement('#event-start-heading');
   hideElement('#event-end-heading');
   document.getElementById('recurrence-enabled').checked = false;
@@ -139,6 +118,7 @@ function createGenericEventSection(titleText) {
 
 function createFieldGroup(label, field) {
   const group = document.createElement('div');
+  group.className = 'fa-v2-page-stack';
   group.append(label, field);
   return group;
 }
@@ -146,8 +126,6 @@ function createFieldGroup(label, field) {
 function configureGenericEventV2() {
   if (eventKind) return;
 
-  const page = document.querySelector('main.page-card');
-  const legacyTitle = page.querySelector('h1');
   const titleLabel = document.querySelector('label[for="title"]');
   const titleInput = document.getElementById('title');
   const notesLabel = document.querySelector('label[for="notes"]');
@@ -163,14 +141,6 @@ function configureGenericEventV2() {
   const privateFieldset = document.getElementById('calendar-private-fieldset');
   const privateSpacing = document.getElementById('calendar-private-spacing');
   const submit = form.querySelector('[type="submit"]');
-  const header = document.createElement('header');
-  const headerContent = document.createElement('div');
-  const heading = document.createElement('h1');
-  const intro = document.createElement('p');
-
-  page.classList.add('fa-page', 'fa-page--wide', 'fa-v2-page', 'fa-v2-page-stack');
-  backLink.closest('p')?.classList.add('account-back-link');
-  backLink.removeAttribute('id');
   backLink.textContent = 'Torna agli Impegni';
   form.className = 'fa-v2-page-stack fa-v2-form-card';
   form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach((field) => {
@@ -178,14 +148,8 @@ function configureGenericEventV2() {
   });
   submit?.classList.add('fa-v2-button', 'fa-v2-button--primary');
 
-  header.className = 'fa-section-hero fa-v2-header-card fa-v2-card';
-  headerContent.className = 'fa-section-hero-content';
-  heading.textContent = 'Nuovo evento';
-  intro.textContent = 'Organizza un evento e definisci quando si svolgerà.';
-  headerContent.append(heading, intro);
-  header.append(headerContent);
-  page.insertBefore(header, message);
-  legacyTitle?.remove();
+  document.getElementById('event-form-title').textContent = 'Nuovo evento';
+  document.getElementById('event-form-intro').textContent = 'Organizza un evento e definisci quando si svolgerà.';
 
   const mainSection = createGenericEventSection('Informazioni principali');
   mainSection.append(
