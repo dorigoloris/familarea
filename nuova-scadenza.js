@@ -78,6 +78,8 @@ let deadlineSharingManagement = { pending: [], collaborators: [] };
 let vehicleServiceItemId = null;
 let vehicleServiceEditingRecord = null;
 let vehicleServicePreviousFocus = null;
+let vehicleServiceRecords = [];
+let vehicleServiceSaving = false;
 const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
@@ -624,6 +626,31 @@ function setVehicleServiceFormMessage(text = '') {
   vehicleServiceFormMessage.textContent = text;
 }
 
+function setVehicleServiceSaving(isSaving) {
+  vehicleServiceSaving = isSaving;
+  vehicleServiceSave.disabled = isSaving;
+  vehicleServiceCancel.disabled = isSaving;
+  vehicleServiceModalClose.disabled = isSaving;
+  vehicleServiceAddCustomTask.disabled = isSaving;
+  vehicleServiceForm.querySelectorAll('input, textarea').forEach((field) => {
+    field.disabled = isSaving;
+  });
+}
+
+function vehicleServiceSaveDiagnostic(stage, error) {
+  const diagnostic = {
+    stage,
+    code: error?.code || null,
+    message: error?.message || null,
+    details: error?.details || null,
+    hint: error?.hint || null
+  };
+  console.error('[FamilArea vehicle-service save]', diagnostic);
+  const reason = diagnostic.message || diagnostic.details || 'Risposta non valida dal servizio Tagliandi.';
+  const code = diagnostic.code ? ` (${diagnostic.code})` : '';
+  return `Salvataggio non riuscito${code}: ${reason}`;
+}
+
 function addVehicleServiceCustomTask(value = '') {
   const row = document.createElement('div');
   const input = document.createElement('input');
@@ -652,7 +679,8 @@ function vehicleServiceFormTasks() {
   return [...standard, ...custom.filter((task) => task.label)];
 }
 
-function closeVehicleServiceForm() {
+function closeVehicleServiceForm(force = false) {
+  if (vehicleServiceSaving && !force) return;
   vehicleServiceModal.hidden = true;
   document.body.classList.remove('confirm-modal-open');
   vehicleServiceEditingRecord = null;
@@ -661,7 +689,7 @@ function closeVehicleServiceForm() {
   setVehicleServiceFormMessage('');
   vehicleServiceFormTitle.textContent = 'Registra tagliando';
   vehicleServiceSave.textContent = 'Salva tagliando';
-  vehicleServiceSave.disabled = false;
+  setVehicleServiceSaving(false);
   vehicleServicePreviousFocus?.focus?.();
   vehicleServicePreviousFocus = null;
 }
@@ -679,6 +707,7 @@ function openVehicleServiceForm(record = null) {
     input.checked = Boolean(record?.tasks?.some((task) => task.task_key === input.value));
   });
   vehicleServiceCustomTasks.replaceChildren();
+  setVehicleServiceSaving(false);
   (record?.tasks || []).filter((task) => !task.task_key).forEach((task) => addVehicleServiceCustomTask(task.label));
   setVehicleServiceFormMessage('');
   vehicleServiceModal.hidden = false;
@@ -738,20 +767,31 @@ function vehicleServiceRecordRow(record) {
   return row;
 }
 
+function renderVehicleServiceRecords() {
+  vehicleServiceList.replaceChildren(...vehicleServiceRecords.map(vehicleServiceRecordRow));
+  vehicleServiceEmpty.hidden = vehicleServiceRecords.length > 0;
+}
+
 async function loadVehicleServiceRecords() {
   if (!vehicleServiceItemId) return;
   vehicleServiceMessage.textContent = 'Caricamento tagliandi...';
-  const { data, error } = await c.rpc('get_my_vehicle_service_records', {
-    p_deadline_item_id: vehicleServiceItemId
-  });
-  if (error) {
+  let result;
+  try {
+    result = await c.rpc('get_my_vehicle_service_records', {
+      p_deadline_item_id: vehicleServiceItemId
+    });
+  } catch {
     vehicleServiceMessage.textContent = 'Impossibile caricare lo storico Tagliandi.';
-    return;
+    return false;
   }
-  const records = data || [];
-  vehicleServiceList.replaceChildren(...records.map(vehicleServiceRecordRow));
-  vehicleServiceEmpty.hidden = records.length > 0;
+  if (result.error) {
+    vehicleServiceMessage.textContent = 'Impossibile caricare lo storico Tagliandi.';
+    return false;
+  }
+  vehicleServiceRecords = Array.isArray(result.data) ? result.data : [];
+  renderVehicleServiceRecords();
   vehicleServiceMessage.textContent = '';
+  return true;
 }
 
 async function initialiseVehicleServiceRecords() {
@@ -778,29 +818,65 @@ async function initialiseVehicleServiceRecords() {
 
 vehicleServiceForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const customInputs = [...vehicleServiceCustomTasks.querySelectorAll('[data-vehicle-service-custom-task]')];
-  if (customInputs.some((input) => !input.value.trim())) {
-    setVehicleServiceFormMessage('Inserisci o rimuovi il lavoro personalizzato vuoto.');
-    return;
+  if (vehicleServiceSaving) return;
+  let stage = 'validazione';
+  try {
+    const customInputs = [...vehicleServiceCustomTasks.querySelectorAll('[data-vehicle-service-custom-task]')];
+    if (customInputs.some((input) => !input.value.trim())) {
+      setVehicleServiceFormMessage('Inserisci o rimuovi il lavoro personalizzato vuoto.');
+      return;
+    }
+    if (!vehicleServiceItemId || !vehicleServicePerformedAt.value) {
+      setVehicleServiceFormMessage('Inserisci la data dell’intervento prima di salvare.');
+      return;
+    }
+    const mileage = vehicleServiceMileage.value === '' ? null : Number(vehicleServiceMileage.value);
+    if (mileage !== null && (!Number.isSafeInteger(mileage) || mileage < 0 || mileage > 2147483647)) {
+      setVehicleServiceFormMessage('Inserisci un chilometraggio intero valido.');
+      return;
+    }
+    const params = {
+      p_performed_at: vehicleServicePerformedAt.value,
+      p_mileage: mileage,
+      p_performed_by: vehicleServicePerformedBy.value,
+      p_notes: vehicleServiceNotes.value,
+      p_tasks: vehicleServiceFormTasks()
+    };
+    const recordId = vehicleServiceEditingRecord?.id;
+    setVehicleServiceFormMessage('');
+    setVehicleServiceSaving(true);
+    stage = recordId ? 'aggiornamento RPC' : 'creazione RPC';
+    const result = recordId
+      ? await c.rpc('update_my_vehicle_service_record', { p_record_id: recordId, ...params })
+      : await c.rpc('create_my_vehicle_service_record', { p_deadline_item_id: vehicleServiceItemId, ...params });
+    if (result?.error) {
+      setVehicleServiceSaving(false);
+      setVehicleServiceFormMessage(vehicleServiceSaveDiagnostic(stage, result.error));
+      return;
+    }
+    if (!result?.data || typeof result.data !== 'object') {
+      setVehicleServiceSaving(false);
+      setVehicleServiceFormMessage(vehicleServiceSaveDiagnostic('risposta RPC', {
+        message: 'La RPC non ha restituito il Tagliando salvato.'
+      }));
+      return;
+    }
+    const savedRecord = result.data;
+    vehicleServiceRecords = recordId
+      ? vehicleServiceRecords.map((record) => record.id === recordId ? savedRecord : record)
+      : [savedRecord, ...vehicleServiceRecords];
+    renderVehicleServiceRecords();
+    closeVehicleServiceForm(true);
+    const refreshed = await loadVehicleServiceRecords();
+    vehicleServiceMessage.textContent = refreshed
+      ? recordId ? 'Tagliando aggiornato.' : 'Tagliando salvato.'
+      : recordId
+        ? 'Tagliando aggiornato. Impossibile aggiornare lo storico in questo momento.'
+        : 'Tagliando salvato. Impossibile aggiornare lo storico in questo momento.';
+  } catch (error) {
+    setVehicleServiceSaving(false);
+    setVehicleServiceFormMessage(vehicleServiceSaveDiagnostic(stage, error));
   }
-  const params = {
-    p_performed_at: vehicleServicePerformedAt.value,
-    p_mileage: vehicleServiceMileage.value === '' ? null : Number(vehicleServiceMileage.value),
-    p_performed_by: vehicleServicePerformedBy.value,
-    p_notes: vehicleServiceNotes.value,
-    p_tasks: vehicleServiceFormTasks()
-  };
-  vehicleServiceSave.disabled = true;
-  const result = vehicleServiceEditingRecord
-    ? await c.rpc('update_my_vehicle_service_record', { p_record_id: vehicleServiceEditingRecord.id, ...params })
-    : await c.rpc('create_my_vehicle_service_record', { p_deadline_item_id: vehicleServiceItemId, ...params });
-  if (result.error) {
-    vehicleServiceSave.disabled = false;
-    setVehicleServiceFormMessage('Impossibile salvare il tagliando.');
-    return;
-  }
-  closeVehicleServiceForm();
-  await loadVehicleServiceRecords();
 });
 
 async function initialiseEditMode(account) {
