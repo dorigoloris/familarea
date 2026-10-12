@@ -28,6 +28,11 @@ function activityHref(activity) {
   return `attivita.html?${query}`;
 }
 
+function eventHref(event) {
+  const query = new URLSearchParams({ event_id: event.id || event.event_id });
+  return `evento.html?${query}`;
+}
+
 function recurrenceLabel(event) {
   const labels = {
     daily: ['Ogni giorno', 'giorni'],
@@ -83,6 +88,21 @@ function activityDetails(activity, occurrence) {
   return details;
 }
 
+function historicCourseDetails(event, occurrence) {
+  const details = document.createElement('div');
+  const nextDate = occurrence ? `Prossima data: ${formatWhen(occurrence)}` : 'Data non disponibile';
+  const recurrence = recurrenceLabel(event);
+
+  ['Corso storico', nextDate, recurrence ? `Ricorrenza: ${recurrence}` : '', event.location ? `Luogo: ${event.location}` : '']
+    .filter(Boolean)
+    .forEach((value) => {
+      const line = document.createElement('div');
+      line.textContent = value;
+      details.append(line);
+    });
+  return details;
+}
+
 function activityCard(activity, occurrence) {
   return createSummaryCard({
     title: activity.title,
@@ -93,12 +113,22 @@ function activityCard(activity, occurrence) {
   });
 }
 
-function appointmentCard(occurrence, activity) {
+function historicCourseCard(event, occurrence) {
+  return createSummaryCard({
+    title: event.title,
+    details: historicCourseDetails(event, occurrence),
+    href: eventHref(event),
+    fallback: 'C',
+    label: `Apri corso storico ${event.title}`
+  });
+}
+
+function appointmentCard(occurrence, record, kind) {
   const item = document.createElement('a');
-  const title = occurrence.title || activity.title;
+  const title = occurrence.title || record.title;
   item.className = 'fa-v2-list-row fa-v2-list-row--media';
-  item.href = activityHref(activity);
-  item.setAttribute('aria-label', `Apri appuntamento ${title}`);
+  item.href = kind === 'event' ? eventHref(record) : activityHref(record);
+  item.setAttribute('aria-label', `Apri ${kind === 'event' ? 'corso storico' : 'appuntamento'} ${title}`);
   const thumbnail = document.createElement('span');
   thumbnail.setAttribute('aria-hidden', 'true');
   thumbnail.textContent = initials(title, 'A');
@@ -127,9 +157,10 @@ async function loadActivities() {
   if (!sessionData.session) { window.location.href = 'login.html'; return; }
 
   const { from, to } = futureWindow();
-  const [accountResult, activitiesResult, occurrencesResult] = await Promise.all([
+  const [accountResult, activitiesResult, eventsResult, occurrencesResult] = await Promise.all([
     activitiesClient.rpc('get_current_account'),
     activitiesClient.rpc('get_visible_activities'),
+    activitiesClient.rpc('get_visible_events'),
     activitiesClient.rpc('get_calendar_occurrences', { p_from: from.toISOString(), p_to: to.toISOString() })
   ]);
   if (activitiesResult.error) {
@@ -143,32 +174,62 @@ async function loadActivities() {
   }
 
   const activities = activitiesResult.data;
+  const visibleEvents = Array.isArray(eventsResult.data) ? eventsResult.data : [];
+  const historicCourses = eventsResult.error ? [] : visibleEvents
+    .filter((event) => event?.area_id != null);
   console.info('[FamilArea activities] get_visible_activities', {
     account: accountResult.error ? null : accountResult.data?.account_id,
     accountType: accountResult.error ? null : accountResult.data?.account_type,
     count: activities.length
   });
+  if (eventsResult.error) {
+    activitiesMessage.textContent = rpcFailureMessage('i corsi storici', eventsResult.error);
+  } else if (!Array.isArray(eventsResult.data)) {
+    activitiesMessage.textContent = 'Impossibile caricare i corsi storici: risposta RPC incompatibile.';
+    console.error('[FamilArea activities] risposta get_visible_events incompatibile', eventsResult.data);
+  }
+
   const activitiesById = new Map(activities.map((activity) => [activity.id || activity.activity_id, activity]));
+  const coursesById = new Map(historicCourses.map((event) => [event.id || event.event_id, event]));
   const activityIds = new Set(activities.map((activity) => activity.id || activity.activity_id));
+  const courseIds = new Set(historicCourses.map((event) => event.id || event.event_id));
   const occurrences = occurrencesResult.error ? [] : (occurrencesResult.data || [])
-    .filter((occurrence) => occurrence.kind === 'activity' && activityIds.has(occurrence.activity_id || occurrence.id))
+    .filter((occurrence) => (
+      (occurrence.kind === 'activity' && activityIds.has(occurrence.activity_id || occurrence.id))
+      || (occurrence.kind === 'event' && courseIds.has(occurrence.event_id || occurrence.id))
+    ))
     .sort((first, second) => new Date(first.starts_at) - new Date(second.starts_at));
   const nextOccurrenceByActivityId = new Map();
+  const nextOccurrenceByCourseId = new Map();
   occurrences.forEach((occurrence) => {
-    const activityId = occurrence.activity_id || occurrence.id;
-    if (!nextOccurrenceByActivityId.has(activityId)) nextOccurrenceByActivityId.set(activityId, occurrence);
+    if (occurrence.kind === 'activity') {
+      const activityId = occurrence.activity_id || occurrence.id;
+      if (!nextOccurrenceByActivityId.has(activityId)) nextOccurrenceByActivityId.set(activityId, occurrence);
+      return;
+    }
+    const eventId = occurrence.event_id || occurrence.id;
+    if (!nextOccurrenceByCourseId.has(eventId)) nextOccurrenceByCourseId.set(eventId, occurrence);
   });
-  coursesList.replaceChildren(...activities.map((activity) => activityCard(activity, nextOccurrenceByActivityId.get(activity.id || activity.activity_id))));
-  coursesEmpty.hidden = activities.length > 0;
+  coursesList.replaceChildren(
+    ...activities.map((activity) => activityCard(activity, nextOccurrenceByActivityId.get(activity.id || activity.activity_id))),
+    ...historicCourses.map((event) => historicCourseCard(event, nextOccurrenceByCourseId.get(event.id || event.event_id)))
+  );
+  coursesEmpty.hidden = activities.length + historicCourses.length > 0;
   if (occurrencesResult.error) {
     appointmentsList.replaceChildren();
     appointmentsEmpty.hidden = true;
     activitiesMessage.textContent = rpcFailureMessage('i prossimi appuntamenti', occurrencesResult.error);
     return;
   }
-  appointmentsList.replaceChildren(...occurrences.slice(0, 5).map((occurrence) => appointmentCard(occurrence, activitiesById.get(occurrence.activity_id || occurrence.id))));
+  appointmentsList.replaceChildren(...occurrences.slice(0, 5).map((occurrence) => {
+    const isEvent = occurrence.kind === 'event';
+    const record = isEvent
+      ? coursesById.get(occurrence.event_id || occurrence.id)
+      : activitiesById.get(occurrence.activity_id || occurrence.id);
+    return appointmentCard(occurrence, record, occurrence.kind);
+  }));
   appointmentsEmpty.hidden = occurrences.length > 0;
-  activitiesMessage.textContent = '';
+  if (!eventsResult.error && Array.isArray(eventsResult.data)) activitiesMessage.textContent = '';
 
 }
 
