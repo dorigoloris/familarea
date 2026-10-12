@@ -10,6 +10,54 @@ const initialDeadlineLimit = 5;
 let loadedDeadlines = [];
 let loadedDeadlineContext = { isManaged: false, member: null };
 
+function localDateFromIso(value) {
+  const match = typeof value === 'string' && value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
+}
+
+function todayLocalDate() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function addMonthsOnDeadlineDay(date, months) {
+  const targetMonth = date.getMonth() + months;
+  const year = date.getFullYear() + Math.floor(targetMonth / 12);
+  const month = ((targetMonth % 12) + 12) % 12;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(date.getDate(), lastDay));
+}
+
+function isoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function nextUpcomingDeadlineDate(deadline, today) {
+  const firstDueOn = localDateFromIso(deadline.first_due_on);
+  const terminatedOn = deadline.terminated_on ? localDateFromIso(deadline.terminated_on) : null;
+  const recurrenceMonths = Number(deadline.recurrence_months);
+  if (!firstDueOn || (deadline.terminated_on && !terminatedOn)) return null;
+  if (!Number.isInteger(recurrenceMonths) || recurrenceMonths <= 0) return firstDueOn >= today ? firstDueOn : null;
+
+  const monthDistance = (today.getFullYear() - firstDueOn.getFullYear()) * 12 + today.getMonth() - firstDueOn.getMonth();
+  let occurrence = addMonthsOnDeadlineDay(firstDueOn, Math.max(0, Math.floor(monthDistance / recurrenceMonths)) * recurrenceMonths);
+  while (occurrence < today) occurrence = addMonthsOnDeadlineDay(occurrence, recurrenceMonths);
+  return terminatedOn && occurrence > terminatedOn ? null : occurrence;
+}
+
+function upcomingDeadlines(deadlines) {
+  const today = todayLocalDate();
+  return deadlines
+    .map((deadline) => {
+      const nextDueOn = nextUpcomingDeadlineDate(deadline, today);
+      return nextDueOn ? { ...deadline, first_due_on: isoDate(nextDueOn) } : null;
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.first_due_on.localeCompare(right.first_due_on));
+}
+
 async function openHomeItem(event) {
   event.preventDefault();
   const { data, error } = await c.rpc('ensure_my_home_item');
@@ -60,11 +108,11 @@ async function load() {
   }
   const { data, error } = isManaged ? await c.rpc('get_my_deadlines_for_managed_member', { p_member_id: context.member.id }) : await c.rpc('get_my_deadlines');
   if (error) { m.textContent = 'Impossibile caricare le scadenze.'; return; }
-  loadedDeadlines = data || [];
+  loadedDeadlines = upcomingDeadlines(Array.isArray(data) ? data : []);
   loadedDeadlineContext = { isManaged, member: context.member };
   deadlineListToggleButton.setAttribute('aria-expanded', 'false');
   const empty = document.getElementById('deadlines-empty'); empty.hidden = loadedDeadlines.length > 0; empty.replaceChildren();
-  if (!loadedDeadlines.length) { const strong = document.createElement('strong'); strong.textContent = isManaged ? `Nessuna scadenza per ${window.FamilAreaManagedContext.memberName(context.member)}.` : 'Nessuna scadenza ancora.'; empty.append(strong); }
+  if (!loadedDeadlines.length) { const strong = document.createElement('strong'); strong.textContent = 'Nessuna prossima scadenza.'; empty.append(strong); }
   document.getElementById('active-deadlines-section').hidden = !loadedDeadlines.length;
   renderDeadlineRows();
   if (!context.requested || isManaged) m.textContent = '';
