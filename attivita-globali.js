@@ -23,7 +23,6 @@ function formatWhen(event) {
 
 function eventHref(event) {
   const query = new URLSearchParams({ event_id: event.id || event.event_id });
-  if (event.area_id) query.set('area_id', event.area_id);
   return `evento.html?${query}`;
 }
 
@@ -46,8 +45,6 @@ function isActivityEvent(event) {
 
 function provenanceLabel(event, occurrence) {
   if (event.organization_name) return event.organization_name;
-  if (occurrence?.area_name) return occurrence.area_name;
-  if (event.area_name) return event.area_name;
   if (event.visibility_source === 'participant') return 'Partecipi';
   if (event.visibility_source === 'owner') return 'Organizzato da te';
   if (event.visibility_source === 'creator') return 'Creato da te';

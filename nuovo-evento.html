@@ -12,13 +12,7 @@
   <title>Nuovo evento - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
-  <script>
-    (() => {
-      const eventParams = new URLSearchParams(window.location.search);
-      if (!eventParams.get('area_id')) document.body.classList.add('fa-v2-app');
-    })();
-  </script>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
   <main class="page-card">

@@ -1,25 +1,16 @@
 (function () {
   const body = document.body;
   const params = new URLSearchParams(window.location.search);
-  const areaId = params.get('area_id');
   const path = window.location.pathname.split('/').pop() || 'dashboard.html';
   const primarySectionByPage = {
     'dashboard.html': 'dashboard',
     'famiglia.html': 'family',
-    'mie-aree.html': 'areas',
-    'crea-area.html': 'areas',
-    'area.html': 'areas',
-    'modifica-area.html': 'areas',
-    'membro.html': 'areas',
-    'aggiungi-membro.html': 'areas',
-    'inviti-area.html': 'areas',
     'interessi.html': 'interests',
     'attivita-globali.html': 'activities',
-    'attivita-area.html': 'activities',
     'attivita.html': 'activities',
     'nuova-attivita.html': 'activities',
     'impegni.html': 'commitments',
-    'eventi.html': 'events',
+    'eventi.html': 'commitments',
     'proposte.html': 'suggestions',
     'evento.html': 'events',
     'nuovo-evento.html': 'events',
@@ -41,26 +32,18 @@
     'inviti.html': 'invites',
     'admin.html': 'admin'
   };
-  // Eventi e Liste fuori da un'Area fanno parte del flusso Impegni. Le
-  // rispettive pagine Area mantengono invece la navigazione legacy dedicata.
-  const isCommitmentFlowOutsideArea = !areaId && [
+  // Eventi e Liste fanno parte del flusso Impegni.
+  const isCommitmentFlow = [
     'nuovo-evento.html',
     'evento.html',
     'liste.html',
     'lista.html',
     'nuova-lista.html'
   ].includes(path);
-  const primarySection = isCommitmentFlowOutsideArea
+  const primarySection = isCommitmentFlow
     ? 'commitments'
     : primarySectionByPage[path] || null;
   const isPrimaryNavActive = (section) => primarySection === section ? ' is-active' : '';
-  const isAreaNavActive = (names) => names.includes(path) ? ' is-active' : '';
-  const isParticipantsView = path === 'area.html' && params.get('view') === 'participants';
-  const areaHref = (anchor) => areaId ? `area.html?area_id=${encodeURIComponent(areaId)}${anchor || ''}` : 'mie-aree.html#areas-title';
-  const participantsHref = areaId ? `area.html?area_id=${encodeURIComponent(areaId)}&view=participants` : 'mie-aree.html#areas-title';
-  const activitiesHref = areaId ? `attivita-area.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
-  const eventsHref = areaId ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'mie-aree.html#areas-title';
-  const listsHref = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
 
   if (!body.classList.contains('fa-v2-app')) body.classList.add('protected-page');
   const header = document.createElement('header');
@@ -416,72 +399,4 @@
   footer.append(identity, links);
   document.body.appendChild(footer);
 
-  if (!areaId) return;
-  body.classList.add('has-area-context');
-  const areaNav = document.createElement('nav');
-  areaNav.className = 'shared-area-nav';
-  areaNav.setAttribute('aria-label', 'Navigazione Area');
-  areaNav.innerHTML = `<p class="shared-nav-label">AREA <span id="nav-area-name">in caricamento…</span></p>
-    <a class="sidebar-link${isAreaNavActive(['modifica-area.html']) || (path === 'area.html' && !isParticipantsView) ? ' is-active' : ''}" href="${areaHref()}">Panoramica Area</a>
-    <a class="sidebar-link${isAreaNavActive(['membro.html', 'aggiungi-membro.html']) || isParticipantsView ? ' is-active' : ''}" href="${participantsHref}">Partecipanti</a>
-    <a class="sidebar-link${isAreaNavActive(['attivita-area.html', 'attivita.html', 'nuova-attivita.html'])}" href="${activitiesHref}">Attività</a>
-    <a class="sidebar-link${isAreaNavActive(['eventi.html', 'evento.html', 'nuovo-evento.html'])}" href="${eventsHref}">Programma</a>
-    <a class="sidebar-link${isAreaNavActive(['liste.html', 'lista.html', 'nuova-lista.html'])}" href="${listsHref}">Liste</a>`;
-  const contextualHeader = document.querySelector(
-    '.area-page-header, .area-invites-page-header, .page-card > .section-heading, .page-card > #contextual-events-content > .section-heading, .page-card > #list-view > .section-heading, .page-card > h1, body > h1'
-  );
-  if (contextualHeader) {
-    contextualHeader.after(areaNav);
-  } else {
-    const pageContent = document.querySelector('main');
-    if (pageContent) pageContent.prepend(areaNav);
-  }
-  if (path === 'nuovo-evento.html') {
-    document.querySelector('main h1').textContent = 'Aggiungi al programma';
-    document.querySelector('#back-link').textContent = 'Torna al programma';
-    document.querySelector('#event-form button[type="submit"]').textContent = 'Aggiungi';
-  }
-  if (path === 'evento.html') {
-    document.querySelector('#event-back').textContent = 'Torna al programma';
-    document.querySelector('#delete-button').textContent = 'Elimina';
-    document.querySelector('#edit-form h2').textContent = 'Modifica';
-  }
-
-  const areaNavIcons = {
-    'Panoramica Area': 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5ZM9 21v-6h6v6',
-    Partecipanti: 'M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8a3 3 0 1 1 0 6M22 20v-1.5a4 4 0 0 0-3-3.8',
-    Attività: 'm5 12 4 4L19 6M3 4h18v16H3z',
-    Eventi: 'M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z',
-    Liste: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
-    Inviti: 'M3 6.5 12 12l9-5.5M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z'
-  };
-  const createAreaNavIcon = (pathData) => {
-    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.classList.add('area-nav-icon');
-    icon.setAttribute('viewBox', '0 0 24 24');
-    icon.setAttribute('aria-hidden', 'true');
-    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pathElement.setAttribute('d', pathData);
-    icon.appendChild(pathElement);
-    return icon;
-  };
-  areaNav.querySelectorAll('.sidebar-link').forEach((link) => {
-    const iconPath = areaNavIcons[link.textContent.trim()];
-    if (iconPath) link.prepend(createAreaNavIcon(iconPath));
-  });
-
-  Promise.all([accountPromise, client.rpc('get_area', { p_area_id: areaId }), client.rpc('get_my_areas')]).then(([account, areaResult, areasResult]) => {
-    const area = areaResult.data;
-    const target = document.getElementById('nav-area-name');
-    if (target) target.textContent = area?.name || 'Area';
-    if (!account || !area) return;
-    const myArea = (areasResult.data || []).find((item) => item.id === areaId);
-    if (area.owner_account_id !== account.account_id && myArea?.role !== 'admin') return;
-    const link = document.createElement('a');
-    link.className = `sidebar-link${isAreaNavActive(['inviti-area.html'])}`;
-    link.href = `inviti-area.html?area_id=${encodeURIComponent(areaId)}`;
-    link.textContent = 'Inviti';
-    link.prepend(createAreaNavIcon(areaNavIcons.Inviti));
-    areaNav.appendChild(link);
-  }).catch(() => {});
 }());

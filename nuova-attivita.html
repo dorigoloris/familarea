@@ -9,43 +9,47 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d2b4f">
-  <title>Nuova attività - FamilArea</title>
+  <title>Nuova attivit&agrave; - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card">
-    <p><a id="back-link" href="#">Torna all'Area</a></p>
-    <h1>Nuova attività</h1>
-    <p id="message">Caricamento...</p>
 
-    <form id="activity-form" hidden>
-      <div><label for="title">Titolo</label><input id="title" type="text" required></div>
-      <br>
-      <div><label for="activity-type">Tipo</label><select id="activity-type"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></div>
-      <br>
-      <div><label for="priority">Priorità</label><select id="priority"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></div>
-      <br>
-      <div><label for="notes">Note</label><textarea id="notes"></textarea></div>
-      <br>
-      <fieldset class="activity-due-fields"><legend>Quando</legend>
+  <main class="page-card fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a id="back-link" href="attivita-globali.html">Torna alle Attivit&agrave;</a></p>
+    <header class="fa-v2-header-card fa-v2-card">
+      <p class="eyebrow">ATTIVIT&Agrave;</p>
+      <h1>Nuova attivit&agrave;</h1>
+    </header>
+    <p id="message" class="fa-v2-status" aria-live="polite">Caricamento...</p>
+
+    <form id="activity-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-page-stack">
+        <label for="title">Titolo<input id="title" class="fa-v2-input" type="text" required></label>
+        <label for="activity-type">Tipo<select id="activity-type" class="fa-v2-select"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></label>
+        <label for="priority">Priorit&agrave;<select id="priority" class="fa-v2-select"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></label>
+        <label for="notes">Note<textarea id="notes" class="fa-v2-textarea"></textarea></label>
+      </div>
+
+      <fieldset class="activity-due-fields">
+        <legend>Quando</legend>
         <div class="activity-dates">
-          <div><label for="activity-date">Data</label><input id="activity-date" type="date"></div>
-          <div><label for="start-time">Ora inizio</label><input id="start-time" type="time"></div>
-          <div><label for="end-time">Ora fine</label><input id="end-time" type="time"></div>
+          <label for="activity-date">Data<input id="activity-date" class="fa-v2-input" type="date"></label>
+          <label for="start-time">Ora inizio<input id="start-time" class="fa-v2-input" type="time"></label>
+          <label for="end-time">Ora fine<input id="end-time" class="fa-v2-input" type="time"></label>
         </div>
         <label class="activity-recurrence-toggle"><input id="recurrence-enabled" type="checkbox"> Ripeti questa attivit&agrave;</label>
         <div id="recurrence-fields" class="activity-recurrence-fields" hidden>
-          <div><label for="recurrence-weekday">Ripeti ogni</label><select id="recurrence-weekday"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></div>
-          <div><label for="recurrence-until">Fine ripetizione</label><input id="recurrence-until" type="date"></div>
+          <label for="recurrence-weekday">Ripeti ogni<select id="recurrence-weekday" class="fa-v2-select"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></label>
+          <label for="recurrence-until">Fine ripetizione<input id="recurrence-until" class="fa-v2-input" type="date"></label>
         </div>
       </fieldset>
-      <br>
-      <fieldset><legend>Assegnatari</legend><div id="assignees"></div></fieldset>
-      <br>
-      <br>
-      <button type="submit">Crea attività</button>
+
+      <div class="fa-v2-card-actions">
+        <button type="button" id="cancel-button" class="fa-button fa-button-secondary">Annulla</button>
+        <button type="submit" id="save-button" class="fa-button fa-button-primary">Crea attivit&agrave;</button>
+      </div>
     </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

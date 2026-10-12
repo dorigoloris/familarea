@@ -1,6 +1,5 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const eventQuery = new URLSearchParams(location.search);
-const areaId = eventQuery.get('area_id');
 const eventKind = eventQuery.get('event_kind') === 'commitment' ? 'commitment' : null;
 const form = document.getElementById('event-form');
 const backLink = document.getElementById('back-link');
@@ -145,7 +144,7 @@ function createFieldGroup(label, field) {
 }
 
 function configureGenericEventV2() {
-  if (eventKind || areaId) return;
+  if (eventKind) return;
 
   const page = document.querySelector('main.page-card');
   const legacyTitle = page.querySelector('h1');
@@ -324,10 +323,8 @@ function focusOnEnter(next) {
 async function load() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data.session) { location.href = 'login.html'; return; }
-  backLink.href = eventKind === 'commitment' || !areaId
-    ? 'impegni.html'
-    : `eventi.html?area_id=${encodeURIComponent(areaId)}`;
-  if (!eventKind && !areaId) backLink.textContent = 'Torna agli Impegni';
+  backLink.href = 'impegni.html';
+  if (!eventKind) backLink.textContent = 'Torna agli Impegni';
   const { data: account } = await supabaseClient.rpc('get_current_account');
   isPersonalAccount = account?.account_type === 'personal';
   if (eventKind !== 'commitment') {
@@ -340,8 +337,8 @@ async function load() {
   }
   }
   const privateFieldset = document.getElementById('calendar-private-fieldset');
-  privateFieldset.hidden = eventKind === 'commitment' || !isPersonalAccount || Boolean(areaId);
-  document.getElementById('calendar-private-spacing').hidden = eventKind || areaId ? privateFieldset.hidden : true;
+  privateFieldset.hidden = eventKind === 'commitment' || !isPersonalAccount;
+  document.getElementById('calendar-private-spacing').hidden = eventKind ? privateFieldset.hidden : true;
   if (genericEventOptionsSection) genericEventOptionsSection.hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
   if (eventKind === 'commitment') syncCommitmentWhenLayout();
@@ -409,12 +406,12 @@ form.addEventListener('submit', async (event) => {
     p_starts_at: interval.startsAt,
     p_ends_at: interval.endsAt,
     p_description: document.getElementById('notes').value.trim() || null,
-    p_area_id: areaId || null,
+    p_area_id: null,
     p_is_all_day: interval.allDay,
     p_location: document.getElementById('location').value.trim() || null,
     p_recurrence: recurrencePayload
   };
-  if (isPersonalAccount && !areaId) {
+  if (isPersonalAccount) {
     payload.p_calendar_private = document.getElementById('calendar-private').checked;
   }
   if (eventKind === 'commitment') payload.p_event_kind = eventKind;
@@ -430,7 +427,7 @@ form.addEventListener('submit', async (event) => {
     location.href = 'impegni.html';
     return;
   }
-  location.href = `evento.html${areaId ? `?area_id=${encodeURIComponent(areaId)}&` : '?'}event_id=${encodeURIComponent(data)}`;
+  location.href = `evento.html?event_id=${encodeURIComponent(data)}`;
 });
 
 configureCommitmentV2();

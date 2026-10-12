@@ -75,9 +75,9 @@
       return `contatto.html?contact_id=${encodeURIComponent(item.birthday_contact_id)}`;
     }
     if (itemType(item) === 'event') {
-      return item.area_id ? `evento.html?area_id=${encodeURIComponent(item.area_id)}&event_id=${encodeURIComponent(item.event_id)}` : `evento.html?event_id=${encodeURIComponent(item.event_id)}`;
+      return `evento.html?event_id=${encodeURIComponent(item.event_id)}`;
     }
-    return item.area_id ? `attivita.html?area_id=${encodeURIComponent(item.area_id)}&activity_id=${encodeURIComponent(item.activity_id)}` : `attivita.html?activity_id=${encodeURIComponent(item.activity_id)}`;
+    return `attivita.html?activity_id=${encodeURIComponent(item.activity_id)}`;
   }
 
   function formatTime(item) {

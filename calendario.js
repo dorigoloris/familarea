@@ -19,7 +19,6 @@ let month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let week = calendarUtils.startOfWeek(new Date());
 let day = new Date();
 let items = [];
-let areas = new Map();
 let isPersonalAccount = false;
 let familyCalendarControls = [];
 let calendarPeople = new Map();
@@ -75,7 +74,6 @@ function normalise(item) {
     calendar_avatar_display_name: hasDeadlineItemSubject ? deadlineItemName : (hasFamilyMemberSubject ? familyMemberName : ownerName),
     calendar_avatar_title: hasDeadlineItemSubject ? deadlineItemName : (hasFamilyMemberSubject ? familyMemberName : `Calendario di ${ownerName || 'Calendario condiviso'}`),
     calendar_owner_avatar_url: hasDeadlineItemSubject ? (deadlineItemAvatarUrls.get(item.deadline_item_id) || '') : (hasFamilyMemberSubject ? (familyMemberAvatarUrls.get(item.family_member_id) || '') : (calendarOwnerAvatarUrls.get(item.calendar_owner_account_id) || '')),
-    area_name: item.area_name || (item.area_id ? areas.get(item.area_id) : null),
     can_open_details: item.calendar_owner_account_id === currentAccountId || isSharedDeadline,
     managed_member_id: managedMember?.id || null,
     is_all_day: Boolean(item.all_day),
@@ -151,20 +149,17 @@ async function load() {
     ]);
     ({ data, error } = occurrences);
     account = currentAccount.data;
-    areas = new Map();
     isPersonalAccount = account?.account_type === 'personal';
     currentAccountId = account?.account_id || null;
     familyCalendarControls = [];
     renderFamilyCalendarControls();
   } else {
-    const [occurrences, myAreasResult, currentAccount] = await Promise.all([
+    const [occurrences, currentAccount] = await Promise.all([
       supabaseClient.rpc('get_calendar_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
-      supabaseClient.rpc('get_my_areas'),
       supabaseClient.rpc('get_current_account')
     ]);
     ({ data, error } = occurrences);
     account = currentAccount.data;
-    areas = new Map((myAreasResult.data || []).map((area) => [area.id, area.name]));
     isPersonalAccount = account?.account_type === 'personal';
     currentAccountId = account?.account_id || null;
     if (!error && account?.account_id) {

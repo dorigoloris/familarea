@@ -29,7 +29,6 @@ function eventIdOf(event) {
 
 function eventHref(event) {
   const query = new URLSearchParams({ event_id: eventIdOf(event) });
-  if (event.area_id) query.set('area_id', event.area_id);
   return `evento.html?${query}`;
 }
 

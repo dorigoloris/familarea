@@ -1,7 +1,5 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const areaId = new URLSearchParams(location.search).get('area_id');
 const eventId = new URLSearchParams(location.search).get('event_id');
-const isArea = Boolean(areaId);
 const message = document.getElementById('message');
 let eventData;
 let canManage = false;
@@ -19,30 +17,6 @@ function localTime(value) {
   return new Date(value).toTimeString().slice(0, 5);
 }
 
-function eventInviteUrl(token) {
-  const link = new URL('invito-evento.html', location.href);
-  link.searchParams.set('token', token);
-  return link.toString();
-}
-
-async function copyInviteUrl(inviteUrl) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(inviteUrl);
-    return;
-  }
-  const fallback = document.createElement('textarea');
-  fallback.value = inviteUrl;
-  fallback.setAttribute('readonly', '');
-  fallback.style.position = 'fixed';
-  fallback.style.opacity = '0';
-  document.body.appendChild(fallback);
-  try {
-    fallback.select();
-    if (!document.execCommand('copy')) throw new Error('copy failed');
-  } finally {
-    fallback.remove();
-  }
-}
 
 function localIso(date, time = '00:00') {
   return new Date(`${date}T${time}`).toISOString();
@@ -284,10 +258,6 @@ function renderStatus() {
 async function render() {
   document.getElementById('event-title').textContent = eventData.title;
   document.getElementById('event-organizer').textContent = eventData.organizer_name || 'Organizzatore';
-  const areaRow = document.getElementById('event-area-row');
-  const areaValue = document.getElementById('event-area');
-  areaRow.hidden = !eventData.area_name;
-  areaValue.textContent = eventData.area_name || '';
   document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
   document.getElementById('location').textContent = eventData.location || '—';
   document.getElementById('notes').textContent = eventData.description || '—';
@@ -354,10 +324,8 @@ async function load() {
   canManage = event.can_manage === true;
   isPersonalAccount = account?.account_type === 'personal';
   const isCommitment = isCommitmentEvent();
-  document.getElementById('event-back').href = isCommitment
-    ? 'impegni.html'
-    : isArea ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'impegni.html';
-  document.getElementById('event-back').textContent = isCommitment || !isArea ? 'Torna agli Impegni' : 'Torna al programma';
+  document.getElementById('event-back').href = 'impegni.html';
+  document.getElementById('event-back').textContent = 'Torna agli Impegni';
   await render();
 }
 
@@ -556,7 +524,7 @@ document.getElementById('delete-button').addEventListener('click', async () => {
     message.textContent = 'Impossibile eliminare l’evento.';
     return;
   }
-  location.href = isArea ? `eventi.html?area_id=${encodeURIComponent(areaId)}` : 'impegni.html';
+  location.href = 'impegni.html';
 });
 
 async function renderParticipantControls() {
@@ -577,7 +545,6 @@ async function renderParticipantControls() {
     return;
   }
   const selected = participants || [];
-  const isAreaEvent = Boolean(eventData?.area_id);
   list.replaceChildren();
   const participantHeading = document.createElement('h3');
   participantHeading.textContent = 'Partecipanti';
@@ -611,52 +578,10 @@ async function renderParticipantControls() {
   const invitationHeading = document.createElement('h3');
   invitationHeading.textContent = 'Invita un Contatto';
   actions.appendChild(invitationHeading);
-  let invite;
-  if (isAreaEvent) {
-    invite = document.createElement('button');
-    invite.type = 'button';
-    invite.className = 'fa-v2-button fa-v2-button--secondary';
-    invite.textContent = 'Invita una persona';
-    invite.addEventListener('click', async () => {
-    const recipient = await FamilAreaConfirm.form({
-      title: 'Invita una persona',
-      message: 'Crea un Contatto privato e un invito per questa attività.',
-      confirmText: 'Crea invito',
-      fields: [
-        { name: 'firstName', label: 'Nome', required: true, autocomplete: 'given-name' },
-        { name: 'lastName', label: 'Cognome', autocomplete: 'family-name' },
-        { name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' }
-      ]
-    });
-    if (!recipient) return;
-    const email = recipient.email.trim();
-    const firstName = recipient.firstName.trim();
-    const lastName = recipient.lastName.trim() || null;
-    const { data, error } = await supabaseClient.rpc('create_event_invite', {
-      p_event_id: eventId, p_recipient_email: email, p_first_name: firstName, p_last_name: lastName
-    });
-    if (error) {
-      const knownErrors = {
-        'pending event invite already exists': 'Esiste già un invito in attesa per questa email.',
-        'contact already participates in this event': 'Questa persona partecipa già all’attività.',
-        'ambiguous contact email': 'L’email è associata a più Contatti. Verifica i Contatti prima di inviare l’invito.',
-        'permission denied': 'Non hai i permessi per invitare persone a questa attività.'
-      };
-      console.error('create_event_invite failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
-      message.textContent = knownErrors[error.message] || 'Impossibile creare l’invito attività. Riprova.';
-      return;
-    }
-    await renderParticipantControls();
-    message.textContent = `Invito creato per ${email}.`;
-    });
-  }
-
   if (!available.length) {
     const unavailable = document.createElement('p');
     unavailable.className = 'fa-v2-empty-state';
-    unavailable.textContent = isAreaEvent
-      ? 'Non ci sono Contatti disponibili da aggiungere.'
-      : 'Non hai Contatti FamilArea idonei da invitare.';
+    unavailable.textContent = 'Non hai Contatti FamilArea idonei da invitare.';
     actions.append(unavailable);
   } else {
     const addControls = document.createElement('div');
@@ -683,25 +608,16 @@ async function renderParticipantControls() {
         return;
       }
       await renderParticipantControls();
-      message.textContent = isAreaEvent ? 'Invito inviato.' : 'Invito inviato. In attesa di accettazione.';
+      message.textContent = 'Invito inviato. In attesa di accettazione.';
     });
     addControls.append(select, add);
     actions.append(addControls);
-  }
-  if (isAreaEvent) {
-    const invitePrompt = document.createElement('div');
-    invitePrompt.className = 'fa-v2-card-actions';
-    const prompt = document.createElement('p');
-    prompt.className = 'fa-v2-status';
-    prompt.textContent = 'La persona non è ancora nei Contatti?';
-    invitePrompt.append(prompt, invite);
-    actions.append(invitePrompt);
   }
   if ((pendingInvites || []).length) {
     const pendingSection = document.createElement('section');
     pendingSection.className = 'fa-v2-page-stack';
     const pendingTitle = document.createElement('h3');
-    pendingTitle.textContent = isAreaEvent ? 'Inviti in attesa' : 'Inviti inviati';
+    pendingTitle.textContent = 'Inviti inviati';
     pendingSection.appendChild(pendingTitle);
     pendingInvites.forEach((pendingInvite) => {
       const row = document.createElement('div');
@@ -711,31 +627,13 @@ async function renderParticipantControls() {
       const fullName = `${pendingInvite.first_name || ''} ${pendingInvite.last_name || ''}`.trim() || 'Contatto';
       const name = document.createElement('strong'); name.textContent = fullName;
       const email = document.createElement('span'); email.textContent = pendingInvite.recipient_email;
-      const state = document.createElement('span'); state.className = 'fa-v2-badge'; state.textContent = isAreaEvent ? 'In attesa' : 'In attesa di accettazione';
+      const state = document.createElement('span'); state.className = 'fa-v2-badge'; state.textContent = 'In attesa di accettazione';
       const person = document.createElement('span');
       person.className = 'fa-v2-status';
       person.append(name, document.createTextNode(' · '), email);
       details.append(state, person);
       const rowActions = document.createElement('div');
       rowActions.className = 'fa-v2-card-actions';
-      if (isAreaEvent) {
-        const linkAction = document.createElement('button');
-        linkAction.type = 'button';
-        linkAction.className = 'fa-v2-button fa-v2-button--secondary';
-        linkAction.textContent = 'Genera nuovo link';
-        linkAction.addEventListener('click', async () => {
-        try {
-          const { data, error } = await supabaseClient.rpc('regenerate_event_invite_link', { p_event_invite_id: pendingInvite.invite_id });
-          if (error) throw error;
-          await copyInviteUrl(eventInviteUrl(data.token));
-          message.textContent = 'Link invito copiato. Ora invialo alla persona invitata.';
-        } catch (error) {
-          console.error('event invite link failed', { code: error.code, message: error.message, details: error.details, hint: error.hint });
-          message.textContent = 'Non è stato possibile generare o copiare il link invito.';
-        }
-        });
-        rowActions.append(linkAction);
-      }
       const cancelAction = document.createElement('button');
       cancelAction.type = 'button';
       cancelAction.className = 'fa-v2-button fa-v2-button--danger';
@@ -769,13 +667,13 @@ async function renderParticipantControls() {
   list.appendChild(actions);
 }
 function isPersonalOwnerEvent() {
-  return isPersonalAccount && canManage && !eventData.area_id && eventData.visibility_source === 'owner';
+  return isPersonalAccount && canManage && eventData.visibility_source === 'owner';
 }
 
 function canManageParticipants() {
   return canManage
     && !isCommitmentEvent()
-    && (Boolean(eventData.area_id) || (!eventData.area_id && eventData.visibility_source === 'owner'));
+    && eventData.visibility_source === 'owner';
 }
 
 const renderEventView = render;

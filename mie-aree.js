@@ -61,8 +61,7 @@ function normaliseItem(item, kind) {
     occurrence_ends_at: occurrenceEnd,
     starts_at: kind === 'event' ? occurrenceStart : item.starts_at,
     ends_at: kind === 'event' ? occurrenceEnd : item.ends_at,
-    is_all_day: Boolean(item.is_all_day ?? item.all_day),
-    area_name: item.area_name || (item.area_id ? 'Area condivisa' : 'Personale')
+    is_all_day: Boolean(item.is_all_day ?? item.all_day)
   };
 }
 function formatActivityDate(activity) {
@@ -77,22 +76,20 @@ function createBadge(text, className) { const badge = document.createElement('sp
 function createActivityCard(activity) {
   const card = document.createElement('article'); card.className = 'activity-card';
   const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = activity.title;
-  const area = document.createElement('p'); area.className = 'activity-card-area'; area.textContent = activity.area_name;
   const meta = document.createElement('div'); meta.className = 'activity-card-meta';
   meta.append(createBadge(typeLabels[activity.activity_type] || activity.activity_type || 'Attività', 'activity-type-badge'), createBadge(`Priorità: ${priorityLabels[activity.priority] || activity.priority || 'Normale'}`, `activity-priority-badge activity-priority-${activity.priority || 'normal'}`), createBadge(`Stato: ${statusLabels[activity.status] || activity.status}`, `activity-status-badge activity-status-${activity.status}`));
   const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = formatActivityDate(activity); date.hidden = !date.textContent;
   const link = document.createElement('a'); link.className = 'btn activity-open-link'; link.textContent = 'Apri'; link.href = calendarUtils.itemLink(activity);
-  card.append(title, area, meta, date, link); return card;
+  card.append(title, meta, date, link); return card;
 }
 function createEventCard(event) {
   const card = document.createElement('article'); card.className = 'activity-card dashboard-event-card';
   const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = event.title;
-  const area = document.createElement('p'); area.className = 'activity-card-area'; area.textContent = event.area_name;
   const meta = document.createElement('div'); meta.className = 'activity-card-meta'; meta.appendChild(createBadge('Evento', 'event-badge'));
   const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = formatActivityDate(event);
   const location = document.createElement('p'); location.className = 'activity-card-location'; location.textContent = event.location ? `Luogo: ${event.location}` : ''; location.hidden = !event.location;
   const link = document.createElement('a'); link.className = 'btn activity-open-link'; link.textContent = 'Apri'; link.href = calendarUtils.itemLink(event);
-  card.append(title, area, meta, date, location, link); return card;
+  card.append(title, meta, date, location, link); return card;
 }
 function deadlineUrgency(occurrenceOn) {
   const due = calendarUtils.toValidDate(occurrenceOn); if (!due) return '';
@@ -137,17 +134,6 @@ async function loadDashboardTimeline() {
 }
 async function changeDashboardWeek(offset) { dashboardDisplayedWeek = new Date(dashboardDisplayedWeek); dashboardDisplayedWeek.setDate(dashboardDisplayedWeek.getDate() + (offset * 7)); await loadDashboardTimeline(); }
 async function showCurrentWeek() { dashboardDisplayedWeek = calendarUtils.startOfWeek(new Date()); await loadDashboardTimeline(); }
-async function loadPendingInvites(account) {
-  if (account?.account_type !== 'personal') { dashboardInvitesSection.hidden = true; return; }
-  const { data, error } = await supabaseClient.rpc('get_my_area_invites');
-  if (error) { dashboardInvitesSection.hidden = true; return; }
-  const pendingInvites = (data || []).filter((invite) => invite.status === 'pending');
-  if (!pendingInvites.length) { dashboardInvitesSection.hidden = true; return; }
-  const count = pendingInvites.length;
-  dashboardInvitesTitle.textContent = `Hai ${count} invit${count === 1 ? 'o' : 'i'} in attesa`;
-  dashboardInvitesDescription.textContent = count === 1 ? 'Sei stato invitato a partecipare a un’Area.' : 'Hai nuovi inviti a partecipare ad alcune Aree.';
-  dashboardInvitesSection.hidden = false;
-}
 async function loadOrganizationDashboardCover(account) {
   if (account?.account_type !== 'organization' || !dashboardHero) return;
   const { data: organization, error: organizationError } = await supabaseClient.rpc('get_my_organization');
@@ -170,7 +156,8 @@ async function initialiseDashboard() {
   const account = window.FamilAreaCurrentAccount ? await window.FamilAreaCurrentAccount : null;
   dashboardTitle.textContent = account?.account_type === 'organization' ? 'Dashboard' : 'La mia Dashboard';
   void loadOrganizationDashboardCover(account);
-  await Promise.all([loadDashboardTimeline(), loadPendingInvites(account)]);
+  dashboardInvitesSection.hidden = true;
+  await loadDashboardTimeline();
 }
 dashboardPreviousWeekButton.addEventListener('click', () => { void changeDashboardWeek(-1); });
 dashboardNextWeekButton.addEventListener('click', () => { void changeDashboardWeek(1); });

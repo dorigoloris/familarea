@@ -1,107 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0d2b4f">
-  <title>Scheda partecipante - FamilArea</title>
-  <link rel="stylesheet" href="app.css">
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0; url=dashboard.html">
+  <title>FamilArea</title>
 </head>
-
 <body>
-
-  <button class="logout-button" type="button" data-logout>Esci</button>
-  <p id="logout-message" aria-live="polite"></p>
-
-  <h1 id="member-name">Scheda partecipante</h1>
-
-  <p id="message">Caricamento...</p>
-
-  <div id="view-mode">
-    <dl>
-      <dt>Nome</dt>
-      <dd id="member-first-name"></dd>
-
-      <dt>Cognome</dt>
-      <dd id="member-last-name"></dd>
-
-      <dt>Ruolo nell'Area</dt>
-      <dd id="member-role"></dd>
-    </dl>
-
-    <div class="member-actions">
-      <button type="button" id="edit-button" hidden>Modifica</button>
-      <button type="button" id="remove-member-button" class="member-remove-button" hidden>Rimuovi dall'Area</button>
-    </div>
-
-    <div id="remove-member-actions" class="member-remove-note" hidden>
-      <p>La persona verrà rimossa soltanto da questa Area. Il suo profilo globale non verrà eliminato.</p>
-    </div>
-
-    <section id="contacts-section" hidden>
-      <p id="contacts-message" aria-live="polite"></p>
-
-      <h3>Email</h3>
-      <ul id="email-contacts-list"></ul>
-      <button type="button" id="add-email-button">Aggiungi email</button>
-
-      <h3>Cellulari</h3>
-      <ul id="phone-contacts-list"></ul>
-      <button type="button" id="add-phone-button">Aggiungi cellulare</button>
-
-      <form id="contact-form" hidden>
-        <h3 id="contact-form-title"></h3>
-
-        <div id="contact-email-field" hidden>
-          <label for="contact-email-input">Email</label><br>
-          <input type="email" id="contact-email-input" autocomplete="email">
-        </div>
-
-        <div id="contact-phone-field" hidden>
-          <label for="contact-phone-input">Cellulare</label><br>
-          <span aria-hidden="true">+39 </span><input type="tel" id="contact-phone-input" inputmode="tel" autocomplete="tel-national" placeholder="3331234567">
-        </div>
-
-        <br>
-
-        <button type="submit" id="contact-save-button">Salva</button>
-        <button type="button" id="contact-cancel-button">Annulla</button>
-      </form>
-    </section>
-  </div>
-
-  <form id="edit-form" hidden>
-    <div>
-      <label for="edit-first-name">Nome</label><br>
-      <input type="text" id="edit-first-name" required>
-    </div>
-
-    <br>
-
-    <div>
-      <label for="edit-last-name">Cognome</label><br>
-      <input type="text" id="edit-last-name">
-    </div>
-
-    <br>
-
-    <button type="submit">Salva</button>
-    <button type="button" id="cancel-button">Annulla</button>
-  </form>
-
-  <p><a id="back-to-area-link" href="#">Torna all'Area</a> · <a id="back-to-members-link" href="#">Torna ai partecipanti</a></p>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-public-config.js"></script>
-  <script src="logout.js"></script>
-  <script src="navigation.js"></script>
-  <script src="confirm-modal.js"></script>
-  <script src="membro.js"></script>
-
+  <script>window.location.replace('dashboard.html');</script>
 </body>
 </html>

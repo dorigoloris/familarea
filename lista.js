@@ -1,5 +1,4 @@
 const c = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const areaId = new URLSearchParams(location.search).get('area_id');
 const listId = new URLSearchParams(location.search).get('list_id');
 const m = document.getElementById('message');
 const itemInput = document.getElementById('item-text');
@@ -36,7 +35,7 @@ let shareSearchRequest = 0;
 let shareActionPending = false;
 let listDraft;
 
-const back = () => areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
+const back = () => 'liste.html';
 
 function initials(name) {
   return (name || 'U').trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('it-IT') || 'U';
@@ -62,9 +61,8 @@ function personName(person) {
 function renderSharingSummary(data) {
   const participants = data.participants || [];
   const people = [data.owner, ...participants].filter((person) => person?.account_id && person.account_id !== data.viewer_account_id);
-  const personalList = list.area_id === null;
-  const sharedPersonalList = personalList && participants.length > 0;
-  sharingSummary.hidden = !personalList;
+  const sharedPersonalList = participants.length > 0;
+  sharingSummary.hidden = false;
   sharingStatus.textContent = sharedPersonalList ? 'Condivisa' : 'Personale';
   sharingAvatars.replaceChildren();
   if (!sharedPersonalList || people.length === 0) return;
@@ -436,14 +434,10 @@ async function load() {
     return;
   }
   list = data.list;
-  const areaName = document.getElementById('area-name');
-  const isAreaList = Boolean(list.area_id);
-  areaName.hidden = !isAreaList;
-  if (isAreaList) areaName.textContent = 'Area';
   renderSharingSummary(data);
   editable = data.can_edit_items === true;
   canManageList = data.can_manage_list === true;
-  canShareList = canManageList && list.area_id === null;
+  canShareList = canManageList;
   backLink.href = back();
   renderListHeader();
   listActions.hidden = !canManageList;

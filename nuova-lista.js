@@ -1,5 +1,4 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const areaId = new URLSearchParams(location.search).get('area_id');
 const form = document.getElementById('list-form');
 const message = document.getElementById('message');
 const backLink = document.querySelector('.account-back-link > a');
@@ -15,7 +14,7 @@ async function load() {
     location.href = 'login.html';
     return;
   }
-  backLink.href = areaId ? `liste.html?area_id=${encodeURIComponent(areaId)}` : 'liste.html';
+  backLink.href = 'liste.html';
   document.querySelector('#list-form .form-actions > a').href = backLink.href;
   form.hidden = false;
   FamilAreaUnsavedChanges.capture(listDraft);
@@ -27,14 +26,14 @@ form.onsubmit = async (event) => {
   const { data, error } = await supabaseClient.rpc('create_list', {
     p_title: document.getElementById('title').value.trim(),
     p_description: document.getElementById('description').value.trim() || null,
-    p_area_id: areaId || null
+    p_area_id: null
   });
   if (error || !data) {
     message.textContent = 'Impossibile creare la lista.';
     return;
   }
   FamilAreaUnsavedChanges.markSaved(listDraft);
-  location.href = `lista.html${areaId ? `?area_id=${encodeURIComponent(areaId)}&` : '?'}list_id=${encodeURIComponent(data)}`;
+  location.href = `lista.html?list_id=${encodeURIComponent(data)}`;
 };
 
 load();

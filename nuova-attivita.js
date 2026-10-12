@@ -1,1 +1,114 @@
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),message=document.getElementById('message'),form=document.getElementById('activity-form'),areaId=new URLSearchParams(location.search).get('area_id'),backLink=document.getElementById('back-link'),assignees=document.getElementById('assignees'),recurrenceEnabled=document.getElementById('recurrence-enabled'),recurrenceFields=document.getElementById('recurrence-fields');function iso(d,t){return d&&t?new Date(`${d}T${t}`).toISOString():null;}function allDayIso(d){return d?new Date(`${d}T00:00:00`).toISOString():null;}function recurrence(){if(!recurrenceEnabled.checked)return{};const until=document.getElementById('recurrence-until').value;if(!until)throw new Error('Indica la fine della ripetizione.');return{frequency:'weekly',interval:1,weekdays:[Number(document.getElementById('recurrence-weekday').value)],until,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'};}function selected(){return[...assignees.querySelectorAll('input:checked')].map(x=>x.value);}async function loadMembers(){const{data,error}=await supabaseClient.rpc('get_area_members',{p_area_id:areaId});if(error)throw error;(data||[]).forEach(x=>{const i=document.createElement('input'),l=document.createElement('label');i.type='checkbox';i.value=x.profile_id;l.append(i,` ${x.first_name||''} ${x.last_name||''}`.trim());assignees.append(l,document.createElement('br'));});}async function load(){const{data}=await supabaseClient.auth.getSession();if(!data.session){location.href='login.html';return;}backLink.href=areaId?`attivita-area.html?area_id=${encodeURIComponent(areaId)}`:'attivita-globali.html';if(!areaId)assignees.closest('fieldset').hidden=true;else await loadMembers();form.hidden=false;}recurrenceEnabled.onchange=()=>recurrenceFields.hidden=!recurrenceEnabled.checked;form.onsubmit=async e=>{e.preventDefault();const date=document.getElementById('activity-date').value,start=document.getElementById('start-time').value,end=document.getElementById('end-time').value,all=!!(date&&!start);const{data,error}=await supabaseClient.rpc('create_activity',{p_title:document.getElementById('title').value.trim(),p_description:document.getElementById('notes').value.trim()||null,p_area_id:areaId||null,p_starts_at:all?allDayIso(date):iso(date,start),p_due_at:all?allDayIso(date):iso(date,end||start),p_is_all_day:all,p_priority:document.getElementById('priority').value,p_recurrence:recurrence(),p_activity_type:document.getElementById('activity-type').value});if(error||!data){message.textContent='Impossibile creare l’attività.';return;}if(areaId&&selected().length)await supabaseClient.rpc('set_activity_assignees',{p_activity_id:data,p_profile_ids:selected()});location.href=`attivita.html${areaId?`?area_id=${encodeURIComponent(areaId)}&`:'?'}activity_id=${encodeURIComponent(data)}`;};load();
+const newActivityClient = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const message = document.getElementById('message');
+const form = document.getElementById('activity-form');
+const backLink = document.getElementById('back-link');
+const recurrenceEnabled = document.getElementById('recurrence-enabled');
+const recurrenceFields = document.getElementById('recurrence-fields');
+const saveButton = document.getElementById('save-button');
+
+function setMessage(text = '') {
+  message.textContent = text;
+  message.hidden = !text;
+}
+
+function syncRecurrenceFields() {
+  recurrenceFields.hidden = !recurrenceEnabled.checked;
+}
+
+function combineLocalDateAndTime(dateValue, timeValue) {
+  if (!dateValue) return null;
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = (timeValue || '00:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes).toISOString();
+}
+
+function recurrencePayload() {
+  if (!recurrenceEnabled.checked) return {};
+  const dateValue = document.getElementById('activity-date').value;
+  const until = document.getElementById('recurrence-until').value;
+  const weekday = Number(document.getElementById('recurrence-weekday').value);
+  if (!dateValue) throw new Error('Per una ricorrenza settimanale è necessaria una data.');
+  if (!weekday || weekday < 1 || weekday > 7) throw new Error('Seleziona un giorno della settimana valido.');
+  if (until && until < dateValue) throw new Error('La fine della ripetizione non può precedere la data dell’attività.');
+  return {
+    frequency: 'weekly',
+    interval: 1,
+    weekdays: [weekday],
+    until: until || null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome'
+  };
+}
+
+function schedulePayload() {
+  const dateValue = document.getElementById('activity-date').value;
+  const startTime = document.getElementById('start-time').value;
+  const endTime = document.getElementById('end-time').value;
+  if (!dateValue && (startTime || endTime || recurrenceEnabled.checked)) {
+    throw new Error('Inserisci una data per specificare orario o ricorrenza.');
+  }
+  if (startTime && endTime && endTime < startTime) {
+    throw new Error('L’ora di fine non può precedere l’ora di inizio.');
+  }
+  return {
+    startsAt: dateValue ? combineLocalDateAndTime(dateValue, startTime) : null,
+    dueAt: dateValue ? combineLocalDateAndTime(dateValue, endTime || startTime) : null,
+    isAllDay: Boolean(dateValue && !startTime && !endTime)
+  };
+}
+
+async function load() {
+  const accountResult = await newActivityClient.rpc('get_current_account');
+  if (accountResult.error || !accountResult.data) {
+    setMessage('Impossibile verificare l’account corrente.');
+    return;
+  }
+  backLink.href = 'attivita-globali.html';
+  backLink.textContent = 'Torna alle Attività';
+  document.getElementById('assignees-fieldset')?.remove();
+  form.hidden = false;
+  setMessage();
+}
+
+async function createActivity(event) {
+  event.preventDefault();
+  const title = document.getElementById('title').value.trim();
+  if (!title) {
+    setMessage('Inserisci un titolo per l’attività.');
+    return;
+  }
+  let schedule;
+  let recurrence;
+  try {
+    schedule = schedulePayload();
+    recurrence = recurrencePayload();
+  } catch (error) {
+    setMessage(error.message);
+    return;
+  }
+
+  saveButton.disabled = true;
+  try {
+    const result = await newActivityClient.rpc('create_activity', {
+      p_title: title,
+      p_description: document.getElementById('notes').value.trim() || null,
+      p_area_id: null,
+      p_starts_at: schedule.startsAt,
+      p_due_at: schedule.dueAt,
+      p_is_all_day: schedule.isAllDay,
+      p_priority: document.getElementById('priority').value,
+      p_recurrence: recurrence,
+      p_activity_type: document.getElementById('activity-type').value
+    });
+    if (result.error || !result.data) throw result.error || new Error('Creazione non riuscita.');
+    window.location.assign(`attivita.html?activity_id=${encodeURIComponent(result.data)}`);
+  } catch (error) {
+    setMessage(error.message || 'Impossibile creare l’attività.');
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
+document.getElementById('cancel-button').addEventListener('click', () => window.location.assign('attivita-globali.html'));
+recurrenceEnabled.addEventListener('change', syncRecurrenceFields);
+form.addEventListener('submit', createActivity);
+load();

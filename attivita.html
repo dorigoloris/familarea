@@ -9,61 +9,81 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d2b4f">
-  <title>Attività - FamilArea</title>
+  <title>Attivit&agrave; - FamilArea</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fa-v2-app">
   <button class="logout-button" type="button" data-logout>Esci</button>
   <p id="logout-message" aria-live="polite"></p>
-  <main class="page-card">
-    <p><a id="back-link" href="#">Torna all'Area</a></p>
-    <h1 id="activity-title">Attività</h1>
-    <p id="message" aria-live="polite">Caricamento...</p>
 
-    <section id="activity-view" hidden>
-      <dl>
-        <dt>Tipo</dt><dd id="activity-type"></dd>
-        <dt>Priorità</dt><dd id="activity-priority"></dd>
-        <dt>Stato</dt><dd id="activity-status"></dd>
-        <dt>Quando</dt><dd id="activity-due"></dd>
-        <dt id="activity-recurrence-label" hidden>Ripetizione</dt><dd id="activity-recurrence" hidden></dd>
-        <dt id="activity-assignees-label">Assegnatari</dt><dd id="activity-assignees"></dd>
-        <dt>Note</dt><dd id="activity-notes"></dd>
-      </dl>
-      <p id="activity-actions" hidden>
-        <button type="button" id="edit-button">Modifica</button>
-        <button type="button" id="delete-button">Elimina attività</button>
-      </p>
-      <div id="personal-status-actions" class="personal-status-control" hidden><label for="personal-status">Stato</label><div class="personal-status-control-row"><select id="personal-status"><option value="open">Aperta</option><option value="completed">Completata</option><option value="cancelled">Annullata</option></select><button id="save-personal-status" class="fa-button fa-button-secondary" type="button" disabled>Salva stato</button></div></div>
+  <main class="page-card fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a id="back-link" href="attivita-globali.html">Torna alle Attivit&agrave;</a></p>
+    <p id="message" class="fa-v2-status" aria-live="polite">Caricamento...</p>
+
+    <section id="activity-view" class="fa-v2-page-stack" hidden>
+      <header class="fa-v2-header-card fa-v2-card">
+        <p class="eyebrow">ATTIVIT&Agrave;</p>
+        <div class="fa-section-hero-title-row">
+          <div><h1 id="activity-title">Attivit&agrave;</h1></div>
+          <div id="activity-actions" class="fa-v2-card-actions" hidden>
+            <button type="button" id="edit-button" class="fa-button fa-button-secondary">Modifica</button>
+            <button type="button" id="delete-button" class="fa-button fa-button-danger">Elimina attivit&agrave;</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="activity-details-title">
+        <h2 id="activity-details-title">Dettagli</h2>
+        <dl class="fa-v2-list">
+          <div class="fa-v2-list-row"><dt>Tipo</dt><dd id="activity-type"></dd></div>
+          <div class="fa-v2-list-row"><dt>Priorit&agrave;</dt><dd id="activity-priority"></dd></div>
+          <div class="fa-v2-list-row"><dt>Stato</dt><dd id="activity-status"></dd></div>
+          <div class="fa-v2-list-row"><dt>Quando</dt><dd id="activity-due"></dd></div>
+          <div id="activity-recurrence-row" class="fa-v2-list-row" hidden><dt id="activity-recurrence-label">Ripetizione</dt><dd id="activity-recurrence"></dd></div>
+          <div class="fa-v2-list-row"><dt>Note</dt><dd id="activity-notes"></dd></div>
+        </dl>
+
+        <div id="personal-status-actions" class="fa-v2-content-action-row" hidden>
+          <label for="personal-status">Stato</label>
+          <div class="fa-v2-card-actions">
+            <select id="personal-status" class="fa-v2-select">
+              <option value="open">Aperta</option>
+              <option value="completed">Completata</option>
+              <option value="cancelled">Annullata</option>
+            </select>
+            <button id="save-personal-status" class="fa-button fa-button-secondary" type="button">Salva stato</button>
+          </div>
+        </div>
+      </section>
     </section>
 
-    <form id="edit-form" hidden>
-      <h2>Modifica attività</h2>
-      <div><label for="edit-title">Titolo</label><input id="edit-title" type="text" required></div>
-      <br>
-      <div><label for="edit-type">Tipo</label><select id="edit-type"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></div>
-      <br>
-      <div><label for="edit-priority">Priorità</label><select id="edit-priority"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></div>
-      <br>
-      <div><label for="edit-notes">Note</label><textarea id="edit-notes"></textarea></div>
-      <br>
-      <fieldset class="activity-due-fields"><legend>Quando</legend>
+    <form id="edit-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
+      <h1>Modifica attivit&agrave;</h1>
+      <div class="fa-v2-page-stack">
+        <label for="edit-title">Titolo<input id="edit-title" class="fa-v2-input" type="text" required></label>
+        <label for="edit-type">Tipo<select id="edit-type" class="fa-v2-select"><option value="task">Da fare</option><option value="reminder">Promemoria</option><option value="deadline">Scadenza</option><option value="appointment">Appuntamento</option></select></label>
+        <label for="edit-priority">Priorit&agrave;<select id="edit-priority" class="fa-v2-select"><option value="normal">Normale</option><option value="low">Bassa</option><option value="high">Alta</option></select></label>
+        <label for="edit-notes">Note<textarea id="edit-notes" class="fa-v2-textarea"></textarea></label>
+      </div>
+
+      <fieldset class="activity-due-fields">
+        <legend>Quando</legend>
         <div class="activity-dates">
-          <div><label for="edit-activity-date">Data</label><input id="edit-activity-date" type="date"></div>
-          <div><label for="edit-start-time">Ora inizio</label><input id="edit-start-time" type="time"></div>
-          <div><label for="edit-end-time">Ora fine</label><input id="edit-end-time" type="time"></div>
+          <label for="edit-activity-date">Data<input id="edit-activity-date" class="fa-v2-input" type="date"></label>
+          <label for="edit-start-time">Ora inizio<input id="edit-start-time" class="fa-v2-input" type="time"></label>
+          <label for="edit-end-time">Ora fine<input id="edit-end-time" class="fa-v2-input" type="time"></label>
         </div>
         <label class="activity-recurrence-toggle"><input id="edit-recurrence-enabled" type="checkbox"> Ripeti questa attivit&agrave;</label>
         <div id="edit-recurrence-fields" class="activity-recurrence-fields" hidden>
-          <div><label for="edit-recurrence-weekday">Ripeti ogni</label><select id="edit-recurrence-weekday"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></div>
-          <div><label for="edit-recurrence-until">Fine ripetizione</label><input id="edit-recurrence-until" type="date"></div>
+          <label for="edit-recurrence-weekday">Ripeti ogni<select id="edit-recurrence-weekday" class="fa-v2-select"><option value="1">Luned&igrave;</option><option value="2">Marted&igrave;</option><option value="3">Mercoled&igrave;</option><option value="4">Gioved&igrave;</option><option value="5">Venerd&igrave;</option><option value="6">Sabato</option><option value="7">Domenica</option></select></label>
+          <label for="edit-recurrence-until">Fine ripetizione<input id="edit-recurrence-until" class="fa-v2-input" type="date"></label>
         </div>
       </fieldset>
-      <br>
-      <fieldset><legend>Assegnatari</legend><div id="edit-assignees"></div></fieldset>
-      <br>
-      <button type="submit">Salva modifiche</button>
-      <button type="button" id="cancel-button">Annulla</button>
+
+      <div class="fa-v2-card-actions">
+        <button type="button" id="cancel-button" class="fa-button fa-button-secondary">Annulla</button>
+        <button type="submit" id="save-button" class="fa-button fa-button-primary">Salva modifiche</button>
+      </div>
     </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
