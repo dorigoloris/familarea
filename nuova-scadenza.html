@@ -24,6 +24,12 @@
       <p id="deadline-occurrence-status" class="fa-v2-status" aria-live="polite"></p>
       <button id="deadline-occurrence-toggle" class="fa-v2-button fa-v2-button--secondary" type="button"></button>
     </section>
+    <section id="vehicle-service-section" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="vehicle-service-title" hidden>
+      <div class="fa-v2-section-heading"><div><h2 id="vehicle-service-title">Lavori eseguiti</h2><p>Registra gli interventi eseguiti sul veicolo.</p></div><button id="vehicle-service-create" class="fa-v2-button fa-v2-button--primary" type="button">+ Registra tagliando</button></div>
+      <p id="vehicle-service-message" class="fa-v2-status" aria-live="polite"></p>
+      <p id="vehicle-service-empty" class="fa-v2-empty-state">Nessun tagliando registrato.</p>
+      <div id="vehicle-service-list" class="fa-v2-list" aria-label="Tagliandi effettuati"></div>
+    </section>
     <section id="deadline-sharing-section" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="deadline-sharing-title" hidden>
       <div class="fa-v2-section-heading"><h2 id="deadline-sharing-title">Condivisione</h2></div>
       <p id="deadline-sharing-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
@@ -44,6 +50,36 @@
       <p id="deadline-sharing-empty" class="fa-v2-empty-state">Nessuna persona ha accesso a questa scadenza.</p>
     </section>
   </main>
+  <div id="vehicle-service-modal" class="confirm-modal-overlay" hidden>
+    <section id="vehicle-service-dialog" class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="vehicle-service-form-title" tabindex="-1">
+      <button id="vehicle-service-modal-close" class="confirm-modal-close" type="button" aria-label="Chiudi form Tagliando">×</button>
+      <form id="vehicle-service-form" class="fa-v2-page-stack">
+        <h2 id="vehicle-service-form-title" class="confirm-modal-title">Registra tagliando</h2>
+        <p id="vehicle-service-form-message" class="fa-v2-status" aria-live="polite"></p>
+        <div class="deadline-form-grid">
+          <div><label for="vehicle-service-performed-at">Data intervento *</label><input id="vehicle-service-performed-at" class="fa-v2-input" type="date" required></div>
+          <div><label for="vehicle-service-mileage">Chilometraggio</label><input id="vehicle-service-mileage" class="fa-v2-input" type="number" min="0" step="1"></div>
+          <div><label for="vehicle-service-performed-by">Eseguito da</label><input id="vehicle-service-performed-by" class="fa-v2-input" type="text"></div>
+        </div>
+        <fieldset id="vehicle-service-tasks" class="fa-choice-fieldset">
+          <legend>Lavori eseguiti</legend>
+          <div class="fa-choice-options">
+            <label><input type="checkbox" value="engine_oil"> Cambio olio motore</label>
+            <label><input type="checkbox" value="engine_oil_filter"> Cambio filtro olio motore</label>
+            <label><input type="checkbox" value="spark_plugs"> Cambio candele</label>
+            <label><input type="checkbox" value="wheel_balancing"> Equilibratura gomme</label>
+          </div>
+        </fieldset>
+        <div class="fa-v2-page-stack">
+          <span>Altro lavoro</span>
+          <div id="vehicle-service-custom-tasks" class="fa-v2-page-stack"></div>
+          <button id="vehicle-service-add-custom-task" class="fa-v2-button fa-v2-button--secondary" type="button">+ Aggiungi lavoro</button>
+        </div>
+        <div class="fa-v2-page-stack"><label for="vehicle-service-notes">Note</label><textarea id="vehicle-service-notes" class="fa-v2-textarea" rows="3"></textarea></div>
+        <div class="fa-v2-card-actions"><button id="vehicle-service-cancel" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button><button id="vehicle-service-save" class="fa-v2-button fa-v2-button--primary" type="submit">Salva tagliando</button></div>
+      </form>
+    </section>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="logout.js"></script><script src="navigation.js"></script><script src="confirm-modal.js"></script><script src="managed-context.js"></script><script src="attachment-preview.js"></script><script src="deadline-attachments.js"></script><script src="nuova-scadenza.js"></script>
 </body>
 </html>

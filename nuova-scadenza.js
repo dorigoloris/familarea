@@ -41,6 +41,26 @@ const deadlineSharingSearchResults = document.getElementById('deadline-sharing-s
 const deadlineSharingPending = document.getElementById('deadline-sharing-pending');
 const deadlineSharingCollaborators = document.getElementById('deadline-sharing-collaborators');
 const deadlineSharingEmpty = document.getElementById('deadline-sharing-empty');
+const vehicleServiceSection = document.getElementById('vehicle-service-section');
+const vehicleServiceMessage = document.getElementById('vehicle-service-message');
+const vehicleServiceEmpty = document.getElementById('vehicle-service-empty');
+const vehicleServiceList = document.getElementById('vehicle-service-list');
+const vehicleServiceCreate = document.getElementById('vehicle-service-create');
+const vehicleServiceModal = document.getElementById('vehicle-service-modal');
+const vehicleServiceDialog = document.getElementById('vehicle-service-dialog');
+const vehicleServiceModalClose = document.getElementById('vehicle-service-modal-close');
+const vehicleServiceForm = document.getElementById('vehicle-service-form');
+const vehicleServiceFormTitle = document.getElementById('vehicle-service-form-title');
+const vehicleServiceFormMessage = document.getElementById('vehicle-service-form-message');
+const vehicleServicePerformedAt = document.getElementById('vehicle-service-performed-at');
+const vehicleServiceMileage = document.getElementById('vehicle-service-mileage');
+const vehicleServicePerformedBy = document.getElementById('vehicle-service-performed-by');
+const vehicleServiceNotes = document.getElementById('vehicle-service-notes');
+const vehicleServiceTasks = document.getElementById('vehicle-service-tasks');
+const vehicleServiceCustomTasks = document.getElementById('vehicle-service-custom-tasks');
+const vehicleServiceAddCustomTask = document.getElementById('vehicle-service-add-custom-task');
+const vehicleServiceCancel = document.getElementById('vehicle-service-cancel');
+const vehicleServiceSave = document.getElementById('vehicle-service-save');
 let otherOptionsToggle = null;
 let otherOptionsContent = null;
 let managedMember = null;
@@ -55,6 +75,9 @@ let deadlineSharingSearchRequest = 0;
 let deadlineSharingActionPending = false;
 let deadlineSharingInitialised = false;
 let deadlineSharingManagement = { pending: [], collaborators: [] };
+let vehicleServiceItemId = null;
+let vehicleServiceEditingRecord = null;
+let vehicleServicePreviousFocus = null;
 const query = new URLSearchParams(window.location.search);
 const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
@@ -80,6 +103,12 @@ const deadlineItemTemplates = {
   ]
 };
 let deadlineItemKind = null;
+const vehicleServiceTaskLabels = {
+  engine_oil: 'Cambio olio motore',
+  engine_oil_filter: 'Cambio filtro olio motore',
+  spark_plugs: 'Cambio candele',
+  wheel_balancing: 'Equilibratura gomme'
+};
 
 function setFormMessage(text, isSuccess = false) {
   m.textContent = text;
@@ -586,6 +615,194 @@ function initialiseDeadlineSharing() {
   void loadDeadlineSharingManagement();
 }
 
+function isVehicleServiceDeadline() {
+  return editingDeadline?.deadline_kind === 'vehicle_service'
+    && selectedDeadlineItem()?.category === 'vehicle';
+}
+
+function setVehicleServiceFormMessage(text = '') {
+  vehicleServiceFormMessage.textContent = text;
+}
+
+function addVehicleServiceCustomTask(value = '') {
+  const row = document.createElement('div');
+  const input = document.createElement('input');
+  const remove = document.createElement('button');
+  row.className = 'fa-v2-content-action-row';
+  input.type = 'text';
+  input.className = 'fa-v2-input';
+  input.value = value;
+  input.placeholder = 'Es. Controllo pastiglie freni';
+  input.setAttribute('data-vehicle-service-custom-task', '');
+  input.setAttribute('aria-label', 'Descrizione altro lavoro');
+  remove.type = 'button';
+  remove.className = 'fa-v2-button fa-v2-button--secondary';
+  remove.textContent = 'Rimuovi';
+  remove.addEventListener('click', () => row.remove());
+  row.append(input, remove);
+  vehicleServiceCustomTasks.append(row);
+  return input;
+}
+
+function vehicleServiceFormTasks() {
+  const standard = [...vehicleServiceTasks.querySelectorAll('input:checked')]
+    .map((input) => ({ task_key: input.value, label: vehicleServiceTaskLabels[input.value] }));
+  const custom = [...vehicleServiceCustomTasks.querySelectorAll('[data-vehicle-service-custom-task]')]
+    .map((input) => ({ task_key: null, label: input.value.trim() }));
+  return [...standard, ...custom.filter((task) => task.label)];
+}
+
+function closeVehicleServiceForm() {
+  vehicleServiceModal.hidden = true;
+  document.body.classList.remove('confirm-modal-open');
+  vehicleServiceEditingRecord = null;
+  vehicleServiceForm.reset();
+  vehicleServiceCustomTasks.replaceChildren();
+  setVehicleServiceFormMessage('');
+  vehicleServiceFormTitle.textContent = 'Registra tagliando';
+  vehicleServiceSave.textContent = 'Salva tagliando';
+  vehicleServiceSave.disabled = false;
+  vehicleServicePreviousFocus?.focus?.();
+  vehicleServicePreviousFocus = null;
+}
+
+function openVehicleServiceForm(record = null) {
+  vehicleServicePreviousFocus = document.activeElement;
+  vehicleServiceEditingRecord = record;
+  vehicleServiceFormTitle.textContent = record ? 'Modifica tagliando' : 'Registra tagliando';
+  vehicleServiceSave.textContent = record ? 'Salva modifiche' : 'Salva tagliando';
+  vehicleServicePerformedAt.value = record?.performed_at || '';
+  vehicleServiceMileage.value = record?.mileage ?? '';
+  vehicleServicePerformedBy.value = record?.performed_by || '';
+  vehicleServiceNotes.value = record?.notes || '';
+  vehicleServiceTasks.querySelectorAll('input').forEach((input) => {
+    input.checked = Boolean(record?.tasks?.some((task) => task.task_key === input.value));
+  });
+  vehicleServiceCustomTasks.replaceChildren();
+  (record?.tasks || []).filter((task) => !task.task_key).forEach((task) => addVehicleServiceCustomTask(task.label));
+  setVehicleServiceFormMessage('');
+  vehicleServiceModal.hidden = false;
+  document.body.classList.add('confirm-modal-open');
+  vehicleServiceDialog.focus();
+}
+
+function vehicleServiceRecordRow(record) {
+  const row = document.createElement('article');
+  const copy = document.createElement('div');
+  const date = document.createElement('strong');
+  const meta = document.createElement('p');
+  const work = document.createElement('p');
+  const actions = document.createElement('div');
+  const edit = document.createElement('button');
+  const remove = document.createElement('button');
+  row.className = 'fa-v2-list-row';
+  copy.className = 'fa-v2-card-content';
+  date.textContent = window.FamilAreaDateUtils.formatDateDisplay(record.performed_at);
+  const details = [];
+  if (record.mileage !== null && record.mileage !== undefined) details.push(`${new Intl.NumberFormat('it-IT').format(record.mileage)} km`);
+  if (record.performed_by) details.push(record.performed_by);
+  meta.textContent = details.join(' · ');
+  work.textContent = (record.tasks || []).map((task) => task.label).join(' · ') || 'Nessun lavoro selezionato';
+  copy.append(date);
+  if (meta.textContent) copy.append(meta);
+  copy.append(work);
+  if (record.notes) {
+    const notes = document.createElement('p');
+    notes.textContent = record.notes;
+    copy.append(notes);
+  }
+  actions.className = 'fa-v2-card-actions';
+  edit.type = 'button';
+  edit.className = 'fa-v2-button fa-v2-button--secondary';
+  edit.textContent = 'Modifica';
+  edit.addEventListener('click', () => openVehicleServiceForm(record));
+  remove.type = 'button';
+  remove.className = 'fa-v2-button fa-v2-button--danger';
+  remove.textContent = 'Elimina';
+  remove.addEventListener('click', async () => {
+    if (!await FamilAreaConfirm.confirm({
+      variant: 'danger',
+      title: 'Eliminare il tagliando?',
+      message: 'Lo storico dell’intervento verrà eliminato.',
+      confirmText: 'Elimina'
+    })) return;
+    const { error } = await c.rpc('delete_my_vehicle_service_record', { p_record_id: record.id });
+    if (error) {
+      vehicleServiceMessage.textContent = 'Impossibile eliminare il tagliando.';
+      return;
+    }
+    await loadVehicleServiceRecords();
+  });
+  actions.append(edit, remove);
+  row.append(copy, actions);
+  return row;
+}
+
+async function loadVehicleServiceRecords() {
+  if (!vehicleServiceItemId) return;
+  vehicleServiceMessage.textContent = 'Caricamento tagliandi...';
+  const { data, error } = await c.rpc('get_my_vehicle_service_records', {
+    p_deadline_item_id: vehicleServiceItemId
+  });
+  if (error) {
+    vehicleServiceMessage.textContent = 'Impossibile caricare lo storico Tagliandi.';
+    return;
+  }
+  const records = data || [];
+  vehicleServiceList.replaceChildren(...records.map(vehicleServiceRecordRow));
+  vehicleServiceEmpty.hidden = records.length > 0;
+  vehicleServiceMessage.textContent = '';
+}
+
+async function initialiseVehicleServiceRecords() {
+  if (!isVehicleServiceDeadline()) return;
+  const item = selectedDeadlineItem();
+  if (!item) return;
+  vehicleServiceItemId = item.id;
+  vehicleServiceSection.hidden = false;
+  vehicleServiceCreate.onclick = () => openVehicleServiceForm();
+  vehicleServiceCancel.onclick = closeVehicleServiceForm;
+  vehicleServiceModalClose.onclick = closeVehicleServiceForm;
+  vehicleServiceAddCustomTask.onclick = () => addVehicleServiceCustomTask().focus();
+  vehicleServiceModal.onclick = (event) => {
+    if (event.target === vehicleServiceModal) closeVehicleServiceForm();
+  };
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !vehicleServiceModal.hidden) {
+      event.preventDefault();
+      closeVehicleServiceForm();
+    }
+  });
+  await loadVehicleServiceRecords();
+}
+
+vehicleServiceForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const customInputs = [...vehicleServiceCustomTasks.querySelectorAll('[data-vehicle-service-custom-task]')];
+  if (customInputs.some((input) => !input.value.trim())) {
+    setVehicleServiceFormMessage('Inserisci o rimuovi il lavoro personalizzato vuoto.');
+    return;
+  }
+  const params = {
+    p_performed_at: vehicleServicePerformedAt.value,
+    p_mileage: vehicleServiceMileage.value === '' ? null : Number(vehicleServiceMileage.value),
+    p_performed_by: vehicleServicePerformedBy.value,
+    p_notes: vehicleServiceNotes.value,
+    p_tasks: vehicleServiceFormTasks()
+  };
+  vehicleServiceSave.disabled = true;
+  const result = vehicleServiceEditingRecord
+    ? await c.rpc('update_my_vehicle_service_record', { p_record_id: vehicleServiceEditingRecord.id, ...params })
+    : await c.rpc('create_my_vehicle_service_record', { p_deadline_item_id: vehicleServiceItemId, ...params });
+  if (result.error) {
+    vehicleServiceSave.disabled = false;
+    setVehicleServiceFormMessage('Impossibile salvare il tagliando.');
+    return;
+  }
+  closeVehicleServiceForm();
+  await loadVehicleServiceRecords();
+});
+
 async function initialiseEditMode(account) {
   const { data, error } = await c.rpc('get_deadline', { p_deadline_id: editingDeadlineId });
   if (error || !data) {
@@ -618,6 +835,7 @@ async function initialiseEditMode(account) {
     cancelLink.href = backLink.href;
   }
   await loadDeadlineAttachments();
+  await initialiseVehicleServiceRecords();
   await loadDeadlineOccurrence();
   return true;
 }
