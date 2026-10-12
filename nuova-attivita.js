@@ -64,7 +64,6 @@ async function load() {
   }
   backLink.href = 'attivita-globali.html';
   backLink.textContent = 'Torna alle Attività';
-  document.getElementById('assignees-fieldset')?.remove();
   form.hidden = false;
   setMessage();
 }
