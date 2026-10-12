@@ -44,7 +44,7 @@ function recurrenceLabel(event) {
   return event.recurrence_interval > 1 ? `Ogni ${event.recurrence_interval} ${unit}` : base;
 }
 
-function createSummaryCard({ title, details, href, fallback, label }) {
+function createSummaryCard({ title, details, href, fallback, label, imageUrl = '' }) {
   const card = document.createElement('a');
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   card.href = href;
@@ -54,6 +54,16 @@ function createSummaryCard({ title, details, href, fallback, label }) {
   visual.className = 'fa-v2-card-visual';
   visual.setAttribute('aria-hidden', 'true');
   visual.textContent = initials(title, fallback);
+  if (imageUrl) {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = imageUrl;
+    image.addEventListener('error', () => {
+      image.remove();
+      visual.textContent = initials(title, fallback);
+    }, { once: true });
+    visual.replaceChildren(image);
+  }
 
   const heading = document.createElement('h3');
   heading.className = 'fa-v2-card-title';
@@ -88,9 +98,27 @@ function activityDetails(activity, occurrence) {
   return details;
 }
 
+function historicCourseDate(event, occurrence) {
+  if (occurrence) return `Prossima data: ${formatWhen(occurrence)}`;
+
+  const today = new Date();
+  const recurrenceUntil = event.recurrence_until ? new Date(`${event.recurrence_until}T23:59:59`) : null;
+  const hasEnded = ['completed', 'closed', 'finished'].includes(String(event.status || '').toLowerCase())
+    || (recurrenceUntil && recurrenceUntil < today)
+    || (!event.recurrence_frequency && event.starts_at && new Date(event.starts_at) < today);
+
+  if (hasEnded) {
+    if (event.recurrence_until) {
+      return `Corso concluso · Ultima data: ${new Date(`${event.recurrence_until}T12:00:00`).toLocaleDateString('it-IT')}`;
+    }
+    return event.starts_at ? `Corso concluso · Ultima data: ${formatWhen(event)}` : 'Corso concluso';
+  }
+  return event.starts_at ? `Prima data: ${formatWhen(event)}` : 'Date da confermare';
+}
+
 function historicCourseDetails(event, occurrence) {
   const details = document.createElement('div');
-  const nextDate = occurrence ? `Prossima data: ${formatWhen(occurrence)}` : 'Data non disponibile';
+  const nextDate = historicCourseDate(event, occurrence);
   const recurrence = recurrenceLabel(event);
 
   ['Corso storico', nextDate, recurrence ? `Ricorrenza: ${recurrence}` : '', event.location ? `Luogo: ${event.location}` : '']
@@ -113,14 +141,34 @@ function activityCard(activity, occurrence) {
   });
 }
 
-function historicCourseCard(event, occurrence) {
+function historicCourseCard(event, occurrence, imageUrl) {
   return createSummaryCard({
     title: event.title,
     details: historicCourseDetails(event, occurrence),
     href: eventHref(event),
     fallback: 'C',
-    label: `Apri corso storico ${event.title}`
+    label: `Apri corso storico ${event.title}`,
+    imageUrl
   });
+}
+
+async function getHistoricCourseImageUrls(events) {
+  const areaIds = [...new Set(events.map((event) => event.area_id).filter(Boolean))];
+  const images = new Map();
+  await Promise.all(areaIds.map(async (areaId) => {
+    const { data: area, error: areaError } = await activitiesClient.rpc('get_area', { p_area_id: areaId });
+    if (areaError || !area?.image_path) {
+      if (areaError) console.warn('[FamilArea activities] immagine Area non disponibile', areaError);
+      return;
+    }
+    const { data, error } = await activitiesClient.storage.from('area-images').createSignedUrl(area.image_path, 3600);
+    if (error || !data?.signedUrl) {
+      console.warn('[FamilArea activities] URL immagine Area non disponibile', error);
+      return;
+    }
+    images.set(areaId, data.signedUrl);
+  }));
+  return images;
 }
 
 function appointmentCard(occurrence, record, kind) {
@@ -191,6 +239,7 @@ async function loadActivities() {
 
   const activitiesById = new Map(activities.map((activity) => [activity.id || activity.activity_id, activity]));
   const coursesById = new Map(historicCourses.map((event) => [event.id || event.event_id, event]));
+  const courseImageUrls = await getHistoricCourseImageUrls(historicCourses);
   const activityIds = new Set(activities.map((activity) => activity.id || activity.activity_id));
   const courseIds = new Set(historicCourses.map((event) => event.id || event.event_id));
   const occurrences = occurrencesResult.error ? [] : (occurrencesResult.data || [])
@@ -212,7 +261,11 @@ async function loadActivities() {
   });
   coursesList.replaceChildren(
     ...activities.map((activity) => activityCard(activity, nextOccurrenceByActivityId.get(activity.id || activity.activity_id))),
-    ...historicCourses.map((event) => historicCourseCard(event, nextOccurrenceByCourseId.get(event.id || event.event_id)))
+    ...historicCourses.map((event) => historicCourseCard(
+      event,
+      nextOccurrenceByCourseId.get(event.id || event.event_id),
+      courseImageUrls.get(event.area_id)
+    ))
   );
   coursesEmpty.hidden = activities.length + historicCourses.length > 0;
   if (occurrencesResult.error) {
