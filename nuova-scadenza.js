@@ -97,7 +97,8 @@ const deadlineItemCategoryLabels = {
 const deadlineItemTemplates = {
   vehicle: [
     { title: 'Assicurazione RCA', kind: 'vehicle_insurance' }, { title: 'Bollo', kind: 'vehicle_tax' },
-    { title: 'Collaudo / Revisione', kind: 'vehicle_inspection' }, { title: 'Tagliando', kind: 'vehicle_service' }
+    { title: 'Collaudo / Revisione', kind: 'vehicle_inspection' }, { title: 'Tagliando', kind: 'vehicle_service' },
+    { title: 'Cambio gomme Estate/Inverno', kind: null }
   ],
   home: [
     { title: 'Caldaia / Impianto termico', kind: 'home_heating' }, { title: 'Assicurazione casa', kind: 'home_insurance' },
@@ -144,7 +145,7 @@ function deadlineItemTemplateTitle(category, value) {
   const normalisedValue = String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it-IT');
   return (deadlineItemTemplates[category] || []).find((template) => (
     template.title.toLocaleLowerCase('it-IT') === normalisedValue
-      && template.kind === presetKind
+      && (template.kind || '') === presetKind
   )) || null;
 }
 

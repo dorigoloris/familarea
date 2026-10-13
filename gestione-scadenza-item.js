@@ -7,7 +7,8 @@ const deadlineItemDeadlinesList = document.getElementById('deadline-item-deadlin
 const itemConfigurations = {
   vehicle: { label: 'Veicolo', imageLabel: 'Foto del veicolo', backHref: 'gestione-scadenze-veicoli.html', templates: [
     { title: 'Assicurazione RCA', kind: 'vehicle_insurance', icon: 'R' }, { title: 'Bollo', kind: 'vehicle_tax', icon: 'B' },
-    { title: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' }, { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' }
+    { title: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' }, { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' },
+    { title: 'Cambio gomme Estate/Inverno', kind: null, icon: 'G' }
   ] },
   home: { label: 'Casa', imageLabel: 'Foto della casa', backHref: 'scadenze.html', templates: [
     { title: 'Caldaia / Impianto termico', kind: 'home_heating', icon: 'I' }, { title: 'Assicurazione casa', kind: 'home_insurance', icon: 'A' },
