@@ -622,6 +622,13 @@ function isVehicleServiceDeadline() {
     && selectedDeadlineItem()?.category === 'vehicle';
 }
 
+function updateVehicleServiceEditFields() {
+  if (!isVehicleServiceDeadline()) return;
+  titleField.hidden = true;
+  deadlineItemSelectorField.hidden = true;
+  document.querySelector('label[for="deadline-first-due-on"]').textContent = 'Data scadenza *';
+}
+
 function setVehicleServiceFormMessage(text = '') {
   vehicleServiceFormMessage.textContent = text;
 }
@@ -906,6 +913,7 @@ async function initialiseEditMode(account) {
   }
   const associatedItem = selectedDeadlineItem();
   if (associatedItem) setAssociatedDeadlineHeader(associatedItem, editingDeadline.title);
+  updateVehicleServiceEditFields();
   if (associatedItem?.id === requestedDeadlineItemId) {
     backLink.href = deadlineItemHref(associatedItem.id);
     cancelLink.href = backLink.href;
