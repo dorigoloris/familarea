@@ -34,28 +34,72 @@ function isoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function nextUpcomingDeadlineDate(deadline, today) {
+function occurrenceDatesThrough(deadline, until) {
+  const firstDueOn = localDateFromIso(deadline.first_due_on);
+  const terminatedOn = deadline.terminated_on ? localDateFromIso(deadline.terminated_on) : null;
+  const recurrenceMonths = Number(deadline.recurrence_months);
+  if (!firstDueOn || (deadline.terminated_on && !terminatedOn) || firstDueOn > until) return [];
+  if (!Number.isInteger(recurrenceMonths) || recurrenceMonths <= 0) return [firstDueOn];
+  const occurrences = [];
+  for (let occurrence = firstDueOn; occurrence <= until && (!terminatedOn || occurrence <= terminatedOn); occurrence = addMonthsOnDeadlineDay(occurrence, recurrenceMonths)) occurrences.push(occurrence);
+  return occurrences;
+}
+
+function nextPendingDeadlineDate(deadline, today, completedOccurrences) {
   const firstDueOn = localDateFromIso(deadline.first_due_on);
   const terminatedOn = deadline.terminated_on ? localDateFromIso(deadline.terminated_on) : null;
   const recurrenceMonths = Number(deadline.recurrence_months);
   if (!firstDueOn || (deadline.terminated_on && !terminatedOn)) return null;
-  if (!Number.isInteger(recurrenceMonths) || recurrenceMonths <= 0) return firstDueOn >= today ? firstDueOn : null;
-
-  const monthDistance = (today.getFullYear() - firstDueOn.getFullYear()) * 12 + today.getMonth() - firstDueOn.getMonth();
-  let occurrence = addMonthsOnDeadlineDay(firstDueOn, Math.max(0, Math.floor(monthDistance / recurrenceMonths)) * recurrenceMonths);
-  while (occurrence < today) occurrence = addMonthsOnDeadlineDay(occurrence, recurrenceMonths);
+  let occurrence = firstDueOn;
+  while (occurrence < today || completedOccurrences.has(isoDate(occurrence))) {
+    if (!Number.isInteger(recurrenceMonths) || recurrenceMonths <= 0) return null;
+    occurrence = addMonthsOnDeadlineDay(occurrence, recurrenceMonths);
+  }
   return terminatedOn && occurrence > terminatedOn ? null : occurrence;
 }
 
-function upcomingDeadlines(deadlines) {
+async function loadOccurrenceStates(deadlines, today, isManaged) {
+  if (isManaged) {
+    const requests = deadlines.flatMap((deadline) => occurrenceDatesThrough(deadline, today).map(async (occurrence) => {
+      const occurrenceOn = isoDate(occurrence);
+      const { data, error } = await c.rpc('get_deadline_occurrence', { p_deadline_id: deadline.id, p_occurrence_on: occurrenceOn });
+      if (error) throw error;
+      return { deadlineId: deadline.id, occurrenceOn, completed: Boolean(data?.completed) };
+    }));
+    const states = new Map();
+    (await Promise.all(requests)).forEach((occurrence) => states.set(`${occurrence.deadlineId}:${occurrence.occurrenceOn}`, occurrence.completed));
+    return states;
+  }
+  const dated = deadlines.filter((deadline) => localDateFromIso(deadline.first_due_on));
+  if (!dated.length) return new Map();
+  const from = dated.map((deadline) => localDateFromIso(deadline.first_due_on)).sort((left, right) => left - right)[0];
+  const { data, error } = await c.rpc('get_deadline_occurrences', { p_from: isoDate(from), p_to: isoDate(today) });
+  if (error) throw error;
+  const states = new Map();
+  (Array.isArray(data) ? data : []).forEach((occurrence) => {
+    const date = localDateFromIso(occurrence.occurrence_on);
+    if (date) states.set(`${occurrence.deadline_id}:${isoDate(date)}`, Boolean(occurrence.completed));
+  });
+  return states;
+}
+
+async function scheduledDeadlines(deadlines, isManaged) {
   const today = todayLocalDate();
-  return deadlines
-    .map((deadline) => {
-      const nextDueOn = nextUpcomingDeadlineDate(deadline, today);
-      return nextDueOn ? { ...deadline, first_due_on: isoDate(nextDueOn) } : null;
-    })
-    .filter(Boolean)
-    .sort((left, right) => left.first_due_on.localeCompare(right.first_due_on));
+  const occurrenceStates = await loadOccurrenceStates(deadlines, today, isManaged);
+  const rows = [];
+  deadlines.forEach((deadline) => {
+    const occurrenceDates = occurrenceDatesThrough(deadline, today);
+    const overdue = occurrenceDates.filter((occurrence) => occurrence < today && !occurrenceStates.get(`${deadline.id}:${isoDate(occurrence)}`));
+    if (overdue.length) {
+      overdue.forEach((occurrence) => rows.push({ ...deadline, first_due_on: isoDate(occurrence), occurrenceState: 'overdue' }));
+      return;
+    }
+    const dueToday = occurrenceDates.find((occurrence) => occurrence.getTime() === today.getTime() && !occurrenceStates.get(`${deadline.id}:${isoDate(occurrence)}`));
+    const completedOccurrences = new Set(occurrenceDates.filter((occurrence) => occurrenceStates.get(`${deadline.id}:${isoDate(occurrence)}`)).map(isoDate));
+    const nextDueOn = dueToday || nextPendingDeadlineDate(deadline, today, completedOccurrences);
+    if (nextDueOn) rows.push({ ...deadline, first_due_on: isoDate(nextDueOn), occurrenceState: dueToday ? 'today' : 'upcoming' });
+  });
+  return rows.sort((left, right) => left.first_due_on.localeCompare(right.first_due_on));
 }
 
 async function openHomeItem(event) {
@@ -74,7 +118,17 @@ function deadlineRow(deadline) {
   thumbnail.setAttribute('aria-label', `Miniatura di ${thumbnailName}`);
   thumbnail.textContent = thumbnailName.trim().charAt(0).toLocaleUpperCase('it-IT');
   if (deadline.deadline_item_image_path) void deadlineItemImageService.render(thumbnail, deadline.deadline_item_image_path, `Foto di ${thumbnailName}`);
-  const copy = document.createElement('span'); copy.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`;
+  const copy = document.createElement('span');
+  const title = document.createElement('span'); title.textContent = `${formatDateDisplay(deadline.first_due_on)} — ${deadline.title}`;
+  copy.appendChild(title);
+  if (deadline.occurrenceState === 'overdue') {
+    const due = localDateFromIso(deadline.first_due_on);
+    const daysLate = due ? Math.max(1, Math.round((todayLocalDate() - due) / 86400000)) : 0;
+    const status = document.createElement('span');
+    status.className = 'fa-v2-badge fa-v2-notice--attention';
+    status.textContent = `Scaduta — da regolarizzare · ${daysLate} ${daysLate === 1 ? 'giorno' : 'giorni'} di ritardo`;
+    copy.appendChild(status);
+  }
   item.append(thumbnail, copy);
   return item;
 }
@@ -108,7 +162,13 @@ async function load() {
   }
   const { data, error } = isManaged ? await c.rpc('get_my_deadlines_for_managed_member', { p_member_id: context.member.id }) : await c.rpc('get_my_deadlines');
   if (error) { m.textContent = 'Impossibile caricare le scadenze.'; return; }
-  loadedDeadlines = upcomingDeadlines(Array.isArray(data) ? data : []);
+  try {
+    loadedDeadlines = await scheduledDeadlines(Array.isArray(data) ? data : [], isManaged);
+  } catch (occurrenceError) {
+    console.error('get_deadline_occurrences failed', occurrenceError);
+    m.textContent = 'Impossibile verificare le occorrenze delle scadenze.';
+    return;
+  }
   loadedDeadlineContext = { isManaged, member: context.member };
   deadlineListToggleButton.setAttribute('aria-expanded', 'false');
   const empty = document.getElementById('deadlines-empty'); empty.hidden = loadedDeadlines.length > 0; empty.replaceChildren();

@@ -945,17 +945,68 @@ function formatOccurrenceDate(value) {
   return new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(new Date(`${value}T00:00:00`));
 }
 
+function localOccurrenceDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function deadlineOccurrencesThroughToday(deadline, today) {
+  const firstDueOn = new Date(`${deadline.first_due_on}T00:00:00`);
+  const terminatedOn = deadline.terminated_on ? new Date(`${deadline.terminated_on}T00:00:00`) : null;
+  const recurrenceMonths = Number(deadline.recurrence_months);
+  if (Number.isNaN(firstDueOn.getTime()) || (terminatedOn && Number.isNaN(terminatedOn.getTime())) || firstDueOn > today) return [];
+  const occurrences = [];
+  for (let occurrence = new Date(firstDueOn); occurrence <= today && (!terminatedOn || occurrence <= terminatedOn); ) {
+    occurrences.push(new Date(occurrence));
+    if (!Number.isInteger(recurrenceMonths) || recurrenceMonths <= 0) break;
+    const nextMonth = occurrence.getMonth() + recurrenceMonths;
+    const next = new Date(occurrence.getFullYear() + Math.floor(nextMonth / 12), ((nextMonth % 12) + 12) % 12, 1);
+    next.setDate(Math.min(firstDueOn.getDate(), new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()));
+    occurrence = next;
+  }
+  return occurrences;
+}
+
 async function loadDeadlineOccurrence() {
   if (!editingDeadline) return;
-  const { data, error } = await c.rpc('get_deadline_occurrence', {
-    p_deadline_id: editingDeadline.id,
-    p_occurrence_on: editingDeadline.first_due_on
-  });
-  if (error || !data) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const occurrenceDates = deadlineOccurrencesThroughToday(editingDeadline, today);
+  const occurrenceResults = await Promise.all(occurrenceDates.map(async (occurrence) => {
+    const result = await c.rpc('get_deadline_occurrence', {
+      p_deadline_id: editingDeadline.id,
+      p_occurrence_on: localOccurrenceDateKey(occurrence)
+    });
+    return result;
+  }));
+  if (occurrenceResults.some((result) => result.error)) {
+    setFormMessage('Impossibile verificare le occorrenze della scadenza.');
+    return;
+  }
+  const pending = occurrenceResults.map((result) => result.data).filter((occurrence) => occurrence && !occurrence.completed);
+  let data = pending[0] || null;
+  const recurrenceMonths = Number(editingDeadline.recurrence_months);
+  if (!data && Number.isInteger(recurrenceMonths) && recurrenceMonths > 0 && occurrenceDates.length) {
+    const previous = occurrenceDates[occurrenceDates.length - 1];
+    const nextMonth = previous.getMonth() + recurrenceMonths;
+    const next = new Date(previous.getFullYear() + Math.floor(nextMonth / 12), ((nextMonth % 12) + 12) % 12, 1);
+    next.setDate(Math.min(new Date(`${editingDeadline.first_due_on}T00:00:00`).getDate(), new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()));
+    const terminatedOn = editingDeadline.terminated_on ? new Date(`${editingDeadline.terminated_on}T00:00:00`) : null;
+    if (!terminatedOn || next <= terminatedOn) {
+      const result = await c.rpc('get_deadline_occurrence', {
+        p_deadline_id: editingDeadline.id,
+        p_occurrence_on: localOccurrenceDateKey(next)
+      });
+      if (!result.error) data = result.data;
+    }
+  }
+  if (!data) return;
 
   occurrenceSection.hidden = false;
-  occurrenceStatus.textContent = `${data.completed ? 'Completata' : 'In scadenza'} il ${formatOccurrenceDate(data.occurrence_on)}.`;
-  occurrenceToggle.textContent = data.completed ? 'Annulla completamento' : 'Completa occorrenza';
+  const occurrenceDate = new Date(`${data.occurrence_on}T00:00:00`);
+  const daysLate = Math.round((today - occurrenceDate) / 86400000);
+  occurrenceStatus.textContent = !data.completed && daysLate > 0
+    ? `Scaduta — da regolarizzare dal ${formatOccurrenceDate(data.occurrence_on)} (${daysLate} ${daysLate === 1 ? 'giorno' : 'giorni'} di ritardo).${pending.length > 1 ? ` Restano ${pending.length} occorrenze arretrate.` : ''}`
+    : `${data.completed ? 'Effettuata' : 'In scadenza'} il ${formatOccurrenceDate(data.occurrence_on)}.`;
+  occurrenceToggle.textContent = data.completed ? 'Annulla conferma' : 'Segna come effettuata';
   occurrenceToggle.onclick = async () => {
     occurrenceToggle.disabled = true;
     const { error: completionError } = await c.rpc('complete_deadline_occurrence', {

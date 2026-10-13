@@ -26,6 +26,7 @@ let dashboardCalendarItems = [];
 let dashboardDisplayedWeek = calendarUtils.startOfWeek(new Date());
 
 function dayStart(value = new Date()) { return new Date(value.getFullYear(), value.getMonth(), value.getDate()); }
+function localDateKey(value) { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`; }
 function weekBounds() { const start = calendarUtils.startOfWeek(dashboardDisplayedWeek); const end = new Date(start); end.setDate(end.getDate() + 7); return { start, end }; }
 function dashboardWindow() {
   const today = dayStart();
@@ -104,7 +105,7 @@ function createEventCard(event) {
 function deadlineUrgency(occurrenceOn) {
   const due = calendarUtils.toValidDate(occurrenceOn); if (!due) return '';
   const days = Math.round((due - dayStart()) / 86400000);
-  if (days < 0) return `Scaduta da ${Math.abs(days)} ${Math.abs(days) === 1 ? 'giorno' : 'giorni'}`;
+  if (days < 0) return `Scaduta — da regolarizzare · ${Math.abs(days)} ${Math.abs(days) === 1 ? 'giorno' : 'giorni'} di ritardo`;
   if (days === 0) return 'Scade oggi'; if (days === 1) return 'Scade domani'; return `Scade tra ${days} giorni`;
 }
 function createDeadlineCard(deadline) {
@@ -117,11 +118,26 @@ function createDeadlineCard(deadline) {
 function renderItems(section, items, limit) { section.list.replaceChildren(); section.empty.hidden = items.length > 0; items.slice(0, limit).forEach((item) => section.list.appendChild(isEvent(item) ? createEventCard(item) : createActivityCard(item))); }
 function renderDashboardCalendar() { calendarUtils.renderWeekCalendar({ weekStart: dashboardDisplayedWeek, titleElement: dashboardWeekTitle, gridElement: dashboardWeekGrid, activities: dashboardCalendarItems }); }
 function renderDeadlines(deadlines) { dashboardDeadlinesList.replaceChildren(); deadlines.forEach((deadline) => dashboardDeadlinesList.appendChild(createDeadlineCard(deadline))); dashboardDeadlinesSection.hidden = deadlines.length === 0; }
+async function loadOverdueDeadlines() {
+  const { data: deadlines, error: deadlinesError } = await supabaseClient.rpc('get_my_deadlines');
+  if (deadlinesError) throw deadlinesError;
+  const dated = (deadlines || []).filter((deadline) => calendarUtils.toValidDate(deadline.first_due_on));
+  if (!dated.length) return [];
+  const today = dayStart();
+  const from = dated.map((deadline) => calendarUtils.toValidDate(deadline.first_due_on)).sort((left, right) => left - right)[0];
+  const { data, error } = await supabaseClient.rpc('get_deadline_occurrences', {
+    p_from: localDateKey(from),
+    p_to: localDateKey(today)
+  });
+  if (error) throw error;
+  return (data || []).filter((deadline) => !deadline.completed && calendarUtils.toValidDate(deadline.occurrence_on) < today);
+}
 async function loadDashboardTimeline() {
   const { start, end } = dashboardWindow();
-  const [calendarResult, dashboardResult] = await Promise.all([
+  const [calendarResult, dashboardResult, overdueDeadlines] = await Promise.all([
     supabaseClient.rpc('get_calendar_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
-    supabaseClient.rpc('get_dashboard', { p_from: start.toISOString(), p_to: end.toISOString() })
+    supabaseClient.rpc('get_dashboard', { p_from: start.toISOString(), p_to: end.toISOString() }),
+    loadOverdueDeadlines()
   ]);
   const { data: calendarData, error } = calendarResult;
   const timeline = Array.isArray(calendarData)
@@ -130,7 +146,7 @@ async function loadDashboardTimeline() {
   const data = timeline && {
     activities: timeline.filter((item) => calendarUtils.itemType(item) === 'activity'),
     events: timeline.filter((item) => calendarUtils.itemType(item) === 'event'),
-    deadlines: timeline.filter((item) => calendarUtils.itemType(item) === 'deadline'),
+    deadlines: [...timeline.filter((item) => calendarUtils.itemType(item) === 'deadline'), ...overdueDeadlines],
     todos: dashboardResult.error || !dashboardResult.data ? [] : dashboardResult.data.todos || []
   };
   if (error || !data) {
@@ -141,7 +157,7 @@ async function loadDashboardTimeline() {
   }
   const activities = (data.activities || []).map((item) => normaliseItem(item, 'activity'));
   const events = (data.events || []).map((item) => normaliseItem(item, 'event'));
-  const deadlines = (data.deadlines || []).map((item) => normaliseItem(item, 'deadline')).filter((item) => calendarUtils.toValidDate(item.occurrence_on) >= dayStart()).sort((a, b) => calendarUtils.toValidDate(a.occurrence_on) - calendarUtils.toValidDate(b.occurrence_on));
+  const deadlines = uniqueCalendarItems((data.deadlines || []).map((item) => normaliseItem(item, 'deadline'))).filter((item) => !item.is_completed).sort((a, b) => calendarUtils.toValidDate(a.occurrence_on) - calendarUtils.toValidDate(b.occurrence_on));
   const todos = (data.todos || []).map((item) => normaliseItem(item, 'activity'));
   const todayStart = dayStart();
   const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
