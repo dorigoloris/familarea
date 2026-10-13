@@ -50,6 +50,16 @@ function compareItems(first, second, dateForItem) {
   if (b) return 1;
   return String(itemId(first)).localeCompare(String(itemId(second)));
 }
+function uniqueCalendarItems(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const occurrence = item.occurs_on || item.occurrence_on || item.occurrence_starts_at || item.starts_at || item.due_at || '';
+    const key = `${calendarUtils.itemType(item)}:${itemId(item)}:${occurrence}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 function normaliseItem(item, kind) {
   const occurrenceStart = item.occurrence_starts_at || item.starts_at || item.due_at;
   const occurrenceEnd = item.occurrence_ends_at || item.ends_at || item.due_at || occurrenceStart;
@@ -98,7 +108,7 @@ function deadlineUrgency(occurrenceOn) {
   if (days === 0) return 'Scade oggi'; if (days === 1) return 'Scade domani'; return `Scade tra ${days} giorni`;
 }
 function createDeadlineCard(deadline) {
-  const link = document.createElement('a'); link.className = 'activity-card dashboard-deadline-card'; link.href = `scadenza.html?deadline_id=${encodeURIComponent(deadline.deadline_id)}`;
+  const link = document.createElement('a'); link.className = 'activity-card dashboard-deadline-card'; link.href = calendarUtils.itemLink(deadline);
   const title = document.createElement('h3'); title.className = 'activity-card-title'; title.textContent = deadline.title;
   const date = document.createElement('p'); date.className = 'activity-card-due'; date.textContent = calendarUtils.toValidDate(deadline.occurrence_on)?.toLocaleDateString('it-IT', { dateStyle: 'medium' }) || '';
   const urgency = document.createElement('p'); urgency.className = 'dashboard-deadline-urgency'; urgency.textContent = deadlineUrgency(deadline.occurrence_on);
@@ -109,7 +119,20 @@ function renderDashboardCalendar() { calendarUtils.renderWeekCalendar({ weekStar
 function renderDeadlines(deadlines) { dashboardDeadlinesList.replaceChildren(); deadlines.forEach((deadline) => dashboardDeadlinesList.appendChild(createDeadlineCard(deadline))); dashboardDeadlinesSection.hidden = deadlines.length === 0; }
 async function loadDashboardTimeline() {
   const { start, end } = dashboardWindow();
-  const { data, error } = await supabaseClient.rpc('get_dashboard', { p_from: start.toISOString(), p_to: end.toISOString() });
+  const [calendarResult, dashboardResult] = await Promise.all([
+    supabaseClient.rpc('get_calendar_occurrences', { p_from: start.toISOString(), p_to: end.toISOString() }),
+    supabaseClient.rpc('get_dashboard', { p_from: start.toISOString(), p_to: end.toISOString() })
+  ]);
+  const { data: calendarData, error } = calendarResult;
+  const timeline = Array.isArray(calendarData)
+    ? uniqueCalendarItems(calendarData).filter((item) => item.calendar_is_shared !== true)
+    : null;
+  const data = timeline && {
+    activities: timeline.filter((item) => calendarUtils.itemType(item) === 'activity'),
+    events: timeline.filter((item) => calendarUtils.itemType(item) === 'event'),
+    deadlines: timeline.filter((item) => calendarUtils.itemType(item) === 'deadline'),
+    todos: dashboardResult.error || !dashboardResult.data ? [] : dashboardResult.data.todos || []
+  };
   if (error || !data) {
     dashboardMessage.textContent = 'Non è stato possibile caricare la Dashboard. Riprova più tardi.';
     dashboardCalendarSection.hidden = true;
@@ -118,7 +141,7 @@ async function loadDashboardTimeline() {
   }
   const activities = (data.activities || []).map((item) => normaliseItem(item, 'activity'));
   const events = (data.events || []).map((item) => normaliseItem(item, 'event'));
-  const deadlines = (data.deadlines || []).map((item) => normaliseItem(item, 'deadline')).sort((a, b) => calendarUtils.toValidDate(a.occurrence_on) - calendarUtils.toValidDate(b.occurrence_on));
+  const deadlines = (data.deadlines || []).map((item) => normaliseItem(item, 'deadline')).filter((item) => calendarUtils.toValidDate(item.occurrence_on) >= dayStart()).sort((a, b) => calendarUtils.toValidDate(a.occurrence_on) - calendarUtils.toValidDate(b.occurrence_on));
   const todos = (data.todos || []).map((item) => normaliseItem(item, 'activity'));
   const todayStart = dayStart();
   const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
