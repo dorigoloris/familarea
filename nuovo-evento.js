@@ -2,7 +2,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const eventQuery = new URLSearchParams(location.search);
 const eventKind = eventQuery.get('event_kind') === 'commitment' ? 'commitment' : null;
 const form = document.getElementById('event-form');
-const backLink = document.getElementById('back-link');
+const backLink = document.getElementById('event-back');
 const message = document.getElementById('message');
 const eventInterestsSelector = document.getElementById('event-interests-selector');
 const eventInterestsMessage = document.getElementById('event-interests-message');
