@@ -16,20 +16,20 @@
     return '';
   }
 
-  async function uploadFile({ client, deadlineId, file }) {
+  async function uploadFile({ client, targetType = 'deadline', targetId, file }) {
     const { data: account, error: accountError } = await client.rpc('get_current_account');
     if (accountError || !account?.account_id) throw accountError || new Error('Account non disponibile');
 
     const storageName = file.name.replace(/[\\/]/g, '-').trim() || 'allegato';
-    const path = `attachments/${account.account_id}/deadline/${deadlineId}/${crypto.randomUUID()}-${storageName}`;
+    const path = `attachments/${account.account_id}/${targetType}/${targetId}/${crypto.randomUUID()}-${storageName}`;
     const { error: uploadError } = await client.storage
       .from('familarea-attachments')
       .upload(path, file, { contentType: file.type, upsert: false });
     if (uploadError) throw uploadError;
 
     const { error: registrationError } = await client.rpc('register_attachment', {
-      p_target_type: 'deadline',
-      p_target_id: deadlineId,
+      p_target_type: targetType,
+      p_target_id: targetId,
       p_storage_path: path,
       p_original_filename: file.name,
       p_mime_type: file.type,
@@ -41,7 +41,7 @@
     }
   }
 
-  function create({ client, deadlineId, input, uploadControl, message, empty, list }) {
+  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list }) {
     let uploadInProgress = false;
 
     function setMessage(text = '', isError = false) {
@@ -115,20 +115,23 @@
       open.className = 'secondary-button';
       open.textContent = 'Apri';
       open.onclick = () => openAttachment(attachment, open);
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'secondary-button list-item-delete';
-      remove.textContent = 'Elimina';
-      remove.onclick = () => removeAttachment(attachment, remove);
-      actions.append(open, remove);
+      actions.append(open);
+      if (canManage) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'secondary-button list-item-delete';
+        remove.textContent = 'Elimina';
+        remove.onclick = () => removeAttachment(attachment, remove);
+        actions.append(remove);
+      }
       row.append(info, actions);
       return row;
     }
 
     async function load() {
       const { data, error } = await client.rpc('get_attachments', {
-        p_target_type: 'deadline',
-        p_target_id: deadlineId
+        p_target_type: targetType,
+        p_target_id: targetId
       });
       if (error) {
         list.replaceChildren();
@@ -142,6 +145,7 @@
     }
 
     input.onchange = async (event) => {
+      if (!canManage) return;
       if (uploadInProgress) return;
       const file = event.target.files[0];
       input.value = '';
@@ -155,7 +159,7 @@
       setUploadInProgress(true);
       setMessage('Caricamento allegato…');
       try {
-        await uploadFile({ client, deadlineId, file });
+        await uploadFile({ client, targetType, targetId, file });
 
         await load();
         setMessage('Allegato caricato.');
@@ -166,6 +170,11 @@
         setUploadInProgress(false);
       }
     };
+
+    if (!canManage) {
+      input.disabled = true;
+      uploadControl.hidden = true;
+    }
 
     return { load };
   }
@@ -235,7 +244,7 @@
         const failedFiles = [];
         for (const file of files) {
           try {
-            await uploadFile({ client, deadlineId, file });
+            await uploadFile({ client, targetId: deadlineId, file });
           } catch (error) {
             console.error('deadline draft attachment upload failed', error);
             failedFiles.push(file);

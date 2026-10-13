@@ -21,7 +21,7 @@
     <div id="event-view" class="fa-v2-page-stack" hidden>
       <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="event-title">
         <div class="fa-section-hero-content">
-          <p class="eyebrow">PROGRAMMA</p>
+          <p id="event-eyebrow" class="eyebrow">PROGRAMMA</p>
           <div class="fa-section-hero-title-row">
             <h1 id="event-title">Evento</h1>
             <div id="creator-actions" class="fa-v2-card-actions" hidden>
@@ -58,9 +58,9 @@
       </section>
     </div>
     <form id="edit-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
-      <div class="fa-v2-section-heading"><h2>Modifica evento</h2></div>
+      <div class="fa-v2-section-heading"><h2 id="edit-form-title">Modifica evento</h2></div>
       <div><label for="edit-title">Titolo</label><input id="edit-title" class="fa-v2-input" required></div>
-      <div><label for="edit-notes">Note</label><textarea id="edit-notes" class="fa-v2-textarea"></textarea></div>
+      <div><label for="edit-notes">Note</label><textarea id="edit-notes" class="fa-v2-textarea" rows="6"></textarea></div>
       <details id="edit-interests-details">
         <summary>Interessi</summary>
         <div class="event-interests-fieldset">
@@ -76,7 +76,6 @@
           <label class="event-form-option"><input type="radio" name="edit-commitment-when" value="period"><span>Periodo</span></label>
         </div>
       </fieldset>
-      <br>
       <div class="event-time-section" aria-labelledby="edit-start-heading">
         <h3 id="edit-start-heading" class="event-form-section-title">Inizio</h3>
         <div id="edit-start-dates" class="event-dates event-start-dates">
@@ -131,6 +130,16 @@
         <p class="event-family-visibility-note">L'evento resta visibile nel tuo Calendario, ma non viene incluso nel calendario che condividi.</p>
       </fieldset>
       <div id="edit-calendar-private-spacing" hidden></div>
+      <section id="commitment-attachments-section" class="deadline-attachments-section fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="commitment-attachments-title" hidden>
+        <div class="fa-v2-section-heading">
+          <div><h2 id="commitment-attachments-title">Allegati</h2><p class="deadline-attachments-intro">Conserva qui i documenti relativi a questo impegno.</p></div>
+          <label id="commitment-attachment-upload" class="fa-v2-button fa-v2-button--secondary deadline-attachment-upload" for="commitment-attachment-input">+ Aggiungi allegato</label>
+          <input id="commitment-attachment-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden>
+        </div>
+        <p id="commitment-attachments-message" class="deadline-attachments-message fa-v2-status" aria-live="polite"></p>
+        <p id="commitment-attachments-empty" class="fa-v2-empty-state">Nessun allegato.</p>
+        <div id="commitment-attachments-list" class="deadline-attachments-list"></div>
+      </section>
       <div class="fa-v2-card-actions"><button class="fa-v2-button fa-v2-button--primary" type="submit">Salva modifiche</button><button id="close-edit" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button></div>
     </form>
   </main>
@@ -140,6 +149,8 @@
   <script src="navigation.js"></script>
   <script src="confirm-modal.js"></script>
   <script src="event-interests.js"></script>
+  <script src="attachment-preview.js"></script>
+  <script src="deadline-attachments.js"></script>
   <script src="evento.js"></script>
 </body>
 </html>

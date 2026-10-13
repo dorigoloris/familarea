@@ -171,17 +171,35 @@ function buildCommitmentEditInterval() {
 }
 
 function configureCommitmentEditForm() {
-  const form = document.getElementById('edit-form');
   const isCommitment = isCommitmentEvent();
   document.getElementById('edit-commitment-when-fieldset').hidden = !isCommitment;
   document.getElementById('edit-interests-details').hidden = isCommitment;
   if (!isCommitment) return;
-  form.querySelector('.fa-v2-section-heading h2').textContent = 'Modifica impegno';
+  document.getElementById('edit-form-title').textContent = 'Impegno';
   document.getElementById('edit-all-day').closest('.event-form-options').hidden = true;
   document.querySelector('label[for="edit-location"]').parentElement.hidden = true;
   document.getElementById('edit-calendar-private-fieldset').hidden = true;
   document.getElementById('edit-calendar-private-spacing').hidden = true;
   syncCommitmentEditLayout();
+}
+
+async function loadCommitmentAttachments() {
+  const section = document.getElementById('commitment-attachments-section');
+  section.hidden = !isCommitmentEvent() || !canManage;
+  if (section.hidden) return;
+
+  const attachments = window.FamilAreaDeadlineAttachments.create({
+    client: supabaseClient,
+    targetType: 'event',
+    targetId: eventId,
+    canManage,
+    input: document.getElementById('commitment-attachment-input'),
+    uploadControl: document.getElementById('commitment-attachment-upload'),
+    message: document.getElementById('commitment-attachments-message'),
+    empty: document.getElementById('commitment-attachments-empty'),
+    list: document.getElementById('commitment-attachments-list')
+  });
+  await attachments.load();
 }
 
 function syncEditMultiDayLayout() {
@@ -256,6 +274,7 @@ function renderStatus() {
 }
 
 async function render() {
+  document.getElementById('event-eyebrow').textContent = isCommitmentEvent() ? 'IMPEGNO' : 'PROGRAMMA';
   document.getElementById('event-title').textContent = eventData.title;
   document.getElementById('event-organizer').textContent = eventData.organizer_name || 'Organizzatore';
   document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
@@ -298,6 +317,7 @@ async function render() {
 
   document.getElementById('event-view').hidden = false;
   document.getElementById('creator-actions').hidden = !canManage;
+  document.getElementById('edit-button').hidden = isCommitmentEvent();
   message.textContent = '';
 }
 
@@ -327,6 +347,7 @@ async function load() {
   document.getElementById('event-back').href = 'impegni.html';
   document.getElementById('event-back').textContent = 'Torna agli Impegni';
   await render();
+  if (isCommitment && canManage) await openEdit();
 }
 
 async function openEdit() {
@@ -382,7 +403,8 @@ async function openEdit() {
   document.getElementById('edit-calendar-private-spacing').hidden = privateFieldset.hidden;
   document.getElementById('edit-calendar-private').checked = eventData.calendar_private === true;
 
-  document.getElementById('event-view').hidden = true;
+  await loadCommitmentAttachments();
+  document.getElementById('event-view').hidden = !isCommitmentEvent();
   form.hidden = false;
 }
 
@@ -408,6 +430,11 @@ async function saveStatus() {
 
 document.getElementById('edit-button').addEventListener('click', () => void openEdit());
 document.getElementById('close-edit').addEventListener('click', () => {
+  if (isCommitmentEvent() && canManage) {
+    void openEdit();
+    message.textContent = '';
+    return;
+  }
   document.getElementById('edit-form').hidden = true;
   document.getElementById('event-view').hidden = false;
   message.textContent = '';
