@@ -7,8 +7,8 @@ const deadlineItemDeadlinesList = document.getElementById('deadline-item-deadlin
 const itemConfigurations = {
   vehicle: { label: 'Veicolo', imageLabel: 'Foto del veicolo', backHref: 'gestione-scadenze-veicoli.html', templates: [
     { title: 'Assicurazione RCA', kind: 'vehicle_insurance', icon: 'R' }, { title: 'Bollo', kind: 'vehicle_tax', icon: 'B' },
-    { title: 'Libretto e Revisione', presetTitle: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' }, { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' },
-    { title: 'Cambio gomme Estate/Inverno', kind: null, icon: 'G' }
+    { title: 'Libretto e Collaudo', presetTitle: 'Collaudo / Revisione', kind: 'vehicle_inspection', icon: 'C' }, { title: 'Tagliando', kind: 'vehicle_service', icon: 'T' },
+    { title: 'Cambio gomme Estate/Inverno', kind: null, icon: 'G', matchTitles: ['Cambio gomme Estate/Inverno', 'Gomme nuove'] }
   ] },
   home: { label: 'Casa', imageLabel: 'Foto della casa', backHref: 'scadenze.html', templates: [
     { title: 'Caldaia / Impianto termico', kind: 'home_heating', icon: 'I' }, { title: 'Assicurazione casa', kind: 'home_insurance', icon: 'A' },
@@ -51,7 +51,9 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   return card;
 }
 function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'fa-v2-list-row deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
-function renderItemDeadlines(rows) { const unmatchedRows = new Set(rows); const cards = currentConfiguration.templates.map((template) => { const deadline = rows.find((row) => unmatchedRows.has(row) && row.deadline_kind === template.kind); if (deadline) unmatchedRows.delete(deadline); return createDeadlineCard({ ...template, deadline }); }); deadlineItemPredefinedCards.replaceChildren(...cards); renderCustomDeadlines([...unmatchedRows]); }
+function normalizedDeadlineTitle(value) { return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it-IT'); }
+function deadlineMatchesTemplate(deadline, template) { if (template.kind !== null) return deadline.deadline_kind === template.kind; const titles = template.matchTitles || [template.title]; return deadline.deadline_kind === null && titles.some((title) => normalizedDeadlineTitle(title) === normalizedDeadlineTitle(deadline.title)); }
+function renderItemDeadlines(rows) { const unmatchedRows = new Set(rows); const cards = currentConfiguration.templates.map((template) => { const deadline = rows.find((row) => unmatchedRows.has(row) && deadlineMatchesTemplate(row, template)); if (deadline) unmatchedRows.delete(deadline); return createDeadlineCard({ ...template, deadline }); }); deadlineItemPredefinedCards.replaceChildren(...cards); renderCustomDeadlines([...unmatchedRows]); }
 async function loadItemDeadlines() { const { data, error } = await deadlineItemClient.rpc('get_my_deadlines_for_item', { p_item_id: deadlineItemId }); if (error) { deadlineItemMessage.textContent = 'Impossibile caricare le scadenze dell’elemento.'; return; } renderItemDeadlines(data || []); }
 function applyHomeV2() {
   if (currentConfiguration?.label !== 'Casa') return;

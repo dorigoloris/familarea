@@ -623,11 +623,27 @@ function isVehicleServiceDeadline() {
     && selectedDeadlineItem()?.category === 'vehicle';
 }
 
-function updateVehicleServiceEditFields() {
-  if (!isVehicleServiceDeadline()) return;
+function vehicleDeadlinePresentationTitle() {
+  if (selectedDeadlineItem()?.category !== 'vehicle') return '';
+  const presentationTitles = {
+    vehicle_insurance: 'Assicurazione RCA',
+    vehicle_tax: 'Bollo',
+    vehicle_inspection: 'Libretto e Collaudo',
+    vehicle_service: 'Tagliando'
+  };
+  if (presentationTitles[editingDeadline?.deadline_kind]) return presentationTitles[editingDeadline.deadline_kind];
+  return ['gomme nuove', 'cambio gomme estate/inverno'].includes(normalizedDeadlineTitle())
+    ? 'Cambio gomme Estate/Inverno'
+    : '';
+}
+
+function updateVehicleDeadlineEditFields() {
+  const presentationTitle = vehicleDeadlinePresentationTitle();
+  if (!presentationTitle) return '';
   titleField.hidden = true;
   deadlineItemSelectorField.hidden = true;
   document.querySelector('label[for="deadline-first-due-on"]').textContent = 'Data scadenza *';
+  return presentationTitle;
 }
 
 function setVehicleServiceFormMessage(text = '') {
@@ -913,8 +929,8 @@ async function initialiseEditMode(account) {
     return false;
   }
   const associatedItem = selectedDeadlineItem();
-  if (associatedItem) setAssociatedDeadlineHeader(associatedItem, editingDeadline.title);
-  updateVehicleServiceEditFields();
+  const presentationTitle = updateVehicleDeadlineEditFields();
+  if (associatedItem) setAssociatedDeadlineHeader(associatedItem, presentationTitle || editingDeadline.title);
   if (associatedItem?.id === requestedDeadlineItemId) {
     backLink.href = deadlineItemHref(associatedItem.id);
     cancelLink.href = backLink.href;
