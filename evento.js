@@ -174,12 +174,10 @@ function configureCommitmentEditForm() {
   const isCommitment = isCommitmentEvent();
   document.getElementById('edit-commitment-when-fieldset').hidden = !isCommitment;
   document.getElementById('edit-interests-details').hidden = isCommitment;
+  document.getElementById('edit-status-field').hidden = !isCommitment;
   if (!isCommitment) return;
   document.getElementById('edit-form-title').textContent = 'Impegno';
   document.getElementById('edit-all-day').closest('.event-form-options').hidden = true;
-  document.querySelector('label[for="edit-location"]').parentElement.hidden = true;
-  document.getElementById('edit-calendar-private-fieldset').hidden = true;
-  document.getElementById('edit-calendar-private-spacing').hidden = true;
   syncCommitmentEditLayout();
 }
 
@@ -268,13 +266,14 @@ function renderStatus() {
   const select = document.getElementById('status-select');
   const save = document.getElementById('save-status');
   document.getElementById('status').textContent = statusLabel(eventData.status);
-  document.getElementById('status-editor').hidden = !canManage;
+  document.getElementById('status-editor').hidden = !canManage || isCommitmentEvent();
   select.value = statusLabels[eventData.status] ? eventData.status : 'active';
   save.disabled = select.value === eventData.status;
 }
 
 async function render() {
-  document.getElementById('event-eyebrow').textContent = isCommitmentEvent() ? 'IMPEGNO' : 'PROGRAMMA';
+  const isCommitment = isCommitmentEvent();
+  document.getElementById('event-eyebrow').textContent = isCommitment ? 'IMPEGNO' : 'PROGRAMMA';
   document.getElementById('event-title').textContent = eventData.title;
   document.getElementById('event-organizer').textContent = eventData.organizer_name || 'Organizzatore';
   document.getElementById('when').textContent = formatWhen(eventData.starts_at, eventData.ends_at, eventData.is_all_day);
@@ -317,7 +316,14 @@ async function render() {
 
   document.getElementById('event-view').hidden = false;
   document.getElementById('creator-actions').hidden = !canManage;
-  document.getElementById('edit-button').hidden = isCommitmentEvent();
+  document.getElementById('edit-button').hidden = isCommitment;
+  const isEditableCommitment = isCommitment && canManage;
+  document.getElementById('event-details-section').hidden = isEditableCommitment;
+  const commitmentMeta = document.getElementById('commitment-header-meta');
+  commitmentMeta.hidden = !isEditableCommitment;
+  commitmentMeta.textContent = isEditableCommitment
+    ? `Organizzato da: ${eventData.organizer_name || 'Organizzatore'} · Stato: ${statusLabel(eventData.status)}`
+    : '';
   message.textContent = '';
 }
 
@@ -364,6 +370,7 @@ async function openEdit() {
   document.getElementById('edit-multi-day').checked = Boolean(eventData.ends_at) && localDate(eventData.starts_at) !== localDate(eventData.ends_at);
   document.getElementById('edit-end-date').value = eventData.ends_at ? localDate(eventData.ends_at) : localDate(eventData.starts_at);
   document.querySelector(`input[name="edit-commitment-when"][value="${commitmentWhenFromEvent()}"]`).checked = true;
+  document.getElementById('edit-status').value = statusLabels[eventData.status] ? eventData.status : 'active';
   if (isCommitmentEvent()) configureCommitmentEditForm();
   else syncEditMultiDayLayout();
   document.getElementById('edit-location').value = eventData.location || '';
@@ -512,6 +519,22 @@ document.getElementById('edit-form').addEventListener('submit', async (event) =>
   if (error) {
     message.textContent = 'Impossibile salvare le modifiche.';
     return;
+  }
+
+  if (isCommitmentEvent()) {
+    const nextStatus = document.getElementById('edit-status').value;
+    if (nextStatus !== eventData.status) {
+      const { error: statusError } = await supabaseClient.rpc('set_event_status', {
+        p_event_id: eventId,
+        p_status: nextStatus
+      });
+      if (statusError) {
+        const statusMessage = 'Le modifiche sono state salvate, ma non è stato possibile aggiornare lo stato.';
+        await load();
+        message.textContent = statusMessage;
+        return;
+      }
+    }
   }
 
   document.getElementById('edit-form').hidden = true;

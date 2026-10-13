@@ -29,9 +29,10 @@
               <button id="delete-button" class="fa-v2-button fa-v2-button--danger" type="button">Elimina evento</button>
             </div>
           </div>
+          <p id="commitment-header-meta" class="fa-v2-status" hidden></p>
         </div>
       </header>
-      <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-details-title">
+      <section id="event-details-section" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="event-details-title">
         <div class="fa-v2-section-heading"><h2 id="event-details-title">Dettagli</h2></div>
         <dl class="fa-v2-list">
           <div class="fa-v2-list-row"><dt>Organizzato da</dt><dd id="event-organizer"></dd></div>
@@ -76,6 +77,7 @@
           <label class="event-form-option"><input type="radio" name="edit-commitment-when" value="period"><span>Periodo</span></label>
         </div>
       </fieldset>
+      <div id="edit-status-field" hidden><label for="edit-status">Stato</label><select id="edit-status" class="fa-v2-select"><option value="active">Attivo</option><option value="cancelled">Annullato</option></select></div>
       <div class="event-time-section" aria-labelledby="edit-start-heading">
         <h3 id="edit-start-heading" class="event-form-section-title">Inizio</h3>
         <div id="edit-start-dates" class="event-dates event-start-dates">
