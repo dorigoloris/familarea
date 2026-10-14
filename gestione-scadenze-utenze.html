@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Utenze e bollette - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="deadline-management-page-view fa-v2-app">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+  <main class="page-card fa-page fa-page--wide fa-section-page fa-v2-page fa-v2-page-stack deadline-management-page" data-deadline-management-content hidden>
+    <p class="account-back-link"><a href="scadenze.html">Torna alle Scadenze</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="utilities-title">
+      <div class="fa-section-hero-content">
+        <div class="fa-section-hero-title-row">
+          <h1 id="utilities-title">Utenze e bollette</h1>
+          <a class="fa-v2-button fa-v2-button--primary" href="nuova-scadenza.html?mode=single&amp;category=utilities&amp;return_to=utilities">+ Aggiungi utenza o bolletta</a>
+        </div>
+        <p>Conserva le scadenze di bollette e utenze, con promemoria e allegati.</p>
+      </div>
+    </header>
+
+    <p id="utilities-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento utenze e bollette...</p>
+    <section id="utilities-empty" class="fa-v2-section-card fa-v2-empty-state fa-v2-card" hidden>
+      <strong>Nessuna utenza o bolletta.</strong>
+      <span>Aggiungi la prima scadenza da tenere sotto controllo.</span>
+    </section>
+    <section id="utilities-list" class="fa-v2-section-card fa-v2-section-card--list fa-v2-list-surface fa-v2-list fa-v2-card" aria-label="Utenze e bollette"></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="gestione-scadenze.js"></script>
+  <script src="date-utils.js"></script>
+  <script src="gestione-scadenze-utenze.js"></script>
+</body>
+</html>

@@ -85,6 +85,8 @@ const requestedDeadlineItemId = query.get('deadline_item_id');
 let editingDeadlineId = query.get('deadline_id');
 const isSingleDeadlineCreate = query.get('mode') === 'single';
 const isCommitmentContext = query.get('context') === 'commitment';
+const isUtilityDeadlineContext = query.get('category') === 'utilities';
+const utilityReturnUrl = query.get('return_to') === 'utilities' ? 'gestione-scadenze-utenze.html' : '';
 let isSingleDeadlineFlow = isSingleDeadlineCreate;
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
@@ -129,6 +131,12 @@ function applyCommitmentReturn() {
   backLink.href = 'impegni.html';
   backLink.textContent = 'Torna agli Impegni';
   cancelLink.href = 'impegni.html';
+}
+
+function applyUtilityReturn() {
+  if (!utilityReturnUrl) return;
+  backLink.href = utilityReturnUrl;
+  cancelLink.href = utilityReturnUrl;
 }
 
 function deadlineItemHref(itemId) {
@@ -923,6 +931,7 @@ async function initialiseEditMode(account) {
   familyMemberField.hidden = true;
   backLink.href = deadlineItem?.id ? deadlineItemHref(deadlineItem.id) : 'scadenze.html';
   cancelLink.href = backLink.href;
+  applyUtilityReturn();
   deleteButton.hidden = false;
   if (!await loadDeadlineItemSelector(editingDeadline.deadline_item_id || '')) {
     setFormMessage('Impossibile preparare il selettore degli elementi.');
@@ -1060,6 +1069,12 @@ async function initialiseCreateMode(account, context) {
   }
 
   await loadDeadlineItemSelector();
+  if (isUtilityDeadlineContext) {
+    categoryInput.value = 'utilities';
+    applyUtilityReturn();
+    formTitle.textContent = 'Nuova utenza o bolletta';
+    formIntro.textContent = 'Registra la scadenza e scegli quando ricevere il promemoria.';
+  }
   return true;
 }
 
@@ -1129,6 +1144,10 @@ deleteButton.addEventListener('click', async () => {
     return;
   }
   if (returnToAssociatedDeadlineItem(editingDeadline.deadline_item_id)) return;
+  if (utilityReturnUrl) {
+    location.href = utilityReturnUrl;
+    return;
+  }
   location.href = 'scadenze.html';
 });
 
@@ -1149,6 +1168,10 @@ async function finishDeadlineCreation(deadlineId, associatedItem) {
   if (returnToAssociatedDeadlineItem(associatedItem?.id)) return;
   if (isCommitmentContext) {
     location.href = 'impegni.html';
+    return;
+  }
+  if (utilityReturnUrl) {
+    location.href = utilityReturnUrl;
     return;
   }
   if (managedMember || isSingleDeadlineCreate) {
