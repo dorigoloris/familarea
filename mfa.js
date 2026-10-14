@@ -50,11 +50,36 @@
     disableButton.disabled = isBusy;
   }
 
-  function toQrDataUrl(svg) {
+  function encodeSvgDataUrl(svg) {
     const bytes = new TextEncoder().encode(svg);
     let binary = '';
     bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
     return `data:image/svg+xml;base64,${btoa(binary)}`;
+  }
+
+  function toQrDataUrl(qrCode) {
+    const value = String(qrCode || '').trim();
+    if (/^data:image\/svg\+xml(?:;[^,]*)?,/i.test(value)) return value;
+
+    let svg = value;
+    if (!/^<svg[\s>]/i.test(svg)) {
+      try {
+        const decoded = decodeURIComponent(value);
+        if (/^<svg[\s>]/i.test(decoded.trim())) svg = decoded.trim();
+      } catch {
+        // Il valore puo' essere base64, che non richiede decodeURIComponent.
+      }
+    }
+    if (/^<svg[\s>]/i.test(svg)) return encodeSvgDataUrl(svg);
+
+    try {
+      const compactBase64 = value.replace(/\s+/g, '');
+      const decoded = atob(compactBase64).trim();
+      if (/^<svg[\s>]/i.test(decoded)) return `data:image/svg+xml;base64,${compactBase64}`;
+    } catch {
+      // Non e' un SVG base64 valido: non usare URL esterni o valori ambigui.
+    }
+    throw new Error('Formato del codice QR non supportato.');
   }
 
   async function getVerifiedTotpFactor() {
