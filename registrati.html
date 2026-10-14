@@ -60,6 +60,7 @@
           </div>
           <div class="login-field"><label for="email">Email</label><input type="email" id="email" required></div>
           <div class="login-field"><label for="password">Password</label><input type="password" id="password" required></div>
+          <div id="signup-captcha" hidden aria-label="Verifica anti-bot"></div>
           <button id="signup-submit" type="submit">Registrati</button>
         </form>
         <p id="message" class="login-message" aria-live="polite"></p>
@@ -75,6 +76,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="auth-utils.js"></script>
+  <script src="turnstile-captcha.js"></script>
   <script src="registrati.js"></script>
 </body>
 </html>

@@ -4,6 +4,10 @@ const message = document.getElementById('message');
 const submitButton = document.getElementById('login-submit');
 const googleSignInButton = document.getElementById('google-sign-in');
 const returnTo = window.FamilAreaAuthUtils.returnToFromLocation();
+const captcha = window.FamilAreaCaptcha.create(document.getElementById('login-captcha'), (state) => {
+  if (state === 'expired') message.textContent = 'La verifica anti-bot è scaduta. Ripeti la verifica.';
+  if (state === 'error') message.textContent = 'Impossibile completare la verifica anti-bot. Riprova.';
+});
 
 document.getElementById('register-link').href = `registrati.html?return_to=${encodeURIComponent(returnTo)}`;
 document.getElementById('forgot-password-link').href = `recupera-password.html?return_to=${encodeURIComponent(returnTo)}`;
@@ -32,9 +36,19 @@ form.addEventListener('submit', async (event) => {
   if (submitButton.disabled) return;
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
+  const captchaError = captcha.validate();
+  if (captchaError) {
+    message.textContent = captchaError;
+    return;
+  }
   setBusy(true, 'Accesso in corso...');
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password,
+    options: captcha.enabled ? { captchaToken: captcha.getToken() } : undefined
+  });
   if (error) {
+    captcha.reset();
     setBusy(false, `Impossibile accedere: ${error.message}`);
     return;
   }

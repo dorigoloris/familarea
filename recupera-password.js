@@ -3,6 +3,10 @@ const form = document.getElementById('recovery-form');
 const message = document.getElementById('message');
 const submitButton = document.getElementById('recovery-submit');
 const returnTo = window.FamilAreaAuthUtils.returnToFromLocation();
+const captcha = window.FamilAreaCaptcha.create(document.getElementById('recovery-captcha'), (state) => {
+  if (state === 'expired') message.textContent = 'La verifica anti-bot è scaduta. Ripeti la verifica.';
+  if (state === 'error') message.textContent = 'Impossibile completare la verifica anti-bot. Riprova.';
+});
 
 document.getElementById('back-to-login-link').href = window.FamilAreaAuthUtils.loginUrl(returnTo);
 
@@ -14,11 +18,19 @@ form.addEventListener('submit', async (event) => {
     message.textContent = 'Inserisci un indirizzo email valido.';
     return;
   }
+  const captchaError = captcha.validate();
+  if (captchaError) {
+    message.textContent = captchaError;
+    return;
+  }
   submitButton.disabled = true;
   message.textContent = 'Invio in corso...';
   const redirectTo = new URL(`nuova-password.html?return_to=${encodeURIComponent(returnTo)}`, window.location.origin).toString();
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+  const options = { redirectTo };
+  if (captcha.enabled) options.captchaToken = captcha.getToken();
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, options);
   if (error) {
+    captcha.reset();
     submitButton.disabled = false;
     message.textContent = 'Impossibile inviare il link di recupero. Riprova.';
     return;

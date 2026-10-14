@@ -12,6 +12,10 @@ const lastNameInput = document.getElementById('last-name');
 const organizationNameInput = document.getElementById('organization-name');
 const organizationTypeInput = document.getElementById('organization-type');
 const returnTo = window.FamilAreaAuthUtils.returnToFromLocation();
+const captcha = window.FamilAreaCaptcha.create(document.getElementById('signup-captcha'), (state) => {
+  if (state === 'expired') message.textContent = 'La verifica anti-bot è scaduta. Ripeti la verifica.';
+  if (state === 'error') message.textContent = 'Impossibile completare la verifica anti-bot. Riprova.';
+});
 
 document.getElementById('login-link').href = window.FamilAreaAuthUtils.loginUrl(returnTo);
 
@@ -76,10 +80,19 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  const captchaError = captcha.validate();
+  if (captchaError) {
+    message.textContent = captchaError;
+    return;
+  }
+
   setBusy(true, 'Registrazione in corso...');
   const redirectTo = new URL(window.FamilAreaAuthUtils.loginUrl(returnTo), window.location.origin).toString();
-  const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: metadata, emailRedirectTo: redirectTo } });
+  const options = { data: metadata, emailRedirectTo: redirectTo };
+  if (captcha.enabled) options.captchaToken = captcha.getToken();
+  const { data, error } = await supabaseClient.auth.signUp({ email, password, options });
   if (error) {
+    captcha.reset();
     setBusy(false, `Impossibile completare la registrazione: ${error.message}`);
     return;
   }
