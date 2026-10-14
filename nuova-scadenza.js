@@ -87,7 +87,7 @@ const isSingleDeadlineCreate = query.get('mode') === 'single';
 const isCommitmentContext = query.get('context') === 'commitment';
 const isUtilityDeadlineContext = query.get('category') === 'utilities';
 const utilityReturnUrl = query.get('return_to') === 'utilities' ? 'gestione-scadenze-utenze.html' : '';
-let isSingleDeadlineFlow = isSingleDeadlineCreate;
+let isSingleDeadlineFlow = isSingleDeadlineCreate && !isUtilityDeadlineContext;
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
 const deadlineItemCategoryLabels = {
@@ -136,6 +136,7 @@ function applyCommitmentReturn() {
 function applyUtilityReturn() {
   if (!utilityReturnUrl) return;
   backLink.href = utilityReturnUrl;
+  backLink.textContent = 'Torna a Utenze e bollette';
   cancelLink.href = utilityReturnUrl;
 }
 
@@ -212,6 +213,12 @@ function isVehicleInsuranceDeadline() {
 
 function updateDeadlineCategoryAndInsuranceFields() {
   const item = associatedDeadlineItem();
+  if (isUtilityDeadlineContext && !editingDeadline) {
+    categoryField.hidden = true;
+    categoryInput.value = 'utilities';
+    insuranceCompanyField.hidden = true;
+    return;
+  }
   categoryField.hidden = Boolean(item);
   if (item) categoryInput.value = item.category;
   insuranceCompanyField.hidden = !isVehicleInsuranceDeadline();
@@ -382,6 +389,23 @@ function configureSingleDeadlineLayout() {
   otherOptionsToggle.addEventListener('click', () => {
     setOtherOptionsOpen(otherOptionsToggle.getAttribute('aria-expanded') !== 'true');
   });
+}
+
+function configureUtilityDeadlineCreateForm() {
+  if (!isUtilityDeadlineContext || editingDeadline) return;
+  formTitle.textContent = 'Nuova utenza o bolletta';
+  formIntro.textContent = 'Registra la scadenza e scegli quando ricevere il promemoria.';
+  categoryInput.value = 'utilities';
+  categoryField.hidden = true;
+  referenceField.hidden = true;
+  deadlineItemSelectorField.hidden = true;
+  familyMemberField.hidden = true;
+  managedMemberField.hidden = true;
+  deadlineItemField.hidden = true;
+  deadlineTypeChoice.hidden = true;
+  startTimeInput.closest('div').hidden = true;
+  endTimeInput.closest('div').hidden = true;
+  applyUtilityReturn();
 }
 
 async function loadDeadlineAttachments() {
@@ -1033,7 +1057,7 @@ async function loadDeadlineOccurrence() {
 }
 
 async function initialiseCreateMode(account, context) {
-  if (!isSingleDeadlineCreate) applyStandardCreateDefaults();
+  if (!isSingleDeadlineFlow) applyStandardCreateDefaults();
   initialiseDraftDeadlineAttachments();
 
   if (context.member) {
@@ -1070,10 +1094,7 @@ async function initialiseCreateMode(account, context) {
 
   await loadDeadlineItemSelector();
   if (isUtilityDeadlineContext) {
-    categoryInput.value = 'utilities';
-    applyUtilityReturn();
-    formTitle.textContent = 'Nuova utenza o bolletta';
-    formIntro.textContent = 'Registra la scadenza e scegli quando ricevere il promemoria.';
+    configureUtilityDeadlineCreateForm();
   }
   return true;
 }
