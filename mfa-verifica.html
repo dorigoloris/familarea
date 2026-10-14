@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Verifica di sicurezza - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-public-page">
+  <main class="fa-v2-page fa-v2-public-main fa-v2-page-stack">
+    <header class="fa-v2-public-header"><a class="fa-v2-public-brand" href="index.html" aria-label="FamilArea, home">Famil<span>Area</span></a></header>
+    <section class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="mfa-verify-title">
+      <div class="fa-v2-section-heading"><h1 id="mfa-verify-title">Verifica di sicurezza</h1><p>Inserisci il codice temporaneo della tua app Authenticator per continuare.</p></div>
+      <p id="mfa-verify-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Verifica della sessione...</p>
+      <form id="mfa-verify-form" class="fa-v2-page-stack" hidden novalidate>
+        <div><label for="mfa-verify-code">Codice temporaneo</label><input id="mfa-verify-code" class="fa-v2-input fa-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></div>
+        <div class="fa-v2-card-actions"><button id="mfa-verify-signout" class="fa-v2-button fa-v2-button--secondary" type="button">Esci</button><button id="mfa-verify-button" class="fa-v2-button fa-v2-button--primary" type="submit">Verifica codice</button></div>
+      </form>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="mfa-verifica.js"></script>
+</body>
+</html>

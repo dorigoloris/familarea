@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Autenticazione a due fattori - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app">
+  <button id="mfa-signout" class="logout-button" type="button">Esci</button>
+  <main class="fa-v2-page fa-page--wide fa-v2-page-stack">
+    <p class="account-back-link"><a href="impostazioni.html">← Torna alle impostazioni</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="mfa-title">
+      <div class="fa-section-hero-content"><p class="eyebrow">SICUREZZA</p><h1 id="mfa-title">Autenticazione a due fattori</h1><p>Proteggi l'accesso con un codice temporaneo della tua app Authenticator.</p></div>
+    </header>
+    <p id="mfa-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento stato sicurezza...</p>
+    <section id="mfa-disabled-card" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden aria-labelledby="mfa-disabled-title">
+      <div class="fa-v2-section-heading"><h2 id="mfa-disabled-title">MFA non attiva</h2><p>Puoi aggiungere facoltativamente un'app Authenticator al tuo account.</p></div>
+      <div class="fa-v2-card-actions"><button id="mfa-start-enrollment" class="fa-v2-button fa-v2-button--primary" type="button">Attiva autenticazione a due fattori</button></div>
+    </section>
+    <section id="mfa-enroll-card" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden aria-labelledby="mfa-enroll-title">
+      <div class="fa-v2-section-heading"><h2 id="mfa-enroll-title">Configura l'app Authenticator</h2><p>Scansiona il codice QR con Google Authenticator, Microsoft Authenticator o un'app equivalente, quindi inserisci il codice a sei cifre.</p></div>
+      <img id="mfa-qr-code" class="fa-mfa-qr" alt="Codice QR per configurare l'autenticazione a due fattori" hidden>
+      <form id="mfa-enroll-form" class="fa-v2-page-stack" novalidate>
+        <div><label for="mfa-enroll-code">Codice temporaneo</label><input id="mfa-enroll-code" class="fa-v2-input fa-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required><p class="field-help">Il codice non viene salvato da FamilArea.</p></div>
+        <div class="fa-v2-card-actions"><button id="mfa-cancel-enrollment" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button><button id="mfa-confirm-enrollment" class="fa-v2-button fa-v2-button--primary" type="submit">Verifica e attiva</button></div>
+      </form>
+    </section>
+    <section id="mfa-enabled-card" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden aria-labelledby="mfa-enabled-title">
+      <div class="fa-v2-section-heading"><h2 id="mfa-enabled-title">MFA attiva</h2><p>Per disattivarla, conferma prima un nuovo codice della tua app Authenticator.</p></div>
+      <form id="mfa-disable-form" class="fa-v2-page-stack" novalidate>
+        <div><label for="mfa-disable-code">Codice temporaneo</label><input id="mfa-disable-code" class="fa-v2-input fa-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></div>
+        <div class="fa-v2-card-actions"><button id="mfa-disable-button" class="fa-v2-button fa-v2-button--secondary" type="submit">Disattiva autenticazione a due fattori</button></div>
+      </form>
+      <p>Se hai perso il dispositivo, non esistono codici di recupero FamilArea: contatta l'assistenza per valutare il recupero dell'accesso.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="mfa.js"></script>
+</body>
+</html>

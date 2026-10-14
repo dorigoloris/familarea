@@ -3,7 +3,8 @@
     'dashboard.html',
     'contatto-condiviso.html',
     'invito-evento.html',
-    'inviti-area.html'
+    'inviti-area.html',
+    'mfa.html'
   ]);
 
   function safeReturnTo(value) {

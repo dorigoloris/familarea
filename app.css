@@ -1483,3 +1483,8 @@ a.fa-v2-card-media-layout{
 .fa-v2-public-section summary{cursor:pointer;color:var(--fa-v2-text);font-size:13px;font-weight:700}
 .fa-v2-public-section details p{margin:var(--fa-v2-space-2) 0 0}
 @media(max-width:700px){.fa-v2-public-main{padding-top:var(--fa-v2-space-4)}.fa-v2-public-header{grid-template-columns:1fr}.fa-v2-public-actions{justify-content:flex-start}.fa-v2-public-actions .fa-v2-button{flex:1 1 auto}.fa-v2-public-section{gap:var(--fa-v2-space-3)}}
+
+/* MFA: evita la visualizzazione del contenuto protetto durante il controllo AAL. */
+html.fa-mfa-pending body > *{visibility:hidden}
+.fa-mfa-qr{display:block;width:min(100%,240px);height:auto;margin:0 auto;padding:var(--fa-v2-space-3);border:1px solid var(--fa-v2-border);border-radius:10px;background:#fff}
+.fa-mfa-code{max-width:18rem;letter-spacing:.22em;text-align:center}
