@@ -6,5 +6,5 @@ const SUPABASE_KEY = 'sb_publishable_S11fyDqQ_RLWQj_jUMiPwQ_Usfj328M';
 window.FamilAreaCaptchaConfig = Object.freeze({
   enabled: false,
   provider: 'turnstile',
-  siteKey: ''
+  siteKey: '0x4AAAAAAFWXuJIm9a4LHWbk'
 });
