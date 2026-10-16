@@ -115,6 +115,7 @@
     maxAttachmentBytes,
     isSupportedMimeType,
     formatAttachmentType,
+    getSignedUrl: signedUrlForAttachment,
     renderCardPreview,
     renderTargetCardPreview
   });

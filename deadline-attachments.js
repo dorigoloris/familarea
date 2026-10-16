@@ -10,8 +10,8 @@
     })} MB`;
   }
 
-  function validateFile(file) {
-    if (!attachmentPreview.isSupportedMimeType(file.type)) return 'Formato non supportato. Puoi allegare PDF, JPG, PNG o WebP.';
+  function validateFile(file, allowedMimeTypes = null) {
+    if (!attachmentPreview.isSupportedMimeType(file.type) || (allowedMimeTypes && !allowedMimeTypes.includes(file.type))) return 'Formato non supportato. Puoi allegare PDF, JPG, PNG o WebP.';
     if (file.size > attachmentPreview.maxAttachmentBytes) return 'Il file supera il limite massimo di 10 MB.';
     return '';
   }
@@ -41,7 +41,7 @@
     }
   }
 
-  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list }) {
+  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list, allowedMimeTypes = null, allowMultiple = false, renderAttachmentActions = null, onAttachmentDeleted = null }) {
     let uploadInProgress = false;
 
     function setMessage(text = '', isError = false) {
@@ -94,6 +94,9 @@
           : 'Allegato eliminato.',
         Boolean(storageError)
       );
+      if (typeof onAttachmentDeleted === 'function') {
+        await onAttachmentDeleted(attachment);
+      }
       await load();
     }
 
@@ -116,6 +119,14 @@
       open.textContent = 'Apri';
       open.onclick = () => openAttachment(attachment, open);
       actions.append(open);
+      const extraActions = typeof renderAttachmentActions === 'function'
+        ? renderAttachmentActions(attachment)
+        : null;
+      if (Array.isArray(extraActions)) {
+        actions.append(...extraActions.filter(Boolean));
+      } else if (extraActions) {
+        actions.append(extraActions);
+      }
       if (canManage) {
         const remove = document.createElement('button');
         remove.type = 'button';
@@ -139,7 +150,7 @@
         setMessage('Non è stato possibile caricare gli allegati. Riprova.', true);
         return;
       }
-      const rows = data || [];
+      const rows = (data || []).filter((attachment) => !allowedMimeTypes || allowedMimeTypes.includes(attachment.mime_type));
       list.replaceChildren(...rows.map(renderAttachment));
       empty.hidden = rows.length > 0;
     }
@@ -147,25 +158,52 @@
     input.onchange = async (event) => {
       if (!canManage) return;
       if (uploadInProgress) return;
-      const file = event.target.files[0];
+      const selectedFiles = Array.from(event.target.files || []);
       input.value = '';
-      if (!file) return;
-      const validationMessage = validateFile(file);
-      if (validationMessage) {
-        setMessage(validationMessage, true);
+      if (!selectedFiles.length) return;
+
+      const validFiles = [];
+      const invalidFiles = [];
+      selectedFiles.forEach((file) => {
+        const validationMessage = validateFile(file, allowedMimeTypes);
+        if (validationMessage) invalidFiles.push(`${file.name}: ${validationMessage}`);
+        else validFiles.push(file);
+      });
+      if (!validFiles.length) {
+        setMessage(invalidFiles.join(' '), true);
         return;
       }
 
       setUploadInProgress(true);
-      setMessage('Caricamento allegato…');
+      const failedFiles = [];
+      let uploadedCount = 0;
+      for (const [index, file] of validFiles.entries()) {
+        setMessage(allowMultiple && validFiles.length > 1
+          ? `Caricamento fotografie: ${index + 1} di ${validFiles.length}`
+          : 'Caricamento allegato…');
+        try {
+          await uploadFile({ client, targetType, targetId, file });
+          uploadedCount += 1;
+        } catch (error) {
+          console.error('deadline attachment upload failed', error);
+          failedFiles.push(file.name);
+        }
+      }
       try {
-        await uploadFile({ client, targetType, targetId, file });
-
         await load();
-        setMessage('Allegato caricato.');
+        const rejectedSummary = invalidFiles.length ? ` ${invalidFiles.length} file non valid${invalidFiles.length === 1 ? 'o' : 'i'} ignorat${invalidFiles.length === 1 ? 'o' : 'i'}.` : '';
+        const failedSummary = failedFiles.length ? ` Non caricat${failedFiles.length === 1 ? 'o' : 'i'}: ${failedFiles.join(', ')}.` : '';
+        if (uploadedCount) {
+          const uploadedSummary = allowMultiple && validFiles.length > 1
+            ? `Fotografie caricate: ${uploadedCount} di ${validFiles.length}.`
+            : 'Allegato caricato.';
+          setMessage(`${uploadedSummary}${rejectedSummary}${failedSummary}`, Boolean(invalidFiles.length || failedFiles.length));
+        } else {
+          setMessage(`Nessun allegato caricato.${rejectedSummary}${failedSummary}`, true);
+        }
       } catch (error) {
-        console.error('deadline attachment upload failed', error);
-        setMessage('Non è stato possibile caricare l’allegato. Riprova.', true);
+        console.error('deadline attachment list refresh failed', error);
+        setMessage('Gli allegati sono stati elaborati, ma non è stato possibile aggiornare l’elenco. Riprova.', true);
       } finally {
         setUploadInProgress(false);
       }

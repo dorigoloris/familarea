@@ -64,5 +64,46 @@
   function confirm(options) { return openModal(options).then((result) => result === true); }
   function prompt(options) { return openModal({ ...options, input: options.input || {} }); }
   function form(options) { return openModal({ ...options, fields: options.fields || [] }); }
-  window.FamilAreaConfirm = { confirm, prompt, form };
+  function choice(options) {
+    if (activeModal) return Promise.resolve(null);
+    const settings = { title: 'Conferma azione', message: '', choices: [], ...options };
+    const previousFocus = document.activeElement;
+    const overlay = createElement('div', 'confirm-modal-overlay');
+    const dialog = createElement('section', 'confirm-modal');
+    const title = createElement('h2', 'confirm-modal-title', settings.title);
+    const message = createElement('p', 'confirm-modal-message', settings.message);
+    const actions = createElement('div', 'confirm-modal-actions');
+    const closeButton = createElement('button', 'confirm-modal-close', '×');
+    const backgroundElements = [...document.body.children].map((element) => ({ element, inert: element.inert, ariaHidden: element.getAttribute('aria-hidden') }));
+    const buttons = settings.choices.map((item) => {
+      const button = createElement('button', item.className || 'confirm-modal-cancel', item.label);
+      button.type = 'button';
+      button.dataset.choice = item.value;
+      return button;
+    });
+    activeModal = overlay;
+    dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true'); dialog.setAttribute('aria-labelledby', 'confirm-modal-choice-title'); title.id = 'confirm-modal-choice-title';
+    closeButton.type = 'button'; closeButton.setAttribute('aria-label', 'Chiudi finestra');
+    actions.append(...buttons); dialog.append(closeButton, title, message, actions); overlay.append(dialog);
+    return new Promise((resolve) => {
+      function finish(result) {
+        if (activeModal !== overlay) return;
+        document.removeEventListener('keydown', onKeyDown); overlay.remove(); document.body.classList.remove('confirm-modal-open');
+        backgroundElements.forEach(({ element, inert, ariaHidden }) => { element.inert = inert; if (ariaHidden === null) element.removeAttribute('aria-hidden'); else element.setAttribute('aria-hidden', ariaHidden); });
+        activeModal = null; if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus(); resolve(result);
+      }
+      function onKeyDown(event) {
+        if (event.key === 'Escape') { event.preventDefault(); finish(null); return; }
+        if (event.key !== 'Tab') return;
+        const focusable = [closeButton, ...buttons]; const index = focusable.indexOf(document.activeElement);
+        if (event.shiftKey && (index <= 0 || index === -1)) { event.preventDefault(); focusable.at(-1).focus(); }
+        else if (!event.shiftKey && (index === focusable.length - 1 || index === -1)) { event.preventDefault(); closeButton.focus(); }
+      }
+      closeButton.addEventListener('click', () => finish(null));
+      buttons.forEach((button) => button.addEventListener('click', () => finish(button.dataset.choice)));
+      overlay.addEventListener('click', (event) => { if (event.target === overlay) finish(null); }); document.addEventListener('keydown', onKeyDown);
+      backgroundElements.forEach(({ element }) => { element.inert = true; element.setAttribute('aria-hidden', 'true'); }); document.body.classList.add('confirm-modal-open'); document.body.appendChild(overlay); (buttons[0] || closeButton).focus();
+    });
+  }
+  window.FamilAreaConfirm = { confirm, prompt, form, choice };
 }());

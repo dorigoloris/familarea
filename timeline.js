@@ -1,0 +1,649 @@
+const timelineClient = window.FamilAreaSupabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const timelineMessage = document.getElementById('timeline-message');
+const timelineTitle = document.getElementById('timeline-title');
+const timelineIntro = document.getElementById('timeline-intro');
+const timelineHome = document.getElementById('timeline-home');
+const timelineBackContainer = document.getElementById('timeline-back-container');
+const timelineCollection = document.getElementById('timeline-collection');
+const timelineCollectionList = document.getElementById('timeline-collection-list');
+const timelineCollectionEmpty = document.getElementById('timeline-collection-empty');
+const timelineCollectionTitle = document.getElementById('timeline-list-title');
+const timelineCollectionIntro = document.getElementById('timeline-list-intro');
+const timelineCreate = document.getElementById('timeline-create');
+const timelineDetail = document.getElementById('timeline-detail');
+const timelineDetailTitle = document.getElementById('timeline-detail-title');
+const timelineDetailDescription = document.getElementById('timeline-detail-description');
+const timelineDetailBackLink = document.getElementById('timeline-detail-back-link');
+const timelineOptions = document.getElementById('timeline-options');
+const memoriesTimeline = document.getElementById('memories-timeline');
+const memoriesEmpty = document.getElementById('memories-empty');
+const timelineManage = document.getElementById('timeline-manage');
+const timelineDelete = document.getElementById('timeline-delete');
+const memoryCreateLink = document.getElementById('memory-create-link');
+const timelineListTitle = document.getElementById('timeline-list-title');
+const galleryModal = document.getElementById('memory-gallery-modal');
+const galleryDialog = document.getElementById('memory-gallery-dialog');
+const galleryClose = document.getElementById('memory-gallery-close');
+const galleryDate = document.getElementById('memory-gallery-date');
+const galleryTitle = document.getElementById('memory-gallery-title');
+const galleryDescription = document.getElementById('memory-gallery-description');
+const galleryMessage = document.getElementById('memory-gallery-message');
+const galleryPhotos = document.getElementById('memory-gallery-photos');
+const galleryPhotoStage = document.getElementById('memory-gallery-photo-stage');
+const galleryPrevious = document.getElementById('memory-gallery-previous');
+const galleryNext = document.getElementById('memory-gallery-next');
+const galleryPosition = document.getElementById('memory-gallery-position');
+const galleryThumbnails = document.getElementById('memory-gallery-thumbnails');
+const galleryDocumentsSection = document.getElementById('memory-gallery-documents-section');
+const galleryDocuments = document.getElementById('memory-gallery-documents');
+const lightbox = document.getElementById('memory-lightbox');
+const lightboxClose = document.getElementById('memory-lightbox-close');
+const lightboxImage = document.getElementById('memory-lightbox-image');
+const lightboxPrevious = document.getElementById('memory-lightbox-previous');
+const lightboxNext = document.getElementById('memory-lightbox-next');
+const lightboxPosition = document.getElementById('memory-lightbox-position');
+
+const memoryPhotoMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const memoryDocumentMimeTypes = new Set(['application/pdf']);
+let galleryPhotosData = [];
+let galleryPhotoIndex = 0;
+let galleryPreviousFocus = null;
+let selectedTimelines = [];
+const timelineParams = new URLSearchParams(window.location.search);
+const requestedTimelineType = timelineParams.get('type');
+const selectedTimelineType = ['memory', 'document'].includes(requestedTimelineType)
+  ? requestedTimelineType
+  : (timelineParams.get('memory_id') ? 'memory' : '');
+let selectedTimelineId = timelineParams.get('timeline_id') || '';
+
+function memoryInitial(title) {
+  return (title || '').trim().charAt(0).toLocaleUpperCase('it-IT') || 'R';
+}
+
+function formatMemoryDate(value) {
+  if (typeof value !== 'string' || !value) return 'Data non disponibile';
+  if (window.FamilAreaDateUtils?.formatDateDisplay) {
+    const formatted = window.FamilAreaDateUtils.formatDateDisplay(value);
+    if (formatted) return formatted;
+  }
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? 'Data non disponibile' : date.toLocaleDateString('it-IT');
+}
+
+function timelineRpcMessage(subject, error) {
+  console.error(`[FamilArea timeline] ${subject}`, error);
+  const code = error?.code ? ` (${error.code})` : '';
+  const reason = error?.message || error?.details || 'Risposta non disponibile.';
+  return `Impossibile ${subject}${code}: ${reason}`;
+}
+
+function timelineHref(type = selectedTimelineType, timelineId = selectedTimelineId) {
+  const params = new URLSearchParams();
+  if (type) params.set('type', type);
+  if (timelineId) params.set('timeline_id', timelineId);
+  return `timeline.html${params.size ? `?${params}` : ''}`;
+}
+
+function memoryHref(memory) {
+  const params = new URLSearchParams({ memory_id: memory.id });
+  const timelineId = selectedTimelineId || memory.timeline_id;
+  if (timelineId) params.set('timeline_id', timelineId);
+  return `ricordo.html?${params}`;
+}
+
+function activeTimeline() {
+  return selectedTimelines.find((timeline) => timeline.id === selectedTimelineId) || null;
+}
+
+function timelineLabel(type = selectedTimelineType) {
+  return type === 'document' ? 'Documenti' : 'Ricordi';
+}
+
+function setRouteView(view) {
+  timelineHome.hidden = view !== 'home';
+  timelineBackContainer.hidden = view !== 'collection';
+  timelineCollection.hidden = view !== 'collection';
+  timelineDetail.hidden = view !== 'detail';
+}
+
+async function fetchTimelines() {
+  const { data, error } = await timelineClient.rpc('get_my_timelines', { p_timeline_type: selectedTimelineType });
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error('Risposta RPC Timeline incompatibile');
+  selectedTimelines = data;
+}
+
+function createTimelineCard(timeline) {
+  const card = document.createElement('a');
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  card.href = timelineHref(selectedTimelineType, timeline.id);
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = memoryInitial(timeline.name);
+  const content = document.createElement('span');
+  content.className = 'fa-v2-card-content';
+  const title = document.createElement('strong');
+  title.className = 'fa-v2-card-title';
+  title.textContent = timeline.name;
+  const description = document.createElement('span');
+  description.className = 'fa-v2-card-description';
+  description.textContent = timeline.description || (timeline.is_default ? 'Timeline predefinita.' : 'Nessuna descrizione.');
+  content.append(title, description);
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
+  const open = document.createElement('span');
+  open.className = 'fa-v2-button fa-v2-button--secondary';
+  open.textContent = 'Apri';
+  actions.append(open);
+  card.append(visual, content, actions);
+  return card;
+}
+
+function renderTimelineCollection() {
+  setRouteView('collection');
+  timelineTitle.textContent = `Timeline ${timelineLabel()}`;
+  timelineIntro.textContent = selectedTimelineType === 'memory'
+    ? 'Scegli un archivio di ricordi.'
+    : 'Scegli un archivio di documenti.';
+  timelineCollectionTitle.textContent = `Le tue Timeline ${timelineLabel()}`;
+  timelineCollectionIntro.textContent = selectedTimelineType === 'memory'
+    ? 'Apri una Timeline per consultare i suoi ricordi.'
+    : 'Apri una Timeline per consultare i documenti cronologici quando saranno disponibili.';
+  timelineCreate.textContent = '+ Crea nuova Timeline';
+  timelineCollectionList.replaceChildren(...selectedTimelines.map(createTimelineCard));
+  timelineCollectionEmpty.hidden = selectedTimelines.length > 0;
+  timelineCollectionEmpty.replaceChildren();
+  if (!selectedTimelines.length) {
+    const heading = document.createElement('strong');
+    heading.textContent = `Nessuna Timeline ${timelineLabel()}.`;
+    const text = document.createElement('span');
+    text.textContent = 'Crea la prima Timeline per iniziare.';
+    timelineCollectionEmpty.append(heading, text);
+  }
+}
+
+async function createTimeline() {
+  const values = await FamilAreaConfirm.form({
+    title: `Nuova Timeline ${timelineLabel()}`,
+    message: 'Scegli un nome per il nuovo archivio.',
+    confirmText: 'Crea Timeline',
+    fields: [
+      { name: 'name', label: 'Nome *', required: true, autocomplete: 'off' },
+      { name: 'description', label: 'Descrizione facoltativa', autocomplete: 'off' }
+    ]
+  });
+  if (!values) return;
+  timelineCreate.disabled = true;
+  timelineMessage.textContent = 'Creazione Timeline...';
+  try {
+    const { data, error } = await timelineClient.rpc('create_timeline', {
+      p_timeline_type: selectedTimelineType,
+      p_name: values.name,
+      p_description: values.description.trim() || null
+    });
+    if (error || !data?.id) throw error || new Error('Risposta RPC incompatibile');
+    window.location.assign(timelineHref(selectedTimelineType, data.id));
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('creare la Timeline', error);
+    timelineCreate.disabled = false;
+  }
+}
+
+function renderTimelineDetail() {
+  const timeline = activeTimeline();
+  if (!timeline) return;
+  setRouteView('detail');
+  timelineTitle.textContent = timeline.name;
+  timelineIntro.textContent = selectedTimelineType === 'memory' ? 'Ricordi in ordine cronologico.' : 'Archivio documentale cronologico.';
+  timelineDetailTitle.textContent = timeline.name;
+  timelineDetailDescription.textContent = timeline.description || '';
+  timelineDetailBackLink.href = timelineHref(selectedTimelineType);
+  memoryCreateLink.hidden = selectedTimelineType !== 'memory';
+  memoryCreateLink.href = `ricordo.html?${new URLSearchParams({ timeline_id: timeline.id })}`;
+  timelineDelete.hidden = Boolean(timeline.is_default);
+  timelineDelete.disabled = Boolean(timeline.is_default);
+  timelineOptions.open = false;
+  memoriesTimeline.hidden = selectedTimelineType !== 'memory';
+  memoriesEmpty.hidden = true;
+}
+
+async function manageActiveTimeline() {
+  const timeline = activeTimeline();
+  if (!timeline) return;
+  const values = await FamilAreaConfirm.form({
+    title: 'Modifica Timeline',
+    message: 'Aggiorna nome e descrizione della Timeline.',
+    confirmText: 'Salva modifiche',
+    fields: [
+      { name: 'name', label: 'Nome *', value: timeline.name, required: true, autocomplete: 'off' },
+      { name: 'description', label: 'Descrizione facoltativa', value: timeline.description || '', autocomplete: 'off' }
+    ]
+  });
+  if (!values) return;
+  timelineManage.disabled = true;
+  try {
+    const { data, error } = await timelineClient.rpc('update_timeline', {
+      p_timeline_id: timeline.id,
+      p_name: values.name,
+      p_description: values.description.trim() || null
+    });
+    if (error || !data?.id) throw error || new Error('Risposta RPC incompatibile');
+    selectedTimelines = selectedTimelines.map((item) => item.id === data.id ? data : item);
+    renderTimelineDetail();
+    timelineMessage.textContent = 'Timeline aggiornata.';
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('aggiornare la Timeline', error);
+  } finally {
+    timelineManage.disabled = false;
+  }
+}
+
+async function deleteActiveTimeline() {
+  const timeline = activeTimeline();
+  if (!timeline || timeline.is_default) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger', title: 'Eliminare la Timeline?',
+    message: `“${timeline.name}” può essere eliminata soltanto se non contiene elementi.`,
+    confirmText: 'Elimina Timeline'
+  });
+  if (!confirmed) return;
+  timelineDelete.disabled = true;
+  try {
+    const { error } = await timelineClient.rpc('delete_timeline', { p_timeline_id: timeline.id });
+    if (error) throw error;
+    window.location.assign(timelineHref(selectedTimelineType));
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('eliminare la Timeline', error);
+    timelineDelete.disabled = false;
+  }
+}
+
+function createMemoryCard(memory) {
+  const item = document.createElement('div');
+  item.className = 'fa-v2-memory-timeline-item';
+  const card = document.createElement('article');
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  card.dataset.memoryId = memory.id;
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', `Apri galleria del ricordo ${memory.title || 'senza titolo'}`);
+  card.addEventListener('click', (event) => {
+    if (!event.target.closest('a, button')) void openMemoryGallery(memory, card);
+  });
+  card.addEventListener('keydown', (event) => {
+    if (event.target.closest('a, button') || !['Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    void openMemoryGallery(memory, card);
+  });
+
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = memoryInitial(memory.title);
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  const date = document.createElement('p');
+  date.className = 'fa-v2-card-description';
+  date.textContent = formatMemoryDate(memory.occurred_on);
+  const title = document.createElement('h3');
+  title.className = 'fa-v2-card-title';
+  title.textContent = memory.title || 'Ricordo senza titolo';
+  const description = document.createElement('p');
+  description.className = 'fa-v2-card-description';
+  description.textContent = memory.description || 'Nessuna descrizione.';
+  content.append(date, title, description);
+
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
+  const edit = document.createElement('a');
+  edit.className = 'fa-v2-button fa-v2-button--secondary';
+  edit.href = memoryHref(memory);
+  edit.textContent = 'Modifica';
+  edit.addEventListener('click', (event) => event.stopPropagation());
+  actions.append(edit);
+  card.append(visual, content, actions);
+  item.append(card);
+  return { item, visual };
+}
+
+async function renderMemoryCover(memory, visual) {
+  if (!memory.cover_attachment_id) return;
+  try {
+    const { data, error } = await timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id });
+    if (error) throw error;
+    const coverAttachment = (data || []).find((attachment) => attachment.id === memory.cover_attachment_id && memoryPhotoMimeTypes.has(attachment.mime_type));
+    if (coverAttachment) await window.FamilAreaAttachmentPreview.renderCardPreview({ client: timelineClient, attachment: coverAttachment, container: visual });
+  } catch (error) {
+    console.warn('[FamilArea timeline] memory cover unavailable', error);
+  }
+}
+
+function setTimelineInert(inert) {
+  [document.querySelector('main'), document.querySelector('.logout-button'), document.getElementById('logout-message')]
+    .filter(Boolean)
+    .forEach((element) => {
+      element.inert = inert;
+      if (inert) element.setAttribute('aria-hidden', 'true');
+      else element.removeAttribute('aria-hidden');
+    });
+  document.body.classList.toggle('confirm-modal-open', inert);
+}
+
+function setGalleryMessage(text = '', isError = false) {
+  galleryMessage.textContent = text;
+  galleryMessage.classList.toggle('is-error', isError);
+}
+
+function photoPositionText() {
+  return galleryPhotosData.length ? `${galleryPhotoIndex + 1} di ${galleryPhotosData.length}` : '';
+}
+
+function renderGalleryPhoto() {
+  const photo = galleryPhotosData[galleryPhotoIndex];
+  galleryPhotoStage.replaceChildren();
+  galleryThumbnails.replaceChildren();
+  if (!photo) {
+    galleryPhotos.hidden = true;
+    return;
+  }
+
+  galleryPhotos.hidden = false;
+  const photoButton = document.createElement('button');
+  photoButton.type = 'button';
+  photoButton.className = 'memory-gallery-image-button';
+  photoButton.setAttribute('aria-label', 'Apri fotografia a schermo intero');
+  if (photo.signedUrl) {
+    const image = document.createElement('img');
+    image.src = photo.signedUrl;
+    image.alt = photo.original_filename || 'Fotografia del ricordo';
+    image.addEventListener('error', () => {
+      photoButton.replaceChildren('Impossibile caricare questa fotografia.');
+      photoButton.disabled = true;
+    });
+    photoButton.append(image);
+  } else {
+    photoButton.disabled = true;
+    photoButton.textContent = 'Impossibile caricare questa fotografia.';
+  }
+  photoButton.addEventListener('click', openLightbox);
+  galleryPhotoStage.append(photoButton);
+  galleryPosition.textContent = photoPositionText();
+  galleryPrevious.disabled = galleryPhotosData.length < 2;
+  galleryNext.disabled = galleryPhotosData.length < 2;
+
+  galleryPhotosData.forEach((thumbnailPhoto, index) => {
+    const thumbnail = document.createElement('button');
+    thumbnail.type = 'button';
+    thumbnail.className = 'memory-gallery-thumbnail';
+    thumbnail.setAttribute('aria-label', `Mostra fotografia ${index + 1}`);
+    thumbnail.setAttribute('aria-current', String(index === galleryPhotoIndex));
+    if (thumbnailPhoto.signedUrl) {
+      const thumbnailImage = document.createElement('img');
+      thumbnailImage.src = thumbnailPhoto.signedUrl;
+      thumbnailImage.alt = '';
+      thumbnailImage.addEventListener('error', () => thumbnail.replaceChildren(String(index + 1)));
+      thumbnail.append(thumbnailImage);
+    } else {
+      thumbnail.textContent = String(index + 1);
+      thumbnail.disabled = true;
+    }
+    thumbnail.addEventListener('click', () => setGalleryPhoto(index));
+    galleryThumbnails.append(thumbnail);
+  });
+}
+
+function setGalleryPhoto(index) {
+  if (!galleryPhotosData.length) return;
+  galleryPhotoIndex = (index + galleryPhotosData.length) % galleryPhotosData.length;
+  renderGalleryPhoto();
+  if (!lightbox.hidden) renderLightboxPhoto();
+}
+
+function renderLightboxPhoto() {
+  const photo = galleryPhotosData[galleryPhotoIndex];
+  if (!photo?.signedUrl) return closeLightbox();
+  lightboxImage.src = photo.signedUrl;
+  lightboxImage.alt = photo.original_filename || 'Fotografia del ricordo';
+  lightboxPosition.textContent = photoPositionText();
+  lightboxPrevious.disabled = galleryPhotosData.length < 2;
+  lightboxNext.disabled = galleryPhotosData.length < 2;
+}
+
+function openLightbox() {
+  if (!galleryPhotosData[galleryPhotoIndex]?.signedUrl) return;
+  lightbox.hidden = false;
+  renderLightboxPhoto();
+  lightboxClose.focus();
+}
+
+function closeLightbox() {
+  if (lightbox.hidden) return;
+  lightbox.hidden = true;
+  lightboxImage.removeAttribute('src');
+  galleryPhotoStage.querySelector('button')?.focus();
+}
+
+async function openAttachment(attachment, button) {
+  button.disabled = true;
+  try {
+    const signedUrl = await window.FamilAreaAttachmentPreview.getSignedUrl(timelineClient, attachment, 60);
+    window.open(signedUrl, '_blank', 'noopener');
+  } catch (error) {
+    console.error('[FamilArea timeline] document open failed', error);
+    setGalleryMessage('Impossibile aprire il documento. Riprova.', true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function renderGalleryDocuments(documents) {
+  galleryDocuments.replaceChildren();
+  galleryDocumentsSection.hidden = documents.length === 0;
+  documents.forEach((attachment) => {
+    const row = document.createElement('div');
+    row.className = 'deadline-attachment';
+    const name = document.createElement('strong');
+    name.textContent = attachment.original_filename || 'Documento PDF';
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'secondary-button';
+    open.textContent = 'Apri';
+    open.addEventListener('click', () => void openAttachment(attachment, open));
+    row.append(name, open);
+    galleryDocuments.append(row);
+  });
+}
+
+async function signedPhoto(attachment) {
+  try {
+    return { ...attachment, signedUrl: await window.FamilAreaAttachmentPreview.getSignedUrl(timelineClient, attachment) };
+  } catch (error) {
+    console.warn('[FamilArea timeline] memory photograph unavailable', error);
+    return { ...attachment, signedUrl: null };
+  }
+}
+
+async function openMemoryGallery(memory, trigger) {
+  galleryPreviousFocus = trigger;
+  galleryModal.hidden = false;
+  setTimelineInert(true);
+  galleryDialog.focus();
+  galleryDate.textContent = formatMemoryDate(memory.occurred_on);
+  galleryTitle.textContent = memory.title || 'Ricordo senza titolo';
+  galleryDescription.textContent = memory.description || '';
+  galleryDescription.hidden = !memory.description;
+  galleryPhotosData = [];
+  galleryPhotoIndex = 0;
+  galleryPhotos.hidden = true;
+  galleryDocumentsSection.hidden = true;
+  galleryPhotoStage.replaceChildren();
+  galleryThumbnails.replaceChildren();
+  galleryDocuments.replaceChildren();
+  setGalleryMessage('Caricamento fotografie e documenti...');
+
+  const { data, error } = await timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id });
+  if (error) {
+    console.error('[FamilArea timeline] gallery attachments failed', error);
+    setGalleryMessage('Impossibile caricare gli allegati del ricordo.', true);
+    return;
+  }
+  const attachments = Array.isArray(data) ? data : [];
+  const photos = attachments.filter((attachment) => memoryPhotoMimeTypes.has(attachment.mime_type));
+  const coverIndex = photos.findIndex((attachment) => attachment.id === memory.cover_attachment_id);
+  if (coverIndex > 0) photos.unshift(photos.splice(coverIndex, 1)[0]);
+  galleryPhotosData = await Promise.all(photos.map(signedPhoto));
+  renderGalleryPhoto();
+  renderGalleryDocuments(attachments.filter((attachment) => memoryDocumentMimeTypes.has(attachment.mime_type)));
+  setGalleryMessage(galleryPhotosData.some((photo) => !photo.signedUrl) ? 'Alcune fotografie non sono disponibili al momento.' : '');
+}
+
+function closeMemoryGallery() {
+  closeLightbox();
+  if (galleryModal.hidden) return;
+  galleryModal.hidden = true;
+  setTimelineInert(false);
+  galleryPhotosData = [];
+  galleryPreviousFocus?.focus?.();
+  galleryPreviousFocus = null;
+}
+
+function attachSwipe(element, callback) {
+  let origin = null;
+  element.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'touch' || event.pointerType === 'pen') origin = { x: event.clientX, y: event.clientY };
+  });
+  element.addEventListener('pointerup', (event) => {
+    if (!origin) return;
+    const deltaX = event.clientX - origin.x;
+    const deltaY = event.clientY - origin.y;
+    origin = null;
+    if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) callback(deltaX < 0 ? 1 : -1);
+  });
+  element.addEventListener('pointercancel', () => { origin = null; });
+}
+
+function loadingError(error) {
+  console.error('[FamilArea timeline] memories load failed', error);
+  const code = error?.code ? ` (${error.code})` : '';
+  const reason = error?.message || error?.details || 'Risposta non disponibile.';
+  return `Impossibile caricare i ricordi${code}: ${reason}`;
+}
+
+function highlightRequestedMemory(cards) {
+  const url = new URL(window.location.href);
+  const requestedMemoryId = url.searchParams.get('memory_id');
+  if (!requestedMemoryId) return;
+  const requestedCard = cards.find(({ memory }) => memory.id === requestedMemoryId)?.item.querySelector('[data-memory-id]');
+  if (!requestedCard) return;
+
+  requestAnimationFrame(() => {
+    requestedCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    requestedCard.classList.add('fa-v2-memory-card--highlighted');
+    window.setTimeout(() => requestedCard.classList.remove('fa-v2-memory-card--highlighted'), 3600);
+  });
+  url.searchParams.delete('memory_id');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function loadSelectedMemoryTimeline() {
+  const timeline = activeTimeline();
+  if (!timeline) return;
+  memoriesTimeline.replaceChildren();
+  memoriesEmpty.hidden = true;
+  timelineMessage.textContent = 'Caricamento ricordi...';
+  const { data, error } = await timelineClient.rpc('get_my_memories_for_timeline', { p_timeline_id: timeline.id });
+  if (error) {
+    timelineMessage.textContent = loadingError(error);
+    return;
+  }
+  if (!Array.isArray(data)) {
+    timelineMessage.textContent = 'Impossibile caricare i ricordi: risposta RPC incompatibile.';
+    return;
+  }
+  const cards = data.map((memory) => ({ memory, ...createMemoryCard(memory) }));
+  memoriesTimeline.replaceChildren(...cards.map(({ item }) => item));
+  memoriesEmpty.replaceChildren();
+  if (!data.length) {
+    const heading = document.createElement('strong');
+    heading.textContent = 'Nessun ricordo.';
+    const text = document.createElement('span');
+    text.textContent = 'Crea il primo ricordo in questa Timeline.';
+    memoriesEmpty.append(heading, text);
+    memoriesEmpty.hidden = false;
+  }
+  timelineMessage.textContent = '';
+  highlightRequestedMemory(cards);
+  await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+}
+
+async function loadTimeline() {
+  const { data: sessionData, error: sessionError } = await timelineClient.auth.getSession();
+  if (sessionError || !sessionData?.session) {
+    window.location.replace(`login.html?return_to=${encodeURIComponent(`timeline.html${window.location.search}`)}`);
+    return;
+  }
+  if (!selectedTimelineType) {
+    setRouteView('home');
+    timelineMessage.textContent = '';
+    return;
+  }
+  try {
+    await fetchTimelines();
+    if (!selectedTimelineId) {
+      renderTimelineCollection();
+      timelineMessage.textContent = '';
+      return;
+    }
+    if (!activeTimeline()) {
+      setRouteView('collection');
+      timelineCollectionList.replaceChildren();
+      timelineCollectionEmpty.hidden = false;
+      timelineCollectionEmpty.textContent = 'Timeline non trovata o non disponibile.';
+      timelineMessage.textContent = '';
+      return;
+    }
+    renderTimelineDetail();
+    if (selectedTimelineType === 'memory') await loadSelectedMemoryTimeline();
+    else {
+      memoriesEmpty.replaceChildren();
+      const heading = document.createElement('strong');
+      heading.textContent = 'Nessun documento in questa Timeline.';
+      const text = document.createElement('span');
+      text.textContent = 'La gestione dei documenti cronologici sarà disponibile qui prossimamente.';
+      memoriesEmpty.append(heading, text);
+      memoriesEmpty.hidden = false;
+      timelineMessage.textContent = '';
+    }
+  } catch (error) {
+    setRouteView('collection');
+    timelineMessage.textContent = timelineRpcMessage('caricare le Timeline', error);
+  }
+}
+
+galleryClose.addEventListener('click', closeMemoryGallery);
+galleryModal.addEventListener('click', (event) => { if (event.target === galleryModal) closeMemoryGallery(); });
+galleryPrevious.addEventListener('click', () => setGalleryPhoto(galleryPhotoIndex - 1));
+galleryNext.addEventListener('click', () => setGalleryPhoto(galleryPhotoIndex + 1));
+lightboxClose.addEventListener('click', closeLightbox);
+lightboxPrevious.addEventListener('click', () => setGalleryPhoto(galleryPhotoIndex - 1));
+lightboxNext.addEventListener('click', () => setGalleryPhoto(galleryPhotoIndex + 1));
+timelineCreate.addEventListener('click', () => void createTimeline());
+timelineManage.addEventListener('click', () => void manageActiveTimeline());
+timelineDelete.addEventListener('click', () => void deleteActiveTimeline());
+attachSwipe(galleryPhotoStage, (direction) => setGalleryPhoto(galleryPhotoIndex + direction));
+attachSwipe(lightbox, (direction) => setGalleryPhoto(galleryPhotoIndex + direction));
+document.addEventListener('keydown', (event) => {
+  if (!lightbox.hidden) {
+    if (event.key === 'Escape') { event.preventDefault(); closeLightbox(); }
+    if (event.key === 'ArrowLeft') { event.preventDefault(); setGalleryPhoto(galleryPhotoIndex - 1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); setGalleryPhoto(galleryPhotoIndex + 1); }
+    return;
+  }
+  if (galleryModal.hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeMemoryGallery(); }
+  if (event.key === 'ArrowLeft') { event.preventDefault(); setGalleryPhoto(galleryPhotoIndex - 1); }
+  if (event.key === 'ArrowRight') { event.preventDefault(); setGalleryPhoto(galleryPhotoIndex + 1); }
+});
+
+void loadTimeline();

@@ -4,6 +4,8 @@
   const path = window.location.pathname.split('/').pop() || 'dashboard.html';
   const primarySectionByPage = {
     'dashboard.html': 'dashboard',
+    'timeline.html': 'memories',
+    'ricordo.html': 'memories',
     'famiglia.html': 'family',
     'interessi.html': 'interests',
     'attivita-globali.html': 'activities',
@@ -78,6 +80,7 @@
     topNav.replaceChildren();
     const sharedItems = [
       { label: 'Dashboard', href: 'dashboard.html', active: isPrimaryNavActive('dashboard') },
+      { label: 'Timeline', href: 'timeline.html', active: isPrimaryNavActive('memories') },
       { label: 'Attività', href: 'attivita-globali.html', active: isPrimaryNavActive('activities') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },
@@ -89,14 +92,15 @@
       ? [
         sharedItems[0],
         { label: 'Famiglia', href: 'famiglia.html', active: isPrimaryNavActive('family') },
-        sharedItems[2],
         sharedItems[3],
-        sharedItems[1],
         sharedItems[4],
+        sharedItems[2],
+        sharedItems[5],
+        sharedItems[1],
         sharingItem,
-        sharedItems[5]
+        sharedItems[6]
       ]
-      : [sharedItems[0], sharedItems[2], sharedItems[3], sharedItems[1], sharedItems[4], sharingItem, sharedItems[5]];
+      : [sharedItems[0], sharedItems[3], sharedItems[4], sharedItems[2], sharedItems[5], sharedItems[1], sharingItem, sharedItems[6]];
     items.forEach((item) => {
       const link = document.createElement('a');
       link.className = `top-nav-link${item.active}`;
