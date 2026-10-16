@@ -1,7 +1,9 @@
 {
   "name": "FamilArea",
   "short_name": "FamilArea",
-  "start_url": ".",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f7f9fb",
   "theme_color": "#0d2b4f",
