@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="it" class="fa-mfa-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FamilArea">
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Documento Timeline - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app deadline-form-page-view">
+  <button class="logout-button" type="button" data-logout>Esci</button>
+  <p id="logout-message" aria-live="polite"></p>
+
+  <main class="page-card fa-page fa-page--wide fa-v2-page fa-v2-page-stack deadline-form-page" aria-labelledby="timeline-document-page-title">
+    <p class="account-back-link"><a id="timeline-document-back" href="timeline.html?type=document">Torna alla Timeline</a></p>
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="timeline-document-page-title">
+      <div class="fa-section-hero-content">
+        <h1 id="timeline-document-page-title">Nuovo documento</h1>
+        <p id="timeline-document-page-intro">Conserva un documento nella Timeline selezionata.</p>
+      </div>
+    </header>
+
+    <p id="timeline-document-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite">Caricamento...</p>
+
+    <form id="timeline-document-form" class="fa-v2-section-card fa-v2-form-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="deadline-form-grid">
+        <div>
+          <label for="timeline-document-occurred-on">Data *</label>
+          <input id="timeline-document-occurred-on" class="fa-v2-input" type="date" required>
+        </div>
+        <div>
+          <label for="timeline-document-title">Titolo *</label>
+          <input id="timeline-document-title" class="fa-v2-input" type="text" required maxlength="500" autocomplete="off">
+        </div>
+        <div class="form-field-wide">
+          <label for="timeline-document-description">Descrizione</label>
+          <textarea id="timeline-document-description" class="fa-v2-textarea" rows="7"></textarea>
+        </div>
+      </div>
+
+      <section id="timeline-document-attachments-section" class="fa-v2-section-card fa-v2-section-card--compact fa-v2-card fa-v2-page-stack" aria-labelledby="timeline-document-attachments-title">
+        <div class="deadline-attachments-heading">
+          <div>
+            <h2 id="timeline-document-attachments-title">Allegati</h2>
+            <p class="deadline-attachments-intro">PDF, JPG, PNG o WebP · massimo 10 MB per file.</p>
+          </div>
+          <label id="timeline-document-upload" class="btn secondary-button deadline-attachment-upload" for="timeline-document-input">+ Aggiungi allegati</label>
+          <input id="timeline-document-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple hidden>
+        </div>
+        <p id="timeline-document-attachments-message" class="deadline-attachments-message" aria-live="polite"></p>
+        <p id="timeline-document-attachments-empty" class="deadline-attachments-empty">Nessun allegato.</p>
+        <div id="timeline-document-attachments-list" class="deadline-attachments-list"></div>
+      </section>
+
+      <div class="form-actions">
+        <button id="timeline-document-delete" class="fa-v2-button fa-v2-button--danger" type="button" hidden>Elimina documento</button>
+        <a id="timeline-document-cancel" class="btn secondary-button fa-v2-button fa-v2-button--secondary" href="timeline.html?type=document">Annulla</a>
+        <button id="timeline-document-submit" class="fa-v2-button fa-v2-button--primary" type="submit">Salva documento</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="logout.js"></script>
+  <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="attachment-preview.js"></script>
+  <script src="deadline-attachments.js"></script>
+  <script src="documento-timeline.js"></script>
+</body>
+</html>

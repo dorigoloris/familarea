@@ -41,12 +41,12 @@
       <div class="fa-v2-card-grid fa-v2-card-grid--two">
         <a class="fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout" href="timeline.html?type=memory">
           <span class="fa-v2-card-visual" aria-hidden="true">R</span>
-          <span class="fa-v2-card-content"><strong class="fa-v2-card-title">Ricordi</strong><span class="fa-v2-card-description">Fotografie, momenti personali e documenti collegati.</span></span>
+          <span class="fa-v2-card-content"><strong class="fa-v2-card-title">Album fotografico</strong><span class="fa-v2-card-description">Fotografie e momenti personali</span></span>
           <span class="fa-v2-card-actions"><span class="fa-v2-button fa-v2-button--secondary">Apri</span></span>
         </a>
         <a class="fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout" href="timeline.html?type=document">
           <span class="fa-v2-card-visual" aria-hidden="true">D</span>
-          <span class="fa-v2-card-content"><strong class="fa-v2-card-title">Documenti</strong><span class="fa-v2-card-description">Documenti ordinati cronologicamente in archivi separati.</span></span>
+          <span class="fa-v2-card-content"><strong class="fa-v2-card-title">Archivio documenti</strong><span class="fa-v2-card-description">Documenti ordinati cronologicamente in archivi separati.</span></span>
           <span class="fa-v2-card-actions"><span class="fa-v2-button fa-v2-button--secondary">Apri</span></span>
         </a>
       </div>
@@ -67,12 +67,12 @@
     <section id="timeline-detail" class="fa-v2-section-card fa-v2-section-card--list fa-v2-card" aria-labelledby="timeline-detail-title" hidden>
       <div class="fa-v2-section-heading">
         <div>
-          <a id="timeline-detail-back-link" class="account-back-link" href="timeline.html">← Torna alle Timeline</a>
           <h2 id="timeline-detail-title">Timeline</h2>
           <p id="timeline-detail-description"></p>
         </div>
         <div class="fa-v2-card-actions">
-          <a id="memory-create-link" class="fa-v2-button fa-v2-button--secondary" href="ricordo.html" hidden>+ Nuovo ricordo</a>
+          <a id="memory-create-link" class="fa-v2-button fa-v2-button--secondary" href="timeline.html?type=memory" hidden>+ Nuovo album</a>
+          <a id="timeline-document-create-action" class="fa-v2-button fa-v2-button--primary" href="documento-timeline.html" hidden>+ Aggiungi documento</a>
           <details id="timeline-options" class="fa-v2-card-actions">
             <summary class="fa-v2-button fa-v2-button--secondary">Opzioni</summary>
             <div class="fa-v2-card-actions">
@@ -83,6 +83,7 @@
         </div>
       </div>
       <div id="memories-timeline" class="fa-v2-memory-timeline" aria-label="Timeline dei ricordi" hidden></div>
+      <div id="timeline-documents-list" class="fa-v2-memory-timeline" aria-label="Documenti della Timeline" hidden></div>
       <p id="memories-empty" class="fa-v2-empty-state" hidden></p>
     </section>
   </main>

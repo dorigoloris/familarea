@@ -4,6 +4,7 @@ const timelineTitle = document.getElementById('timeline-title');
 const timelineIntro = document.getElementById('timeline-intro');
 const timelineHome = document.getElementById('timeline-home');
 const timelineBackContainer = document.getElementById('timeline-back-container');
+const timelineReturn = document.getElementById('timeline-return');
 const timelineCollection = document.getElementById('timeline-collection');
 const timelineCollectionList = document.getElementById('timeline-collection-list');
 const timelineCollectionEmpty = document.getElementById('timeline-collection-empty');
@@ -13,14 +14,15 @@ const timelineCreate = document.getElementById('timeline-create');
 const timelineDetail = document.getElementById('timeline-detail');
 const timelineDetailTitle = document.getElementById('timeline-detail-title');
 const timelineDetailDescription = document.getElementById('timeline-detail-description');
-const timelineDetailBackLink = document.getElementById('timeline-detail-back-link');
 const timelineOptions = document.getElementById('timeline-options');
 const memoriesTimeline = document.getElementById('memories-timeline');
 const memoriesEmpty = document.getElementById('memories-empty');
 const timelineManage = document.getElementById('timeline-manage');
 const timelineDelete = document.getElementById('timeline-delete');
 const memoryCreateLink = document.getElementById('memory-create-link');
+const timelineDocumentCreateLink = document.getElementById('timeline-document-create-action');
 const timelineListTitle = document.getElementById('timeline-list-title');
+const timelineDocumentsList = document.getElementById('timeline-documents-list');
 const galleryModal = document.getElementById('memory-gallery-modal');
 const galleryDialog = document.getElementById('memory-gallery-dialog');
 const galleryClose = document.getElementById('memory-gallery-close');
@@ -103,6 +105,14 @@ function memoryHref(memory) {
   return `ricordo.html?${params}`;
 }
 
+function timelineDocumentHref(timelineDocument) {
+  const params = new URLSearchParams({
+    timeline_document_id: timelineDocument.id,
+    timeline_id: selectedTimelineId || timelineDocument.timeline_id
+  });
+  return `documento-timeline.html?${params}`;
+}
+
 function activeTimeline() {
   return selectedTimelines.find((timeline) => timeline.id === selectedTimelineId) || null;
 }
@@ -113,7 +123,7 @@ function timelineLabel(type = selectedTimelineType) {
 
 function setRouteView(view) {
   timelineHome.hidden = view !== 'home';
-  timelineBackContainer.hidden = view !== 'collection';
+  timelineBackContainer.hidden = view === 'home';
   timelineCollection.hidden = view !== 'collection';
   timelineDetail.hidden = view !== 'detail';
 }
@@ -154,6 +164,8 @@ function createTimelineCard(timeline) {
 
 function renderTimelineCollection() {
   setRouteView('collection');
+  timelineReturn.href = 'timeline.html';
+  timelineReturn.textContent = 'Torna alla Timeline';
   timelineTitle.textContent = `Timeline ${timelineLabel()}`;
   timelineIntro.textContent = selectedTimelineType === 'memory'
     ? 'Scegli un archivio di ricordi.'
@@ -161,7 +173,7 @@ function renderTimelineCollection() {
   timelineCollectionTitle.textContent = `Le tue Timeline ${timelineLabel()}`;
   timelineCollectionIntro.textContent = selectedTimelineType === 'memory'
     ? 'Apri una Timeline per consultare i suoi ricordi.'
-    : 'Apri una Timeline per consultare i documenti cronologici quando saranno disponibili.';
+    : 'Apri una Timeline per consultare i suoi documenti cronologici.';
   timelineCreate.textContent = '+ Crea nuova Timeline';
   timelineCollectionList.replaceChildren(...selectedTimelines.map(createTimelineCard));
   timelineCollectionEmpty.hidden = selectedTimelines.length > 0;
@@ -210,13 +222,17 @@ function renderTimelineDetail() {
   timelineIntro.textContent = selectedTimelineType === 'memory' ? 'Ricordi in ordine cronologico.' : 'Archivio documentale cronologico.';
   timelineDetailTitle.textContent = timeline.name;
   timelineDetailDescription.textContent = timeline.description || '';
-  timelineDetailBackLink.href = timelineHref(selectedTimelineType);
+  timelineReturn.href = timelineHref(selectedTimelineType, null);
+  timelineReturn.textContent = 'Torna alla Timeline';
   memoryCreateLink.hidden = selectedTimelineType !== 'memory';
   memoryCreateLink.href = `ricordo.html?${new URLSearchParams({ timeline_id: timeline.id })}`;
+  timelineDocumentCreateLink.hidden = selectedTimelineType !== 'document';
+  timelineDocumentCreateLink.href = `documento-timeline.html?${new URLSearchParams({ timeline_id: timeline.id })}`;
   timelineDelete.hidden = Boolean(timeline.is_default);
   timelineDelete.disabled = Boolean(timeline.is_default);
   timelineOptions.open = false;
   memoriesTimeline.hidden = selectedTimelineType !== 'memory';
+  timelineDocumentsList.hidden = selectedTimelineType !== 'document';
   memoriesEmpty.hidden = true;
 }
 
@@ -696,15 +712,100 @@ async function loadSelectedMemoryTimeline() {
   memoriesEmpty.replaceChildren();
   if (!data.length) {
     const heading = document.createElement('strong');
-    heading.textContent = 'Nessun ricordo.';
+    heading.textContent = 'Nessun album.';
     const text = document.createElement('span');
-    text.textContent = 'Crea il primo ricordo in questa Timeline.';
+    text.textContent = 'Crea il primo album in questa Timeline.';
     memoriesEmpty.append(heading, text);
     memoriesEmpty.hidden = false;
   }
   timelineMessage.textContent = '';
   highlightRequestedMemory(cards);
   await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+}
+
+function createTimelineDocumentCard(timelineDocument) {
+  const item = document.createElement('div');
+  item.className = 'fa-v2-memory-timeline-item';
+
+  const card = document.createElement('a');
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  card.href = timelineDocumentHref(timelineDocument);
+
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = memoryInitial(timelineDocument.title);
+
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  const date = document.createElement('p');
+  date.className = 'fa-v2-card-description';
+  date.textContent = formatMemoryDate(timelineDocument.occurred_on);
+  const title = document.createElement('h3');
+  title.className = 'fa-v2-card-title';
+  title.textContent = timelineDocument.title || 'Documento senza titolo';
+  const description = document.createElement('p');
+  description.className = 'fa-v2-card-description';
+  description.textContent = timelineDocument.description || 'Nessuna descrizione.';
+  content.append(date, title, description);
+
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
+  const open = document.createElement('span');
+  open.className = 'fa-v2-button fa-v2-button--secondary';
+  open.textContent = 'Apri';
+  actions.append(open);
+  card.append(visual, content, actions);
+  item.append(card);
+  return { item, visual };
+}
+
+async function renderTimelineDocumentPreview(timelineDocument, visual) {
+  try {
+    await window.FamilAreaAttachmentPreview.renderTargetCardPreview({
+      client: timelineClient,
+      targetType: 'timeline_document',
+      targetId: timelineDocument.id,
+      container: visual
+    });
+  } catch (error) {
+    console.warn('[FamilArea timeline] document preview unavailable', error);
+  }
+}
+
+async function loadSelectedDocumentTimeline() {
+  const timeline = activeTimeline();
+  if (!timeline) return;
+  timelineDocumentsList.replaceChildren();
+  memoriesEmpty.hidden = true;
+  timelineMessage.textContent = 'Caricamento documenti...';
+
+  const { data, error } = await timelineClient.rpc('get_timeline_documents', { p_timeline_id: timeline.id });
+  if (error) {
+    timelineMessage.textContent = timelineRpcMessage('caricare i documenti', error);
+    return;
+  }
+  if (!Array.isArray(data)) {
+    timelineMessage.textContent = 'Impossibile caricare i documenti: risposta RPC incompatibile.';
+    return;
+  }
+
+  const cards = data.map((timelineDocument) => ({
+    timelineDocument,
+    ...createTimelineDocumentCard(timelineDocument)
+  }));
+  timelineDocumentsList.replaceChildren(...cards.map(({ item }) => item));
+  memoriesEmpty.replaceChildren();
+  if (!data.length) {
+    const heading = document.createElement('strong');
+    heading.textContent = 'Nessun documento in questa Timeline.';
+    const text = document.createElement('span');
+    text.textContent = 'Aggiungi il primo documento per iniziare.';
+    memoriesEmpty.append(heading, text);
+    memoriesEmpty.hidden = false;
+  }
+  timelineMessage.textContent = '';
+  await Promise.all(cards.map(({ timelineDocument, visual }) => renderTimelineDocumentPreview(timelineDocument, visual)));
 }
 
 async function loadTimeline() {
@@ -735,16 +836,7 @@ async function loadTimeline() {
     }
     renderTimelineDetail();
     if (selectedTimelineType === 'memory') await loadSelectedMemoryTimeline();
-    else {
-      memoriesEmpty.replaceChildren();
-      const heading = document.createElement('strong');
-      heading.textContent = 'Nessun documento in questa Timeline.';
-      const text = document.createElement('span');
-      text.textContent = 'La gestione dei documenti cronologici sarà disponibile qui prossimamente.';
-      memoriesEmpty.append(heading, text);
-      memoriesEmpty.hidden = false;
-      timelineMessage.textContent = '';
-    }
+    else await loadSelectedDocumentTimeline();
   } catch (error) {
     setRouteView('collection');
     timelineMessage.textContent = timelineRpcMessage('caricare le Timeline', error);

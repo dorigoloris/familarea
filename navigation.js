@@ -6,6 +6,7 @@
     'dashboard.html': 'dashboard',
     'timeline.html': 'memories',
     'ricordo.html': 'memories',
+    'documento-timeline.html': 'memories',
     'famiglia.html': 'family',
     'interessi.html': 'interests',
     'attivita-globali.html': 'activities',

@@ -4,24 +4,22 @@ let memoryId = memoryParams.get('memory_id') || '';
 let requestedTimelineId = memoryParams.get('timeline_id') || '';
 let photoAttachments;
 let documentAttachments;
+let draftPhotoAttachments;
 let coverAttachmentId = null;
 let coverUpdateInProgress = false;
 let formBaseline = null;
 let leavePromptInProgress = false;
 let browserBackGuardArmed = false;
-let memoryTimelines = [];
 
 const memoryForm = document.getElementById('memory-form');
 const memoryMessage = document.getElementById('memory-message');
 const memoryTitle = document.getElementById('memory-title');
 const memoryOccurredOn = document.getElementById('memory-occurred-on');
 const memoryDescription = document.getElementById('memory-description');
-const memoryTimeline = document.getElementById('memory-timeline');
 const memorySubmit = document.getElementById('memory-submit');
 const memoryDelete = document.getElementById('memory-delete');
 const memoryPageTitle = document.getElementById('memory-page-title');
 const memoryPageIntro = document.getElementById('memory-page-intro');
-const memoryAttachmentsLock = document.getElementById('memory-attachments-lock');
 const memoryPhotosSection = document.getElementById('memory-photos-section');
 const memoryDocumentsSection = document.getElementById('memory-documents-section');
 const memoryBackLink = document.getElementById('memory-back-link');
@@ -38,15 +36,14 @@ function setMessage(text = '', isError = false) {
 function setSaving(inProgress) {
   memorySubmit.disabled = inProgress;
   memoryDelete.disabled = inProgress;
-  memorySubmit.textContent = inProgress ? 'Salvataggio...' : (memoryId ? 'Salva modifiche' : 'Crea ricordo');
+  memorySubmit.textContent = inProgress ? 'Salvataggio...' : (memoryId ? 'Salva modifiche' : 'Salva album');
 }
 
 function currentFormState() {
   return JSON.stringify({
     occurredOn: memoryOccurredOn.value || '',
     title: memoryTitle.value.trim(),
-    description: memoryDescription.value.trim() || null,
-    timelineId: memoryTimeline.value || ''
+    description: memoryDescription.value.trim() || null
   });
 }
 
@@ -55,12 +52,15 @@ function captureFormBaseline() {
 }
 
 function hasUnsavedChanges() {
-  return formBaseline !== null && currentFormState() !== formBaseline;
+  return formBaseline !== null && (
+    currentFormState() !== formBaseline
+    || Boolean(draftPhotoAttachments?.pendingCount())
+  );
 }
 
 function timelineHref() {
   const params = new URLSearchParams({ type: 'memory' });
-  const timelineId = memoryTimeline.value || requestedTimelineId;
+  const timelineId = requestedTimelineId;
   if (memoryId) params.set('memory_id', memoryId);
   if (timelineId) params.set('timeline_id', timelineId);
   const query = params.toString();
@@ -85,28 +85,17 @@ function populateMemory(memory) {
   requestedTimelineId = memory.timeline_id || requestedTimelineId;
 }
 
-function renderMemoryTimelineOptions(selectedTimelineId = requestedTimelineId) {
-  memoryTimeline.replaceChildren(...memoryTimelines.map((timeline) => {
-    const option = document.createElement('option');
-    option.value = timeline.id;
-    option.textContent = timeline.is_default ? `${timeline.name} (predefinita)` : timeline.name;
-    option.selected = timeline.id === selectedTimelineId;
-    return option;
-  }));
-  if (!memoryTimelines.some((timeline) => timeline.id === memoryTimeline.value)) {
-    memoryTimeline.value = memoryTimelines.find((timeline) => timeline.is_default)?.id || memoryTimelines[0]?.id || '';
+async function verifyMemoryTimeline(timelineId = requestedTimelineId) {
+  if (!timelineId) {
+    throw new Error('Timeline Ricordi non specificata. Torna alla Timeline e seleziona “+ Nuovo album”.');
   }
-  requestedTimelineId = memoryTimeline.value || '';
-}
-
-async function loadMemoryTimelines(selectedTimelineId = requestedTimelineId) {
   const { data, error } = await memoryClient.rpc('get_my_timelines', { p_timeline_type: 'memory' });
   if (error || !Array.isArray(data)) {
     throw error || new Error('Risposta Timeline incompatibile');
   }
-  memoryTimelines = data;
-  renderMemoryTimelineOptions(selectedTimelineId);
-  if (!memoryTimeline.value) throw new Error('Nessuna Timeline Ricordi disponibile');
+  if (!data.some((timeline) => timeline.id === timelineId)) {
+    throw new Error('Timeline Ricordi non trovata o non disponibile.');
+  }
 }
 
 function createCoverActions(attachment) {
@@ -155,15 +144,30 @@ async function updateMemoryCover(attachmentId, action) {
   }
 }
 
-function updatePageForStoredMemory() {
-  memoryPageTitle.textContent = 'Modifica ricordo';
-  memoryPageIntro.textContent = 'Aggiorna il ricordo, le sue fotografie e i documenti collegati.';
+function updatePageForStoredMemory({ showDocuments = true } = {}) {
+  memoryPageTitle.textContent = 'Modifica album';
+  memoryPageIntro.textContent = 'Aggiorna l’album e le sue fotografie.';
   memorySubmit.textContent = 'Salva modifiche';
   memoryDelete.hidden = false;
-  memoryAttachmentsLock.hidden = true;
   memoryPhotosSection.hidden = false;
-  memoryDocumentsSection.hidden = false;
+  memoryDocumentsSection.hidden = !showDocuments;
   updateTimelineLinks();
+}
+
+function initialiseDraftPhotoAttachments() {
+  if (draftPhotoAttachments || memoryId) return;
+  draftPhotoAttachments = window.FamilAreaDeadlineAttachments.createDraft({
+    client: memoryClient,
+    input: document.getElementById('memory-photo-input'),
+    uploadControl: document.getElementById('memory-photo-upload'),
+    message: document.getElementById('memory-photos-message'),
+    empty: document.getElementById('memory-photos-empty'),
+    list: document.getElementById('memory-photos-list'),
+    targetType: 'memory',
+    allowedMimeTypes: photoMimeTypes,
+    multipleProgressLabel: 'fotografie',
+    multipleCompleteLabel: 'Fotografie caricate'
+  });
 }
 
 function attachmentController(options) {
@@ -222,12 +226,13 @@ async function loadMemory() {
 
   if (!memoryId) {
     try {
-      await loadMemoryTimelines();
+      await verifyMemoryTimeline();
     } catch (error) {
       memoryForm.hidden = true;
       setMessage(rpcMessage('caricare le Timeline Ricordi', error), true);
       return;
     }
+    initialiseDraftPhotoAttachments();
     memoryForm.hidden = false;
     setMessage('');
     captureFormBaseline();
@@ -238,13 +243,13 @@ async function loadMemory() {
   const { data, error } = await memoryClient.rpc('get_memory', { p_memory_id: memoryId });
   if (error || !data?.id) {
     memoryForm.hidden = true;
-    setMessage(error ? rpcMessage('caricare il ricordo', error) : 'Ricordo non trovato o non disponibile.', true);
+    setMessage(error ? rpcMessage('caricare l’album', error) : 'Album non trovato o non disponibile.', true);
     return;
   }
 
   populateMemory(data);
   try {
-    await loadMemoryTimelines(data.timeline_id);
+    await verifyMemoryTimeline(data.timeline_id);
   } catch (timelineError) {
     memoryForm.hidden = true;
     setMessage(rpcMessage('caricare le Timeline Ricordi', timelineError), true);
@@ -257,51 +262,64 @@ async function loadMemory() {
   updateTimelineLinks();
 }
 
-async function saveMemory({ returnAfterSave = false } = {}) {
+async function saveMemory({ redirectOnSuccess = true } = {}) {
   if (memorySubmit.disabled) return;
 
   const occurredOn = memoryOccurredOn.value;
   const title = memoryTitle.value.trim();
   const description = memoryDescription.value.trim() || null;
-  const timelineId = memoryTimeline.value;
+  const timelineId = requestedTimelineId;
   if (!occurredOn || !title || !timelineId) {
-    setMessage('Inserisci Timeline, data e titolo del ricordo.', true);
+    setMessage('Apri una Timeline Ricordi e seleziona “+ Nuovo album” prima di salvare.', true);
     return false;
   }
 
   setSaving(true);
-  setMessage('Salvataggio ricordo...');
+  setMessage('Salvataggio album...');
   const params = memoryId
     ? { p_memory_id: memoryId, p_timeline_id: timelineId, p_occurred_on: occurredOn, p_title: title, p_description: description }
     : { p_timeline_id: timelineId, p_occurred_on: occurredOn, p_title: title, p_description: description };
   const rpcName = memoryId ? 'update_memory_in_timeline' : 'create_memory_in_timeline';
-  const { data, error } = await memoryClient.rpc(rpcName, params);
-  if (error || !data?.id) {
-    setSaving(false);
-    setMessage(error ? rpcMessage('salvare il ricordo', error) : 'Impossibile salvare il ricordo: risposta RPC incompatibile.', true);
-    return false;
-  }
+  try {
+    const { data, error } = await memoryClient.rpc(rpcName, params);
+    if (error || !data?.id) throw error || new Error('Risposta RPC incompatibile');
 
-  const wasNew = !memoryId;
-  memoryId = data.id;
-  populateMemory(data);
-  requestedTimelineId = data.timeline_id || timelineId;
-  window.history.replaceState({}, '', `ricordo.html?${new URLSearchParams({ memory_id: memoryId, timeline_id: requestedTimelineId })}`);
-  await initialiseAttachments();
-  setSaving(false);
-  captureFormBaseline();
-  updateTimelineLinks();
-  if (returnAfterSave) {
-    returnToTimeline();
+    const wasNew = !memoryId;
+    memoryId = data.id;
+    populateMemory(data);
+    requestedTimelineId = data.timeline_id || timelineId;
+    window.history.replaceState({}, '', `ricordo.html?${new URLSearchParams({ memory_id: memoryId, timeline_id: requestedTimelineId })}`);
+    updatePageForStoredMemory({ showDocuments: false });
+
+    let uploadResult = { ok: true, failed: 0 };
+    if (draftPhotoAttachments?.pendingCount()) {
+      uploadResult = await draftPhotoAttachments.uploadSelected(memoryId);
+    }
+    if (uploadResult.ok) draftPhotoAttachments = undefined;
+    captureFormBaseline();
+    updateTimelineLinks();
+    if (!uploadResult.ok) {
+      setMessage(
+        `Album ${wasNew ? 'creato' : 'salvato'}, ma ${uploadResult.failed} fotograf${uploadResult.failed === 1 ? 'ia non è stata caricata' : 'ie non sono state caricate'}. Riprova senza creare un nuovo album.`,
+        true
+      );
+      return false;
+    }
+
+    setMessage(wasNew ? 'Album e fotografie salvati.' : 'Modifiche salvate.');
+    if (redirectOnSuccess) window.location.replace(timelineHref());
     return true;
+  } catch (error) {
+    setMessage(rpcMessage('salvare l’album', error), true);
+    return false;
+  } finally {
+    setSaving(false);
   }
-  setMessage(wasNew ? 'Ricordo creato. Ora puoi aggiungere fotografie e documenti.' : 'Modifiche salvate.');
-  return true;
 }
 
 memoryForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  await saveMemory({ returnAfterSave: Boolean(memoryId) });
+  await saveMemory();
 });
 
 async function requestLeave(destination) {
@@ -315,14 +333,17 @@ async function requestLeave(destination) {
   try {
     const choice = await FamilAreaConfirm.choice({
       title: 'Hai modifiche non salvate. Cosa vuoi fare?',
-      message: 'Le modifiche a data, titolo e descrizione non sono ancora state salvate.',
+        message: 'Le modifiche a data, titolo e descrizione non sono ancora state salvate.',
       choices: [
         { value: 'continue', label: 'Continua a modificare', className: 'confirm-modal-cancel' },
         { value: 'discard', label: 'Esci senza salvare', className: 'confirm-modal-cancel list-item-delete' },
         { value: 'save', label: 'Salva modifiche', className: 'confirm-modal-confirm' }
       ]
     });
-    if (choice === 'save') await saveMemory({ returnAfterSave: true });
+    if (choice === 'save') {
+      const saved = await saveMemory({ redirectOnSuccess: false });
+      if (saved) destination();
+    }
     if (choice === 'discard') destination();
   } finally {
     leavePromptInProgress = false;
@@ -360,21 +381,21 @@ memoryDelete.addEventListener('click', async () => {
   if (!memoryId || memoryDelete.disabled) return;
   const confirmed = await FamilAreaConfirm.confirm({
     variant: 'danger',
-    title: 'Eliminare il ricordo?',
+    title: 'Eliminare l’album?',
     message: 'Rimuovi prima tutte le fotografie e i documenti collegati. Questa operazione non puÃ² essere annullata.',
     confirmText: 'Elimina'
   });
   if (!confirmed) return;
 
   setSaving(true);
-  setMessage('Eliminazione ricordo...');
+  setMessage('Eliminazione album...');
   const { error } = await memoryClient.rpc('delete_memory', { p_memory_id: memoryId });
   if (error) {
     setSaving(false);
     const hasAttachments = /remove memory attachments/i.test(error.message || '');
     setMessage(hasAttachments
       ? 'Rimuovi prima tutte le fotografie e i documenti collegati, poi elimina il ricordo.'
-      : rpcMessage('eliminare il ricordo', error), true);
+      : rpcMessage('eliminare l’album', error), true);
     return;
   }
   window.location.replace(timelineHref());

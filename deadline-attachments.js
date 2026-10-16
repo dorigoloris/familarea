@@ -41,7 +41,7 @@
     }
   }
 
-  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list, allowedMimeTypes = null, allowMultiple = false, renderAttachmentActions = null, onAttachmentDeleted = null }) {
+  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list, allowedMimeTypes = null, allowMultiple = false, multipleProgressLabel = 'fotografie', multipleCompleteLabel = 'Fotografie caricate', renderAttachmentActions = null, onAttachmentDeleted = null }) {
     let uploadInProgress = false;
 
     function setMessage(text = '', isError = false) {
@@ -68,7 +68,7 @@
       window.open(data.signedUrl, '_blank', 'noopener');
     }
 
-    async function removeAttachment(attachment, button) {
+    async function removeAttachment(attachment, button, row) {
       const confirmed = await FamilAreaConfirm.confirm({
         variant: 'danger',
         title: 'Eliminare l’allegato?',
@@ -78,26 +78,28 @@
       if (!confirmed) return;
 
       button.disabled = true;
-      const result = await client.rpc('delete_attachment', { p_attachment_id: attachment.id });
-      if (result.error) {
+      try {
+        // The Storage policy verifies the attachment path while its metadata still exists.
+        // Delete the object first, then remove the authorized metadata record.
+        const { error: storageError } = await client.storage
+          .from('familarea-attachments')
+          .remove([attachment.storage_path]);
+        if (storageError) throw storageError;
+
+        const { error: deletionError } = await client.rpc('delete_attachment', { p_attachment_id: attachment.id });
+        if (deletionError) throw deletionError;
+
+        row.remove();
+        if (typeof onAttachmentDeleted === 'function') {
+          await onAttachmentDeleted(attachment);
+        }
+        setMessage('Allegato eliminato.');
+        await load();
+      } catch (error) {
+        console.error('deadline attachment deletion failed', error);
         button.disabled = false;
         setMessage('Non è stato possibile eliminare l’allegato. Riprova.', true);
-        return;
       }
-
-      const { error: storageError } = await client.storage
-        .from('familarea-attachments')
-        .remove([attachment.storage_path]);
-      setMessage(
-        storageError
-          ? 'Allegato eliminato, ma non è stato possibile rimuovere il file dallo spazio di archiviazione.'
-          : 'Allegato eliminato.',
-        Boolean(storageError)
-      );
-      if (typeof onAttachmentDeleted === 'function') {
-        await onAttachmentDeleted(attachment);
-      }
-      await load();
     }
 
     function renderAttachment(attachment) {
@@ -132,7 +134,7 @@
         remove.type = 'button';
         remove.className = 'secondary-button list-item-delete';
         remove.textContent = 'Elimina';
-        remove.onclick = () => removeAttachment(attachment, remove);
+        remove.onclick = () => removeAttachment(attachment, remove, row);
         actions.append(remove);
       }
       row.append(info, actions);
@@ -179,7 +181,7 @@
       let uploadedCount = 0;
       for (const [index, file] of validFiles.entries()) {
         setMessage(allowMultiple && validFiles.length > 1
-          ? `Caricamento fotografie: ${index + 1} di ${validFiles.length}`
+          ? `Caricamento ${multipleProgressLabel}: ${index + 1} di ${validFiles.length}`
           : 'Caricamento allegato…');
         try {
           await uploadFile({ client, targetType, targetId, file });
@@ -195,7 +197,7 @@
         const failedSummary = failedFiles.length ? ` Non caricat${failedFiles.length === 1 ? 'o' : 'i'}: ${failedFiles.join(', ')}.` : '';
         if (uploadedCount) {
           const uploadedSummary = allowMultiple && validFiles.length > 1
-            ? `Fotografie caricate: ${uploadedCount} di ${validFiles.length}.`
+            ? `${multipleCompleteLabel}: ${uploadedCount} di ${validFiles.length}.`
             : 'Allegato caricato.';
           setMessage(`${uploadedSummary}${rejectedSummary}${failedSummary}`, Boolean(invalidFiles.length || failedFiles.length));
         } else {
@@ -217,7 +219,7 @@
     return { load };
   }
 
-  function createDraft({ client, input, uploadControl, message, empty, list }) {
+  function createDraft({ client, input, uploadControl, message, empty, list, targetType = 'deadline', allowedMimeTypes = null, multipleProgressLabel = 'allegati', multipleCompleteLabel = 'Allegati caricati' }) {
     const files = [];
     let uploadInProgress = false;
 
@@ -261,28 +263,36 @@
       const selectedFiles = [...event.target.files];
       input.value = '';
       if (!selectedFiles.length) return;
-      const validFiles = selectedFiles.filter((file) => !validateFile(file));
-      const invalidFile = selectedFiles.find((file) => validateFile(file));
+      const fileValidation = selectedFiles.map((file) => ({ file, error: validateFile(file, allowedMimeTypes) }));
+      const validFiles = fileValidation.filter(({ error }) => !error).map(({ file }) => file);
+      const invalidFiles = fileValidation.filter(({ error }) => error);
       files.push(...validFiles);
       render();
       setMessage(
-        invalidFile
-          ? `${validateFile(invalidFile)} Gli altri file validi restano selezionati.`
+        invalidFiles.length
+          ? `${invalidFiles.map(({ file, error }) => `${file.name}: ${error}`).join(' ')} Gli altri file validi restano selezionati.`
           : `${files.length} allegat${files.length === 1 ? 'o selezionato.' : 'i selezionati.'}`,
-        Boolean(invalidFile)
+        Boolean(invalidFiles.length)
       );
     };
 
     return {
-      async uploadSelected(deadlineId) {
+      pendingCount() {
+        return files.length;
+      },
+      async uploadSelected(targetId) {
         if (uploadInProgress || files.length === 0) return { ok: true, failed: 0 };
         uploadInProgress = true;
         input.disabled = true;
         uploadControl.setAttribute('aria-disabled', 'true');
         const failedFiles = [];
-        for (const file of files) {
+        let uploadedCount = 0;
+        const filesToUpload = [...files];
+        for (const [index, file] of filesToUpload.entries()) {
+          setMessage(`Caricamento ${multipleProgressLabel}: ${index + 1} di ${filesToUpload.length}`);
           try {
-            await uploadFile({ client, targetId: deadlineId, file });
+            await uploadFile({ client, targetType, targetId, file });
+            uploadedCount += 1;
           } catch (error) {
             console.error('deadline draft attachment upload failed', error);
             failedFiles.push(file);
@@ -293,7 +303,14 @@
         input.disabled = false;
         uploadControl.setAttribute('aria-disabled', 'false');
         render();
-        return { ok: failedFiles.length === 0, failed: failedFiles.length };
+        const failedSummary = failedFiles.length ? ` Non caricat${failedFiles.length === 1 ? 'o' : 'i'}: ${failedFiles.map((file) => file.name).join(', ')}.` : '';
+        setMessage(
+          failedFiles.length
+            ? `${multipleCompleteLabel}: ${uploadedCount} di ${filesToUpload.length}.${failedSummary}`
+            : `${multipleCompleteLabel}: ${uploadedCount} di ${filesToUpload.length}.`,
+          Boolean(failedFiles.length)
+        );
+        return { ok: failedFiles.length === 0, failed: failedFiles.length, uploaded: uploadedCount };
       }
     };
   }
