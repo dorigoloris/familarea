@@ -49,6 +49,18 @@ let galleryPhotosData = [];
 let galleryPhotoIndex = 0;
 let galleryPreviousFocus = null;
 let selectedTimelines = [];
+const lightboxGesture = {
+  scale: 1,
+  x: 0,
+  y: 0,
+  baseWidth: 0,
+  baseHeight: 0,
+  pointers: new Map(),
+  panOrigin: null,
+  pinchOrigin: null,
+  moved: false,
+  lastTapAt: 0
+};
 const timelineParams = new URLSearchParams(window.location.search);
 const requestedTimelineType = timelineParams.get('type');
 const selectedTimelineType = ['memory', 'document'].includes(requestedTimelineType)
@@ -403,6 +415,9 @@ function setGalleryPhoto(index) {
 function renderLightboxPhoto() {
   const photo = galleryPhotosData[galleryPhotoIndex];
   if (!photo?.signedUrl) return closeLightbox();
+  resetLightboxTransform();
+  lightboxImage.style.removeProperty('width');
+  lightboxImage.style.removeProperty('height');
   lightboxImage.src = photo.signedUrl;
   lightboxImage.alt = photo.original_filename || 'Fotografia del ricordo';
   lightboxPosition.textContent = photoPositionText();
@@ -419,9 +434,124 @@ function openLightbox() {
 
 function closeLightbox() {
   if (lightbox.hidden) return;
+  resetLightboxTransform();
   lightbox.hidden = true;
   lightboxImage.removeAttribute('src');
   galleryPhotoStage.querySelector('button')?.focus();
+}
+
+function resetLightboxTransform() {
+  lightboxGesture.scale = 1;
+  lightboxGesture.x = 0;
+  lightboxGesture.y = 0;
+  lightboxGesture.baseWidth = 0;
+  lightboxGesture.baseHeight = 0;
+  lightboxGesture.pointers.clear();
+  lightboxGesture.panOrigin = null;
+  lightboxGesture.pinchOrigin = null;
+  lightboxGesture.moved = false;
+  lightboxImage.style.transform = '';
+}
+
+function fitLightboxImage() {
+  if (lightbox.hidden || !lightboxImage.naturalWidth || !lightboxImage.naturalHeight) return;
+  const stage = lightboxImage.parentElement.getBoundingClientRect();
+  if (!stage.width || !stage.height) return;
+  const fit = Math.min(stage.width / lightboxImage.naturalWidth, stage.height / lightboxImage.naturalHeight);
+  lightboxGesture.baseWidth = lightboxImage.naturalWidth * fit;
+  lightboxGesture.baseHeight = lightboxImage.naturalHeight * fit;
+  lightboxImage.style.width = `${lightboxGesture.baseWidth}px`;
+  lightboxImage.style.height = `${lightboxGesture.baseHeight}px`;
+  applyLightboxTransform();
+}
+
+function clampLightboxPosition() {
+  const stage = lightboxImage.parentElement.getBoundingClientRect();
+  const maxX = Math.max(0, (lightboxGesture.baseWidth * lightboxGesture.scale - stage.width) / 2);
+  const maxY = Math.max(0, (lightboxGesture.baseHeight * lightboxGesture.scale - stage.height) / 2);
+  lightboxGesture.x = Math.max(-maxX, Math.min(maxX, lightboxGesture.x));
+  lightboxGesture.y = Math.max(-maxY, Math.min(maxY, lightboxGesture.y));
+}
+
+function applyLightboxTransform() {
+  if (lightboxGesture.scale <= 1) {
+    lightboxGesture.scale = 1;
+    lightboxGesture.x = 0;
+    lightboxGesture.y = 0;
+  } else {
+    clampLightboxPosition();
+  }
+  lightboxImage.style.transform = `translate3d(${lightboxGesture.x}px, ${lightboxGesture.y}px, 0) scale(${lightboxGesture.scale})`;
+}
+
+function pointerDistance() {
+  const [first, second] = [...lightboxGesture.pointers.values()];
+  return Math.hypot(second.x - first.x, second.y - first.y);
+}
+
+function attachLightboxGestures(stage) {
+  stage.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    stage.setPointerCapture?.(event.pointerId);
+    lightboxGesture.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    lightboxGesture.moved = false;
+    if (lightboxGesture.pointers.size === 2) {
+      lightboxGesture.pinchOrigin = { distance: pointerDistance(), scale: lightboxGesture.scale };
+      lightboxGesture.panOrigin = null;
+      return;
+    }
+    lightboxGesture.panOrigin = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, imageX: lightboxGesture.x, imageY: lightboxGesture.y };
+  });
+
+  stage.addEventListener('pointermove', (event) => {
+    if (!lightboxGesture.pointers.has(event.pointerId)) return;
+    const previous = lightboxGesture.pointers.get(event.pointerId);
+    lightboxGesture.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 4) lightboxGesture.moved = true;
+
+    if (lightboxGesture.pointers.size >= 2 && lightboxGesture.pinchOrigin?.distance) {
+      lightboxGesture.scale = Math.max(1, Math.min(4, lightboxGesture.pinchOrigin.scale * (pointerDistance() / lightboxGesture.pinchOrigin.distance)));
+      applyLightboxTransform();
+      return;
+    }
+    if (lightboxGesture.scale <= 1 || lightboxGesture.panOrigin?.pointerId !== event.pointerId) return;
+    lightboxGesture.x = lightboxGesture.panOrigin.imageX + event.clientX - lightboxGesture.panOrigin.x;
+    lightboxGesture.y = lightboxGesture.panOrigin.imageY + event.clientY - lightboxGesture.panOrigin.y;
+    applyLightboxTransform();
+  });
+
+  const finishPointer = (event) => {
+    const origin = lightboxGesture.panOrigin;
+    const wasPinching = lightboxGesture.pointers.size >= 2 || Boolean(lightboxGesture.pinchOrigin);
+    lightboxGesture.pointers.delete(event.pointerId);
+    if (lightboxGesture.pointers.size < 2) lightboxGesture.pinchOrigin = null;
+
+    if (!wasPinching && lightboxGesture.scale === 1 && origin?.pointerId === event.pointerId) {
+      const deltaX = event.clientX - origin.x;
+      const deltaY = event.clientY - origin.y;
+      if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        setGalleryPhoto(galleryPhotoIndex + (deltaX < 0 ? 1 : -1));
+      } else if (!lightboxGesture.moved && event.pointerType !== 'mouse') {
+        const now = Date.now();
+        if (now - lightboxGesture.lastTapAt < 300) {
+          lightboxGesture.scale = lightboxGesture.scale === 1 ? 2 : 1;
+          applyLightboxTransform();
+          lightboxGesture.lastTapAt = 0;
+        } else {
+          lightboxGesture.lastTapAt = now;
+        }
+      }
+    }
+    if (lightboxGesture.pointers.size === 1) {
+      const [pointerId, point] = [...lightboxGesture.pointers.entries()][0];
+      lightboxGesture.panOrigin = { pointerId, x: point.x, y: point.y, imageX: lightboxGesture.x, imageY: lightboxGesture.y };
+    } else {
+      lightboxGesture.panOrigin = null;
+    }
+  };
+
+  stage.addEventListener('pointerup', finishPointer);
+  stage.addEventListener('pointercancel', finishPointer);
 }
 
 async function openAttachment(attachment, button) {
@@ -632,7 +762,13 @@ timelineCreate.addEventListener('click', () => void createTimeline());
 timelineManage.addEventListener('click', () => void manageActiveTimeline());
 timelineDelete.addEventListener('click', () => void deleteActiveTimeline());
 attachSwipe(galleryPhotoStage, (direction) => setGalleryPhoto(galleryPhotoIndex + direction));
-attachSwipe(lightbox, (direction) => setGalleryPhoto(galleryPhotoIndex + direction));
+attachLightboxGestures(lightboxImage.parentElement);
+lightboxImage.addEventListener('load', fitLightboxImage);
+window.addEventListener('resize', () => {
+  if (lightbox.hidden) return;
+  resetLightboxTransform();
+  requestAnimationFrame(fitLightboxImage);
+});
 document.addEventListener('keydown', (event) => {
   if (!lightbox.hidden) {
     if (event.key === 'Escape') { event.preventDefault(); closeLightbox(); }
