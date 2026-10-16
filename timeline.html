@@ -113,11 +113,17 @@
   </div>
 
   <div id="memory-lightbox" class="memory-lightbox" role="dialog" aria-modal="true" aria-label="Fotografia a schermo intero" hidden>
-    <button id="memory-lightbox-close" class="confirm-modal-close" type="button" aria-label="Chiudi fotografia">×</button>
-    <button id="memory-lightbox-previous" class="memory-lightbox-nav memory-lightbox-nav--previous" type="button" aria-label="Fotografia precedente">←</button>
-    <img id="memory-lightbox-image" alt="">
-    <button id="memory-lightbox-next" class="memory-lightbox-nav memory-lightbox-nav--next" type="button" aria-label="Fotografia successiva">→</button>
-    <p id="memory-lightbox-position" class="memory-lightbox-position" aria-live="polite"></p>
+    <header class="memory-lightbox-header">
+      <button id="memory-lightbox-close" class="confirm-modal-close" type="button" aria-label="Chiudi fotografia">×</button>
+    </header>
+    <div class="memory-lightbox-stage">
+      <img id="memory-lightbox-image" alt="">
+    </div>
+    <footer class="memory-lightbox-footer">
+      <button id="memory-lightbox-previous" class="memory-lightbox-nav memory-lightbox-nav--previous" type="button" aria-label="Fotografia precedente">←</button>
+      <p id="memory-lightbox-position" class="memory-lightbox-position" aria-live="polite"></p>
+      <button id="memory-lightbox-next" class="memory-lightbox-nav memory-lightbox-nav--next" type="button" aria-label="Fotografia successiva">→</button>
+    </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
