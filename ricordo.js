@@ -27,6 +27,9 @@ const memoryCancel = document.getElementById('memory-cancel');
 
 const photoMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentMimeTypes = ['application/pdf'];
+// Single switch for the future return of PDF attachments inside photo albums.
+// Keep the existing document markup and controller code intact while disabled.
+const memoryDocumentsEnabled = false;
 
 function setMessage(text = '', isError = false) {
   memoryMessage.textContent = text;
@@ -144,13 +147,13 @@ async function updateMemoryCover(attachmentId, action) {
   }
 }
 
-function updatePageForStoredMemory({ showDocuments = true } = {}) {
+function updatePageForStoredMemory() {
   memoryPageTitle.textContent = 'Modifica album';
   memoryPageIntro.textContent = 'Aggiorna l’album e le sue fotografie.';
   memorySubmit.textContent = 'Salva modifiche';
   memoryDelete.hidden = false;
   memoryPhotosSection.hidden = false;
-  memoryDocumentsSection.hidden = !showDocuments;
+  memoryDocumentsSection.hidden = !memoryDocumentsEnabled;
   updateTimelineLinks();
 }
 
@@ -199,15 +202,20 @@ async function initialiseAttachments() {
       }
     }
   });
-  documentAttachments = attachmentController({
-    input: document.getElementById('memory-document-input'),
-    uploadControl: document.getElementById('memory-document-upload'),
-    message: document.getElementById('memory-documents-message'),
-    empty: document.getElementById('memory-documents-empty'),
-    list: document.getElementById('memory-documents-list'),
-    allowedMimeTypes: documentMimeTypes
-  });
-  await Promise.all([photoAttachments.load(), documentAttachments.load()]);
+  if (memoryDocumentsEnabled) {
+    documentAttachments = attachmentController({
+      input: document.getElementById('memory-document-input'),
+      uploadControl: document.getElementById('memory-document-upload'),
+      message: document.getElementById('memory-documents-message'),
+      empty: document.getElementById('memory-documents-empty'),
+      list: document.getElementById('memory-documents-list'),
+      allowedMimeTypes: documentMimeTypes
+    });
+  }
+  await Promise.all([
+    photoAttachments.load(),
+    ...(documentAttachments ? [documentAttachments.load()] : [])
+  ]);
 }
 
 function rpcMessage(subject, error) {
@@ -394,7 +402,7 @@ memoryDelete.addEventListener('click', async () => {
     setSaving(false);
     const hasAttachments = /remove memory attachments/i.test(error.message || '');
     setMessage(hasAttachments
-      ? 'Rimuovi prima tutte le fotografie e i documenti collegati, poi elimina il ricordo.'
+      ? 'Rimuovi prima tutti gli allegati collegati. I PDF già presenti sono temporaneamente nascosti: riattiva la sezione Documenti prima di eliminare un album che li contiene.'
       : rpcMessage('eliminare l’album', error), true);
     return;
   }
