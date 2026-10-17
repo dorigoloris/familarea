@@ -50,6 +50,7 @@ const memoryDocumentMimeTypes = new Set(['application/pdf']);
 let galleryPhotosData = [];
 let galleryPhotoIndex = 0;
 let galleryPreviousFocus = null;
+let lightboxHistoryEntry = false;
 let selectedTimelines = [];
 const lightboxGesture = {
   scale: 1,
@@ -441,18 +442,48 @@ function renderLightboxPhoto() {
   lightboxNext.disabled = galleryPhotosData.length < 2;
 }
 
+function useImmersiveLightbox() {
+  return window.matchMedia?.('(pointer: coarse)').matches === true;
+}
+
+function requestLightboxFullscreen() {
+  if (!useImmersiveLightbox() || typeof lightbox.requestFullscreen !== 'function') return;
+  Promise.resolve(lightbox.requestFullscreen()).catch(() => {
+    // Fullscreen is optional and may be denied by the browser or installed PWA.
+  });
+}
+
+function exitLightboxFullscreen() {
+  if (document.fullscreenElement !== lightbox || typeof document.exitFullscreen !== 'function') return;
+  Promise.resolve(document.exitFullscreen()).catch(() => {});
+}
+
 function openLightbox() {
   if (!galleryPhotosData[galleryPhotoIndex]?.signedUrl) return;
   lightbox.hidden = false;
+  lightbox.classList.toggle('memory-lightbox--immersive', useImmersiveLightbox());
+  if (useImmersiveLightbox() && !lightboxHistoryEntry) {
+    history.pushState({ ...(history.state || {}), familareaMemoryLightbox: true }, '');
+    lightboxHistoryEntry = true;
+  }
   renderLightboxPhoto();
-  lightboxClose.focus();
+  requestLightboxFullscreen();
+  if (!useImmersiveLightbox()) lightboxClose.focus();
 }
 
-function closeLightbox() {
+function closeLightbox({ fromHistory = false } = {}) {
   if (lightbox.hidden) return;
   resetLightboxTransform();
   lightbox.hidden = true;
+  lightbox.classList.remove('memory-lightbox--immersive');
   lightboxImage.removeAttribute('src');
+  exitLightboxFullscreen();
+  if (lightboxHistoryEntry && !fromHistory) {
+    lightboxHistoryEntry = false;
+    history.back();
+  } else {
+    lightboxHistoryEntry = false;
+  }
   galleryPhotoStage.querySelector('button')?.focus();
 }
 
@@ -545,7 +576,9 @@ function attachLightboxGestures(stage) {
     if (!wasPinching && lightboxGesture.scale === 1 && origin?.pointerId === event.pointerId) {
       const deltaX = event.clientX - origin.x;
       const deltaY = event.clientY - origin.y;
-      if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (useImmersiveLightbox() && Math.abs(deltaY) >= 72 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        closeLightbox();
+      } else if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
         setGalleryPhoto(galleryPhotoIndex + (deltaX < 0 ? 1 : -1));
       } else if (!lightboxGesture.moved && event.pointerType !== 'mouse') {
         const now = Date.now();
@@ -860,6 +893,14 @@ window.addEventListener('resize', () => {
   if (lightbox.hidden) return;
   resetLightboxTransform();
   requestAnimationFrame(fitLightboxImage);
+});
+window.addEventListener('popstate', () => {
+  if (!lightbox.hidden) closeLightbox({ fromHistory: true });
+});
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && !lightbox.hidden && lightboxHistoryEntry && useImmersiveLightbox()) {
+    closeLightbox();
+  }
 });
 document.addEventListener('keydown', (event) => {
   if (!lightbox.hidden) {
