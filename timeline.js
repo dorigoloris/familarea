@@ -11,6 +11,10 @@ const timelineCollectionEmpty = document.getElementById('timeline-collection-emp
 const timelineCollectionTitle = document.getElementById('timeline-list-title');
 const timelineCollectionIntro = document.getElementById('timeline-list-intro');
 const timelineCreate = document.getElementById('timeline-create');
+const sharedMemoriesCollection = document.getElementById('shared-memories-collection');
+const sharedMemoriesList = document.getElementById('shared-memories-list');
+const sharedMemoriesEmpty = document.getElementById('shared-memories-empty');
+const sharedMemoriesMessage = document.getElementById('shared-memories-message');
 const timelineDetail = document.getElementById('timeline-detail');
 const timelineDetailTitle = document.getElementById('timeline-detail-title');
 const timelineDetailDescription = document.getElementById('timeline-detail-description');
@@ -29,6 +33,7 @@ const galleryClose = document.getElementById('memory-gallery-close');
 const galleryDate = document.getElementById('memory-gallery-date');
 const galleryTitle = document.getElementById('memory-gallery-title');
 const galleryDescription = document.getElementById('memory-gallery-description');
+const galleryShare = document.getElementById('memory-gallery-share');
 const galleryMessage = document.getElementById('memory-gallery-message');
 const galleryPhotos = document.getElementById('memory-gallery-photos');
 const galleryPhotoStage = document.getElementById('memory-gallery-photo-stage');
@@ -127,6 +132,7 @@ function setRouteView(view) {
   timelineBackContainer.hidden = view === 'home';
   timelineCollection.hidden = view !== 'collection';
   timelineDetail.hidden = view !== 'detail';
+  if (view !== 'collection') sharedMemoriesCollection.hidden = true;
 }
 
 async function fetchTimelines() {
@@ -186,6 +192,10 @@ function renderTimelineCollection() {
     text.textContent = 'Crea la prima Timeline per iniziare.';
     timelineCollectionEmpty.append(heading, text);
   }
+  sharedMemoriesCollection.hidden = true;
+  sharedMemoriesList.replaceChildren();
+  sharedMemoriesMessage.textContent = '';
+  sharedMemoriesEmpty.hidden = true;
 }
 
 async function createTimeline() {
@@ -288,22 +298,26 @@ async function deleteActiveTimeline() {
   }
 }
 
-function createMemoryCard(memory) {
-  const item = document.createElement('div');
-  item.className = 'fa-v2-memory-timeline-item';
+function createMemoryCard(memory, { shared = false, onOpen = null } = {}) {
+  const item = shared ? null : document.createElement('div');
+  if (item) item.className = 'fa-v2-memory-timeline-item';
   const card = document.createElement('article');
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
   card.dataset.memoryId = memory.id;
   card.tabIndex = 0;
   card.setAttribute('role', 'button');
-  card.setAttribute('aria-label', `Apri galleria del ricordo ${memory.title || 'senza titolo'}`);
+  card.setAttribute('aria-label', `Apri galleria dell’album ${memory.title || 'senza titolo'}`);
+  const open = () => {
+    const opener = onOpen || ((item) => openMemoryGallery(item, card, { canShare: !shared }));
+    void opener(memory, card);
+  };
   card.addEventListener('click', (event) => {
-    if (!event.target.closest('a, button')) void openMemoryGallery(memory, card);
+    if (!event.target.closest('a, button')) open();
   });
   card.addEventListener('keydown', (event) => {
     if (event.target.closest('a, button') || !['Enter', ' '].includes(event.key)) return;
     event.preventDefault();
-    void openMemoryGallery(memory, card);
+    open();
   });
 
   const visual = document.createElement('span');
@@ -322,18 +336,39 @@ function createMemoryCard(memory) {
   description.className = 'fa-v2-card-description';
   description.textContent = memory.description || 'Nessuna descrizione.';
   content.append(date, title, description);
+  if (shared) {
+    const owner = document.createElement('p');
+    owner.className = 'fa-v2-card-description';
+    owner.textContent = `Condiviso da: ${memory.owner_display_name || 'un account FamilArea'}`;
+    content.append(owner);
+  }
 
   const actions = document.createElement('span');
   actions.className = 'fa-v2-card-actions';
-  const edit = document.createElement('a');
-  edit.className = 'fa-v2-button fa-v2-button--secondary';
-  edit.href = memoryHref(memory);
-  edit.textContent = 'Modifica';
-  edit.addEventListener('click', (event) => event.stopPropagation());
-  actions.append(edit);
+  if (shared) {
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'fa-v2-button fa-v2-button--secondary';
+    openButton.textContent = 'Apri';
+    openButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      open();
+    });
+    actions.append(openButton);
+  } else {
+    const edit = document.createElement('a');
+    edit.className = 'fa-v2-button fa-v2-button--secondary';
+    edit.href = memoryHref(memory);
+    edit.textContent = 'Modifica';
+    edit.addEventListener('click', (event) => event.stopPropagation());
+    actions.append(edit);
+  }
   card.append(visual, content, actions);
-  item.append(card);
-  return { item, visual };
+  if (item) {
+    item.append(card);
+    return { item, visual };
+  }
+  return { item: card, visual };
 }
 
 async function renderMemoryCover(memory, visual) {
@@ -643,7 +678,7 @@ async function signedPhoto(attachment) {
   }
 }
 
-async function openMemoryGallery(memory, trigger) {
+async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   galleryPreviousFocus = trigger;
   galleryModal.hidden = false;
   setTimelineInert(true);
@@ -652,6 +687,12 @@ async function openMemoryGallery(memory, trigger) {
   galleryTitle.textContent = memory.title || 'Ricordo senza titolo';
   galleryDescription.textContent = memory.description || '';
   galleryDescription.hidden = !memory.description;
+  galleryShare.hidden = !canShare;
+  if (canShare) {
+    const href = new URL(memoryHref(memory), window.location.href);
+    href.searchParams.set('share', '1');
+    galleryShare.href = `${href.pathname}${href.search}`;
+  }
   galleryPhotosData = [];
   galleryPhotoIndex = 0;
   galleryPhotos.hidden = true;
@@ -683,6 +724,7 @@ function closeMemoryGallery() {
   galleryModal.hidden = true;
   setTimelineInert(false);
   galleryPhotosData = [];
+  galleryShare.hidden = true;
   galleryPreviousFocus?.focus?.();
   galleryPreviousFocus = null;
 }
@@ -753,6 +795,42 @@ async function loadSelectedMemoryTimeline() {
   }
   timelineMessage.textContent = '';
   highlightRequestedMemory(cards);
+  await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+}
+
+async function openSharedMemoryGallery(memory, trigger) {
+  const { data, error } = await timelineClient.rpc('get_shared_memory', { p_memory_id: memory.id });
+  if (error || !data?.id) {
+    sharedMemoriesMessage.textContent = error
+      ? timelineRpcMessage('aprire l’album condiviso', error)
+      : 'Album condiviso non disponibile.';
+    return;
+  }
+  await openMemoryGallery(data, trigger);
+}
+
+async function loadSharedMemories() {
+  if (selectedTimelineType !== 'memory' || selectedTimelineId) return;
+  sharedMemoriesCollection.hidden = false;
+  sharedMemoriesList.replaceChildren();
+  sharedMemoriesEmpty.hidden = true;
+  sharedMemoriesMessage.textContent = 'Caricamento album condivisi…';
+  const { data, error } = await timelineClient.rpc('get_my_shared_memories');
+  if (error) {
+    sharedMemoriesMessage.textContent = timelineRpcMessage('caricare gli album condivisi', error);
+    return;
+  }
+  if (!Array.isArray(data)) {
+    sharedMemoriesMessage.textContent = 'Impossibile caricare gli album condivisi: risposta RPC incompatibile.';
+    return;
+  }
+  const cards = data.map((memory) => ({
+    memory,
+    ...createMemoryCard(memory, { shared: true, onOpen: openSharedMemoryGallery })
+  }));
+  sharedMemoriesList.replaceChildren(...cards.map(({ item }) => item));
+  sharedMemoriesEmpty.hidden = data.length > 0;
+  sharedMemoriesMessage.textContent = '';
   await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
 }
 
@@ -857,6 +935,7 @@ async function loadTimeline() {
     if (!selectedTimelineId) {
       renderTimelineCollection();
       timelineMessage.textContent = '';
+      await loadSharedMemories();
       return;
     }
     if (!activeTimeline()) {

@@ -64,6 +64,18 @@
       <p id="timeline-collection-empty" class="fa-v2-empty-state" hidden></p>
     </section>
 
+    <section id="shared-memories-collection" class="fa-v2-section-card fa-v2-section-card--list fa-v2-card" aria-labelledby="shared-memories-title" hidden>
+      <div class="fa-v2-section-heading">
+        <div>
+          <h2 id="shared-memories-title">Album condivisi con me</h2>
+          <p>Album che altri account FamilArea hanno condiviso con te.</p>
+        </div>
+      </div>
+      <p id="shared-memories-message" class="fa-v2-status fa-v2-stack-optional" aria-live="polite"></p>
+      <div id="shared-memories-list" class="fa-v2-card-grid fa-v2-card-grid--two"></div>
+      <p id="shared-memories-empty" class="fa-v2-empty-state" hidden>Nessun album condiviso con te.</p>
+    </section>
+
     <section id="timeline-detail" class="fa-v2-section-card fa-v2-section-card--list fa-v2-card" aria-labelledby="timeline-detail-title" hidden>
       <div class="fa-v2-section-heading">
         <div>
@@ -95,6 +107,7 @@
         <p id="memory-gallery-date" class="fa-v2-card-description"></p>
         <h2 id="memory-gallery-title" class="confirm-modal-title"></h2>
         <p id="memory-gallery-description" class="memory-gallery-description" hidden></p>
+        <a id="memory-gallery-share" class="fa-v2-button fa-v2-button--secondary" href="ricordo.html" hidden>Condividi</a>
       </header>
       <p id="memory-gallery-message" class="memory-gallery-message" aria-live="polite"></p>
       <section id="memory-gallery-photos" class="memory-gallery-photos" aria-label="Fotografie del ricordo">

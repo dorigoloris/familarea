@@ -20,7 +20,7 @@ function setPageMessage(text = '', timeout = 0) {
 }
 
 function acceptedInviteMessage(kind) {
-  return ({ family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', contactShare: 'Contatto aggiunto alla tua rubrica.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+  return ({ family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', memory: 'Album condiviso disponibile nella Timeline.', contactShare: 'Contatto aggiunto alla tua rubrica.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
 }
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
@@ -66,7 +66,7 @@ async function respondToInvite(invite, rpcName, card, kind) {
       ? (rpcName === 'accept_my_contact_share'
         ? { p_share_id: invite.share_id, p_existing_contact_id: null }
         : { p_share_id: invite.share_id })
-    : kind === 'deadline'
+    : kind === 'deadline' || kind === 'memory'
       ? { p_collaboration_id: invite.collaboration_id }
     : { p_invite_id: invite.invite_id };
   const { error } = await supabaseClient.rpc(rpcName, params);
@@ -241,6 +241,46 @@ function createDeadlineInviteCard(invite) {
   return article;
 }
 
+function memoryInviteDateLabel(invite) {
+  const occurredOn = invite.occurred_on ? new Date(`${invite.occurred_on}T00:00:00`) : null;
+  if (!occurredOn || Number.isNaN(occurredOn.getTime())) return 'Data non disponibile';
+  return new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' }).format(occurredOn);
+}
+
+function createMemoryInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker';
+  type.textContent = 'Album fotografico';
+  const title = document.createElement('h3');
+  title.textContent = invite.title || 'Album FamilArea';
+  const inviter = document.createElement('p');
+  inviter.textContent = `Condiviso da ${invite.inviter_display_name || 'un account FamilArea'}`;
+  const date = document.createElement('p');
+  date.textContent = `Data: ${memoryInviteDateLabel(invite)}`;
+  const status = document.createElement('span');
+  status.className = 'invite-status fa-status-badge invite-status-pending';
+  status.textContent = 'In attesa';
+  details.append(type, title, inviter, date, status);
+  article.append(details);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'fa-button fa-button-secondary';
+  decline.textContent = 'Rifiuta';
+  decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_memory_collaboration', article, 'memory'));
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accetta';
+  accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_memory_collaboration', article, 'memory'));
+  actions.append(decline, accept);
+  article.append(actions);
+  return article;
+}
+
 function createContactShareInviteCard(share) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row';
@@ -327,7 +367,7 @@ function createContactSuggestionCard(suggestion) {
 
 async function loadInvites(account) {
   const isPersonal = account.account_type === 'personal';
-  const [contactShareResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult] = await Promise.all([
+  const [contactShareResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult, memoryResult] = await Promise.all([
     supabaseClient.rpc('get_my_contact_share_invites'),
     ...(isPersonal ? [
       supabaseClient.rpc('get_my_family_invites'),
@@ -340,7 +380,8 @@ async function loadInvites(account) {
       Promise.resolve({ data: [] }),
       Promise.resolve({ data: [] })
     ]),
-    supabaseClient.rpc('get_my_deadline_collaboration_invites')
+    supabaseClient.rpc('get_my_deadline_collaboration_invites'),
+    supabaseClient.rpc('get_my_memory_collaboration_invites')
   ]);
   if (contactShareResult.error) { setPageMessage(inviteErrorMessage(contactShareResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
@@ -348,6 +389,7 @@ async function loadInvites(account) {
   if (suggestionResult.error) console.error('get_my_contact_suggestions failed', suggestionResult.error);
   if (listResult.error) console.error('get_my_list_invites failed', listResult.error);
   if (deadlineResult.error) console.error('get_my_deadline_collaboration_invites failed', deadlineResult.error);
+  if (memoryResult.error) console.error('get_my_memory_collaboration_invites failed', memoryResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
@@ -356,17 +398,20 @@ async function loadInvites(account) {
   const visibleContactShares = (contactShareResult.data || []).filter((share) => share.status === 'pending');
   const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleDeadlineInvites = (deadlineResult.data || []).filter((invite) => invite.status === 'pending');
+  const visibleMemoryInvites = (memoryResult.data || []).filter((invite) => invite.status === 'pending');
   const pendingCount = visibleFamilyInvites.length
     + visibleEventInvites.length
     + visibleSuggestions.length
     + visibleContactShares.length
     + visibleListInvites.length
-    + visibleDeadlineInvites.length;
+    + visibleDeadlineInvites.length
+    + visibleMemoryInvites.length;
   invitesPendingBadge.hidden = pendingCount === 0;
   if (pendingCount > 0) invitesPendingBadge.textContent = String(pendingCount);
   const acceptedLists = [...recentlyAcceptedLists.values()];
-  invitesEmpty.hidden = visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleContactShares.length + visibleListInvites.length + visibleDeadlineInvites.length + acceptedLists.length > 0;
+  invitesEmpty.hidden = visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleContactShares.length + visibleListInvites.length + visibleDeadlineInvites.length + visibleMemoryInvites.length + acceptedLists.length > 0;
   acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));
+  visibleMemoryInvites.forEach((invite) => invitesList.appendChild(createMemoryInviteCard(invite)));
   visibleDeadlineInvites.forEach((invite) => invitesList.appendChild(createDeadlineInviteCard(invite)));
   visibleContactShares.forEach((share) => invitesList.appendChild(createContactShareInviteCard(share)));
   visibleListInvites.forEach((invite) => invitesList.appendChild(createListInviteCard(invite)));
@@ -389,8 +434,8 @@ async function loadPage() {
   proposalsSharingCard.hidden = !isPersonal;
   sharedDeadlinesCard.hidden = false;
   invitesDescription.textContent = isPersonal
-    ? 'Gestisci gli inviti ricevuti per Scadenze, Liste, Eventi e Famiglia.'
-    : 'Gestisci gli inviti ricevuti per Scadenze, Eventi e Contatti.';
+    ? 'Gestisci gli inviti ricevuti per Album, Scadenze, Liste, Eventi e Famiglia.'
+    : 'Gestisci gli inviti ricevuti per Album, Scadenze, Eventi e Contatti.';
   await loadInvites(account);
   if (invitesSection.hidden === false) setPageMessage('');
 }

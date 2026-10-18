@@ -18,6 +18,7 @@ const memoryOccurredOn = document.getElementById('memory-occurred-on');
 const memoryDescription = document.getElementById('memory-description');
 const memorySubmit = document.getElementById('memory-submit');
 const memoryDelete = document.getElementById('memory-delete');
+const memoryShare = document.getElementById('memory-share');
 const memoryPageTitle = document.getElementById('memory-page-title');
 const memoryPageIntro = document.getElementById('memory-page-intro');
 const memoryPhotosSection = document.getElementById('memory-photos-section');
@@ -39,6 +40,7 @@ function setMessage(text = '', isError = false) {
 function setSaving(inProgress) {
   memorySubmit.disabled = inProgress;
   memoryDelete.disabled = inProgress;
+  memoryShare.disabled = inProgress;
   memorySubmit.textContent = inProgress ? 'Salvataggio...' : (memoryId ? 'Salva modifiche' : 'Salva album');
 }
 
@@ -152,6 +154,7 @@ function updatePageForStoredMemory() {
   memoryPageIntro.textContent = 'Aggiorna l’album e le sue fotografie.';
   memorySubmit.textContent = 'Salva modifiche';
   memoryDelete.hidden = false;
+  memoryShare.hidden = false;
   memoryPhotosSection.hidden = false;
   memoryDocumentsSection.hidden = !memoryDocumentsEnabled;
   updateTimelineLinks();
@@ -225,6 +228,248 @@ function rpcMessage(subject, error) {
   return `Impossibile ${subject}${code}: ${reason}`;
 }
 
+function memorySharingInitials(name = '') {
+  const words = String(name).trim().split(/\s+/).filter(Boolean);
+  return (words.slice(0, 2).map((word) => word[0]).join('') || '?').toUpperCase();
+}
+
+function renderMemorySharingAvatar(avatar, account) {
+  const name = account.display_name || account.account_name || 'Account FamilArea';
+  avatar.textContent = memorySharingInitials(name);
+  const avatarPath = account.avatar_path;
+  if (!avatarPath) return;
+  const bucket = account.account_type === 'organization' ? 'organization-avatars' : 'profile-avatars';
+  memoryClient.storage.from(bucket).createSignedUrl(avatarPath, 3600).then(({ data, error }) => {
+    if (error || !data?.signedUrl) return;
+    const image = document.createElement('img');
+    image.src = data.signedUrl;
+    image.alt = '';
+    image.addEventListener('error', () => image.remove());
+    avatar.replaceChildren(image);
+  }).catch(() => {});
+}
+
+function createMemorySharingRow(account, { status = '', actionLabel = '', action = null, busy = false } = {}) {
+  const row = document.createElement('div');
+  row.className = 'fa-v2-list-row fa-v2-list-row--media';
+  const avatar = document.createElement('span');
+  avatar.className = 'contact-directory-avatar';
+  renderMemorySharingAvatar(avatar, account);
+  const details = document.createElement('div');
+  const title = document.createElement('strong');
+  title.textContent = account.display_name || account.account_name || 'Account FamilArea';
+  const meta = document.createElement('p');
+  meta.className = 'fa-v2-status';
+  const accountType = account.account_type === 'organization' ? 'Organizzazione' : 'Persona';
+  meta.textContent = status ? `${accountType} · ${status}` : accountType;
+  details.append(title, meta);
+  row.append(avatar, details);
+  if (action) {
+    const actions = document.createElement('div');
+    actions.className = 'fa-v2-card-actions';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'fa-v2-button fa-v2-button--secondary';
+    button.textContent = actionLabel;
+    button.disabled = busy;
+    button.addEventListener('click', action);
+    actions.append(button);
+    row.append(actions);
+  }
+  return row;
+}
+
+function openMemorySharingDialog() {
+  if (!memoryId || document.getElementById('memory-sharing-overlay')) return;
+
+  const previousFocus = document.activeElement;
+  const background = [...document.body.children].filter((element) => element.id !== 'memory-sharing-overlay');
+  const previousInert = background.map((element) => ({ element, inert: element.inert }));
+  previousInert.forEach(({ element }) => { element.inert = true; });
+  document.body.classList.add('confirm-modal-open');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'memory-sharing-overlay';
+  overlay.className = 'confirm-modal-overlay';
+  const dialog = document.createElement('section');
+  dialog.className = 'confirm-modal';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'memory-sharing-title');
+  dialog.tabIndex = -1;
+  const title = document.createElement('h2');
+  title.id = 'memory-sharing-title';
+  title.className = 'confirm-modal-title';
+  title.textContent = 'Condividi album';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'confirm-modal-close';
+  close.setAttribute('aria-label', 'Chiudi');
+  close.textContent = '×';
+  const intro = document.createElement('p');
+  intro.className = 'confirm-modal-message';
+  intro.textContent = 'Invita un contatto FamilArea: potrà solo visualizzare questo album e le sue fotografie.';
+  const status = document.createElement('p');
+  status.className = 'fa-v2-status';
+  status.setAttribute('aria-live', 'polite');
+  const searchLabel = document.createElement('label');
+  searchLabel.htmlFor = 'memory-sharing-search';
+  searchLabel.textContent = 'Cerca tra i Contatti';
+  const search = document.createElement('input');
+  search.id = 'memory-sharing-search';
+  search.type = 'search';
+  search.className = 'fa-v2-input';
+  search.placeholder = 'Nome dell’account o organizzazione';
+  search.autocomplete = 'off';
+  const results = document.createElement('div');
+  results.className = 'fa-v2-list';
+  const pendingTitle = document.createElement('h3');
+  pendingTitle.textContent = 'Inviti in attesa';
+  const pending = document.createElement('div');
+  pending.className = 'fa-v2-list';
+  const acceptedTitle = document.createElement('h3');
+  acceptedTitle.textContent = 'Accesso attivo';
+  const accepted = document.createElement('div');
+  accepted.className = 'fa-v2-list';
+  dialog.append(close, title, intro, status, searchLabel, search, results, pendingTitle, pending, acceptedTitle, accepted);
+  overlay.append(dialog);
+  document.body.append(overlay);
+
+  let searchTimer;
+  let actionPending = false;
+  const setStatus = (message = '', isError = false) => {
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+  const setBusy = (busy) => {
+    actionPending = busy;
+    dialog.querySelectorAll('button, input').forEach((element) => {
+      if (element !== close) element.disabled = busy;
+    });
+  };
+  const closeDialog = () => {
+    window.clearTimeout(searchTimer);
+    document.removeEventListener('keydown', onKeyDown);
+    overlay.remove();
+    document.body.classList.remove('confirm-modal-open');
+    previousInert.forEach(({ element, inert }) => { element.inert = inert; });
+    if (previousFocus instanceof HTMLElement) previousFocus.focus();
+  };
+  const onKeyDown = (event) => {
+    if (event.key === 'Escape' && !actionPending) closeDialog();
+  };
+  close.addEventListener('click', closeDialog);
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay && !actionPending) closeDialog();
+  });
+  document.addEventListener('keydown', onKeyDown);
+
+  const refreshManagement = async () => {
+    setStatus('Caricamento condivisioni…');
+    const { data, error } = await memoryClient.rpc('get_memory_collaboration_management', { p_memory_id: memoryId });
+    if (error) {
+      setStatus(rpcMessage('caricare le condivisioni', error), true);
+      return;
+    }
+    pending.replaceChildren();
+    accepted.replaceChildren();
+    const pendingItems = Array.isArray(data?.pending) ? data.pending : [];
+    const acceptedItems = Array.isArray(data?.collaborators) ? data.collaborators : [];
+    const appendManagement = (container, item, label, rpcName, confirmation) => {
+      const account = {
+        display_name: item.display_name,
+        account_type: item.account_type,
+        avatar_path: item.avatar_path
+      };
+      container.append(createMemorySharingRow(account, {
+        status: label,
+        actionLabel: confirmation.confirmText,
+        action: async () => {
+          if (actionPending) return;
+          const confirmed = await FamilAreaConfirm.confirm(confirmation);
+          if (!confirmed) return;
+          setBusy(true);
+          setStatus(`${confirmation.confirmText} in corso…`);
+          const { error: actionError } = await memoryClient.rpc(rpcName, { p_collaboration_id: item.collaboration_id });
+          setBusy(false);
+          if (actionError) {
+            setStatus(rpcMessage(confirmation.subject, actionError), true);
+            return;
+          }
+          await refreshManagement();
+        }
+      }));
+    };
+    pendingItems.forEach((item) => appendManagement(pending, item, 'In attesa', 'cancel_memory_collaboration', {
+      title: 'Annullare invito?', message: 'Il destinatario non potrà più accettare questo invito.', confirmText: 'Annulla invito', subject: 'annullare l’invito'
+    }));
+    acceptedItems.forEach((item) => appendManagement(accepted, item, 'Può visualizzare l’album', 'revoke_memory_collaboration', {
+      variant: 'danger', title: 'Revocare accesso?', message: 'Il destinatario non potrà più aprire questo album.', confirmText: 'Revoca accesso', subject: 'revocare l’accesso'
+    }));
+    if (!pendingItems.length) pending.textContent = 'Nessun invito in attesa.';
+    if (!acceptedItems.length) accepted.textContent = 'Nessun collaboratore con accesso attivo.';
+    setStatus('');
+  };
+  const searchRecipients = async () => {
+    const query = search.value.trim();
+    results.replaceChildren();
+    if (query.length < 2) return;
+    setStatus('Ricerca Contatti…');
+    const { data, error } = await memoryClient.rpc('search_invitable_memory_collaboration_accounts', {
+      p_memory_id: memoryId,
+      p_query: query
+    });
+    if (error) {
+      setStatus(rpcMessage('cercare i Contatti', error), true);
+      return;
+    }
+    const accounts = Array.isArray(data) ? data : [];
+    if (!accounts.length) {
+      results.textContent = 'Nessun Contatto disponibile.';
+      setStatus('');
+      return;
+    }
+    accounts.forEach((account) => {
+      results.append(createMemorySharingRow(account, {
+        actionLabel: 'Invita',
+        action: async () => {
+          if (actionPending) return;
+          setBusy(true);
+          setStatus('Invio invito…');
+          const { error: inviteError } = await memoryClient.rpc('create_memory_collaboration', {
+            p_memory_id: memoryId,
+            p_recipient_account_id: account.account_id
+          });
+          setBusy(false);
+          if (inviteError) {
+            setStatus(rpcMessage('inviare l’invito', inviteError), true);
+            return;
+          }
+          search.value = '';
+          results.replaceChildren();
+          await refreshManagement();
+          setStatus('Invito inviato.');
+        }
+      }));
+    });
+    setStatus('');
+  };
+  search.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => { void searchRecipients(); }, 250);
+  });
+  void refreshManagement();
+  dialog.focus();
+}
+
+function openRequestedMemorySharing() {
+  if (memoryParams.get('share') !== '1' || !memoryId) return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete('share');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  openMemorySharingDialog();
+}
+
 async function loadMemory() {
   const { data: sessionData, error: sessionError } = await memoryClient.auth.getSession();
   if (sessionError || !sessionData?.session) {
@@ -268,6 +513,7 @@ async function loadMemory() {
   await initialiseAttachments();
   captureFormBaseline();
   updateTimelineLinks();
+  openRequestedMemorySharing();
 }
 
 async function saveMemory({ redirectOnSuccess = true } = {}) {
@@ -408,5 +654,7 @@ memoryDelete.addEventListener('click', async () => {
   }
   window.location.replace(timelineHref());
 });
+
+memoryShare.addEventListener('click', openMemorySharingDialog);
 
 void loadMemory().then(setupBrowserBackGuard);
