@@ -343,15 +343,24 @@
   async function refreshInvitesBadge() {
     if (!invitesLink) return;
     const requestVersion = ++invitesBadgeRequestVersion;
-    const { data, error } = await client.rpc('get_my_pending_invites_count');
+    const [pendingResult, memoryInvitesResult] = await Promise.all([
+      client.rpc('get_my_pending_invites_count'),
+      client.rpc('get_my_memory_collaboration_invites')
+    ]);
     if (requestVersion !== invitesBadgeRequestVersion) return;
 
-    if (error) {
-      console.error('get_my_pending_invites_count badge failed', error);
+    if (pendingResult.error) {
+      console.error('get_my_pending_invites_count badge failed', pendingResult.error);
       return;
     }
+    if (memoryInvitesResult.error) {
+      console.error('get_my_memory_collaboration_invites badge failed', memoryInvitesResult.error);
+    }
 
-    const pendingCount = Math.max(0, Number(data) || 0);
+    const memoryPendingCount = Array.isArray(memoryInvitesResult.data)
+      ? memoryInvitesResult.data.filter((invite) => invite.status === 'pending').length
+      : 0;
+    const pendingCount = Math.max(0, Number(pendingResult.data) || 0) + memoryPendingCount;
 
     invitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
     if (pendingCount === 0) {
