@@ -33,6 +33,10 @@
     return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 
+  function dateInputValue(value) {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+
   function nextLocalDay(value) {
     const next = startOfLocalDay(value);
     next.setDate(next.getDate() + 1);
@@ -179,6 +183,7 @@
     for (let day = 1; day <= daysInMonth; day += 1) {
       const cell = document.createElement('article');
       cell.className = 'calendar-day';
+      cell.dataset.calendarDate = dateInputValue(new Date(year, monthIndex, day));
       if (sameLocalDay(new Date(year, monthIndex, day), today)) cell.classList.add('calendar-day-today');
 
       const number = document.createElement('h3');
@@ -436,6 +441,7 @@
     const columns = document.createElement('div'); columns.className = 'week-agenda-columns';
     perDay.forEach((day, index) => {
       const column = document.createElement('div'); column.className = 'week-agenda-day-column';
+      column.dataset.calendarDate = dateInputValue(days[index]);
       if (sameLocalDay(days[index], today)) column.classList.add('is-today');
       layoutOverlaps(day.timed).forEach((entry) => {
         const viewStart = new Date(days[index].getFullYear(), days[index].getMonth(), days[index].getDate(), startHour);

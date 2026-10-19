@@ -39,9 +39,11 @@
       <section class="calendar-section calendar-month-surface calendar-v2-surface fa-surface fa-v2-card" aria-labelledby="month-title">
         <div class="calendar-print-heading" aria-hidden="true"><strong><span class="calendar-print-brand-prefix">Il Calendario di </span>Famil<span class="calendar-print-brand-accent">Area</span></strong><b id="print-month-title"></b></div>
         <div class="calendar-controls">
-          <button id="previous-month" class="calendar-nav-button" type="button" aria-label="Mese precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
-          <h2 id="month-title" aria-live="polite"></h2>
-          <button id="next-month" class="calendar-nav-button" type="button" aria-label="Mese successivo"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+          <div class="calendar-period-navigation" role="group" aria-label="Navigazione del periodo">
+            <button id="previous-month" class="calendar-nav-button" type="button" aria-label="Precedente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Precedente</span></button>
+            <h2 id="month-title" aria-live="polite"></h2>
+            <button id="next-month" class="calendar-nav-button" type="button" aria-label="Successivo"><span>Successivo</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+          </div>
         </div>
         <div class="calendar-view-toolbar">
           <div class="calendar-view-switch" role="group" aria-label="Vista del calendario">
@@ -85,6 +87,7 @@
   <script src="supabase-public-config.js"></script>
   <script src="logout.js"></script>
   <script src="navigation.js"></script>
+  <script src="confirm-modal.js"></script>
   <script src="deadline-item-image.js?v=20260929-calendar-vehicle-avatar"></script>
   <script src="managed-context.js"></script>
   <script src="family-member-avatar.js"></script>

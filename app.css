@@ -940,10 +940,14 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 .calendar-page-view.fa-v2-app #calendar-message{margin:0 0 var(--fa-v2-space-4);color:var(--fa-v2-muted);font-size:13px}
 .calendar-page-view.fa-v2-app #calendar-content{display:grid;gap:var(--fa-v2-space-5)}
 .calendar-page-view.fa-v2-app .calendar-v2-surface{margin:0;padding:var(--fa-v2-space-6);border-color:var(--fa-v2-border);border-radius:var(--fa-v2-radius);background:var(--fa-v2-surface);box-shadow:var(--fa-v2-shadow)}
-.calendar-page-view.fa-v2-app .calendar-controls{margin:0 0 var(--fa-v2-space-4)}
+.calendar-page-view.fa-v2-app .calendar-controls{display:flex;align-items:center;justify-content:center;margin:0 0 var(--fa-v2-space-4)}
+.calendar-page-view.fa-v2-app .calendar-period-navigation{display:flex;align-items:center;justify-content:center;gap:10px;max-width:100%}
+.calendar-page-view.fa-v2-app .calendar-period-navigation h2{min-width:0;text-align:center;overflow-wrap:break-word}
 .calendar-page-view.fa-v2-app .calendar-controls h2{color:var(--fa-v2-text);font-size:20px;letter-spacing:0}
 .calendar-page-view.fa-v2-app .calendar-nav-button,.calendar-page-view.fa-v2-app .calendar-today-button,.calendar-page-view.fa-v2-app .calendar-print-button,.calendar-page-view.fa-v2-app .calendar-view-button{min-height:38px;margin:0;border-radius:10px;box-shadow:none;font-size:13px;font-weight:700}
 .calendar-page-view.fa-v2-app .calendar-nav-button,.calendar-page-view.fa-v2-app .calendar-print-button,.calendar-page-view.fa-v2-app .calendar-view-button{border-color:#cbd8e2;background:#fff;color:var(--fa-v2-secondary)}
+.calendar-page-view.fa-v2-app .calendar-period-navigation .calendar-nav-button{display:grid;flex:0 0 38px;width:38px;height:38px;padding:0;place-items:center}
+.calendar-page-view.fa-v2-app .calendar-period-navigation .calendar-nav-button span{display:none}
 .calendar-page-view.fa-v2-app .calendar-nav-button:hover,.calendar-page-view.fa-v2-app .calendar-nav-button:focus-visible,.calendar-page-view.fa-v2-app .calendar-print-button:hover,.calendar-page-view.fa-v2-app .calendar-print-button:focus-visible,.calendar-page-view.fa-v2-app .calendar-view-button:hover,.calendar-page-view.fa-v2-app .calendar-view-button:focus-visible{border-color:#aac2d1;background:#f4f8fa;color:var(--fa-v2-secondary);outline:none}
 .calendar-page-view.fa-v2-app .calendar-today-button{border-color:var(--fa-v2-primary);background:var(--fa-v2-primary);color:#fff}
 .calendar-page-view.fa-v2-app .calendar-view-switch{border-color:var(--fa-v2-border);background:#f5f8f6}
@@ -962,10 +966,8 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 .calendar-page-view.fa-v2-app .calendar-v2-header,.calendar-page-view.fa-v2-app .calendar-v2-sharing,.calendar-page-view.fa-v2-app .calendar-v2-surface{padding:var(--fa-v2-space-4)}
 }
 @media screen and (max-width:620px){
-.calendar-page-view.fa-v2-app .calendar-controls{grid-template-columns:auto minmax(0,1fr) auto;gap:var(--fa-v2-space-2)}
+.calendar-page-view.fa-v2-app .calendar-period-navigation{gap:var(--fa-v2-space-2)}
 .calendar-page-view.fa-v2-app .calendar-controls h2{font-size:17px;text-align:center}
-.calendar-page-view.fa-v2-app .calendar-nav-button{width:38px;padding:0}
-.calendar-page-view.fa-v2-app .calendar-nav-button span{display:none}
 .calendar-page-view.fa-v2-app .calendar-view-toolbar{align-items:stretch;flex-wrap:wrap;gap:var(--fa-v2-space-2)}
 .calendar-page-view.fa-v2-app .calendar-view-switch{flex:1 1 100%}
 .calendar-page-view.fa-v2-app .calendar-view-button{flex:1 1 0}
@@ -1463,6 +1465,42 @@ a.fa-v2-card-media-layout{
 @media(max-width:700px){
   .fa-v2-card-media-layout{grid-template-columns:96px minmax(0,1fr) auto;column-gap:16px}
   .fa-v2-card-visual{width:96px;height:90px}
+}
+
+/* Vehicle/home deadline cards: reserve the first row for readable content on narrow phones.
+   The action moves below rather than reducing the content column to a few characters. */
+@media(max-width:480px){
+  .deadline-management-page .fa-v2-card-media-layout{
+    grid-template-columns:76px minmax(0,1fr);
+    grid-template-rows:auto auto;
+    align-items:start;
+    column-gap:12px;
+    row-gap:12px;
+  }
+  .deadline-management-page .fa-v2-card-visual{
+    width:76px;
+    height:76px;
+    border-radius:14px;
+  }
+  .deadline-management-page .fa-v2-card-content{
+    align-self:center;
+  }
+  .deadline-management-page .fa-v2-card-title,
+  .deadline-management-page .fa-v2-card-description{
+    word-break:normal;
+    overflow-wrap:break-word;
+  }
+  .deadline-management-page .fa-v2-card-actions{
+    grid-column:1 / -1;
+    grid-row:2;
+    justify-self:end;
+    justify-content:flex-end;
+  }
+  .deadline-management-page .fa-v2-card-actions .fa-button{
+    width:auto;
+    margin:0;
+    white-space:nowrap;
+  }
 }
 
 /* Timeline Ricordi: struttura soltanto; le card restano le primitive V2 condivise. */

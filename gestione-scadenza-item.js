@@ -51,9 +51,37 @@ function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }
   return card;
 }
 function renderCustomDeadlines(rows) { deadlineItemCustomDeadlines.hidden = rows.length === 0; deadlineItemDeadlinesList.replaceChildren(...rows.map((deadline) => { const row = document.createElement('a'); row.className = 'fa-v2-list-row deadline-card'; row.href = `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; row.textContent = `${deadline.title} — ${window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on)}`; return row; })); }
+function createCustomDeadlineCard(deadline) {
+  return createDeadlineCard({
+    title: deadline.title || 'Scadenza',
+    kind: deadline.deadline_kind || '',
+    icon: (deadline.title || 'S').trim().charAt(0).toLocaleUpperCase('it-IT') || 'S',
+    deadline
+  });
+}
+function renderCustomDeadlineCards(rows) {
+  deadlineItemCustomDeadlines.hidden = rows.length === 0;
+  deadlineItemDeadlinesList.replaceChildren(...rows.map(createCustomDeadlineCard));
+}
 function normalizedDeadlineTitle(value) { return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it-IT'); }
 function deadlineMatchesTemplate(deadline, template) { if (template.kind !== null) return deadline.deadline_kind === template.kind; const titles = template.matchTitles || [template.title]; return deadline.deadline_kind === null && titles.some((title) => normalizedDeadlineTitle(title) === normalizedDeadlineTitle(deadline.title)); }
-function renderItemDeadlines(rows) { const unmatchedRows = new Set(rows); const cards = currentConfiguration.templates.map((template) => { const deadline = rows.find((row) => unmatchedRows.has(row) && deadlineMatchesTemplate(row, template)); if (deadline) unmatchedRows.delete(deadline); return createDeadlineCard({ ...template, deadline }); }); deadlineItemPredefinedCards.replaceChildren(...cards); renderCustomDeadlines([...unmatchedRows]); }
+function renderItemDeadlines(rows) {
+  const unmatchedRows = new Set(rows);
+  const cards = currentConfiguration.templates.map((template) => {
+    const deadline = rows.find((row) => unmatchedRows.has(row) && deadlineMatchesTemplate(row, template));
+    if (deadline) unmatchedRows.delete(deadline);
+    return createDeadlineCard({ ...template, deadline });
+  });
+  const customRows = [...unmatchedRows];
+  if (currentConfiguration?.label === 'Veicolo') {
+    deadlineItemCustomDeadlines.hidden = true;
+    deadlineItemDeadlinesList.replaceChildren();
+    deadlineItemPredefinedCards.replaceChildren(...cards, ...customRows.map(createCustomDeadlineCard));
+    return;
+  }
+  deadlineItemPredefinedCards.replaceChildren(...cards);
+  renderCustomDeadlineCards(customRows);
+}
 async function loadItemDeadlines() { const { data, error } = await deadlineItemClient.rpc('get_my_deadlines_for_item', { p_item_id: deadlineItemId }); if (error) { deadlineItemMessage.textContent = 'Impossibile caricare le scadenze dell’elemento.'; return; } renderItemDeadlines(data || []); }
 function applyHomeV2() {
   if (currentConfiguration?.label !== 'Casa') return;

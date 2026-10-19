@@ -129,6 +129,65 @@ function render() {
   else calendarUtils.renderDayAgenda({ day, titleElement: title, gridElement: dayView, activities: items });
 }
 
+function validCalendarDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+}
+
+function timeFromAgendaPosition(column, clientY) {
+  const rect = column.getBoundingClientRect();
+  if (!rect.height) return '';
+  const minutes = Math.round(Math.max(0, Math.min(1439, ((clientY - rect.top) / rect.height) * 1440)) / 30) * 30;
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+function creationHref(kind, dateValue, timeValue = '') {
+  const target = new URL(kind === 'activity' ? 'nuova-attivita.html' : kind === 'deadline' ? 'nuova-scadenza.html' : 'nuovo-evento.html', window.location.href);
+  target.searchParams.set('date', dateValue);
+  if (timeValue) target.searchParams.set('time', timeValue);
+  if (kind === 'commitment') target.searchParams.set('event_kind', 'commitment');
+  if (kind === 'deadline') {
+    target.searchParams.set('mode', 'single');
+    if (timeValue) target.searchParams.set('calendar_appointment', '1');
+    if (managedMember) target.searchParams.set('managed_member_id', managedMember.id);
+  }
+  return `${target.pathname.split('/').pop()}${target.search}`;
+}
+
+async function chooseCalendarCreation(dateValue, timeValue = '') {
+  if (!validCalendarDate(dateValue) || !window.FamilAreaConfirm?.choice) return;
+  const choices = managedMember
+    ? [{ value: 'deadline', label: 'Scadenza', className: 'confirm-modal-confirm' }]
+    : [
+      { value: 'event', label: 'Evento / Appuntamento', className: 'confirm-modal-confirm' },
+      { value: 'commitment', label: 'Impegno', className: 'confirm-modal-cancel' },
+      { value: 'activity', label: 'Attività', className: 'confirm-modal-cancel' },
+      { value: 'deadline', label: 'Scadenza', className: 'confirm-modal-cancel' }
+    ];
+  const selection = await window.FamilAreaConfirm.choice({
+    title: 'Crea nel Calendario',
+    message: timeValue ? `Scegli cosa creare il ${dateValue} alle ${timeValue}.` : `Scegli cosa creare il ${dateValue}.`,
+    choices
+  });
+  if (selection) window.location.assign(creationHref(selection, dateValue, timeValue));
+}
+
+function isExistingCalendarItem(target) {
+  return Boolean(target.closest('a, button, input, select, textarea, .calendar-activity, .week-agenda-timed-item, .week-agenda-all-day-item, .week-agenda-outside-item'));
+}
+
+function handleMonthCreation(event) {
+  if (isExistingCalendarItem(event.target)) return;
+  const cell = event.target.closest('.calendar-day[data-calendar-date]');
+  if (cell && grid.contains(cell)) void chooseCalendarCreation(cell.dataset.calendarDate);
+}
+
+function handleAgendaCreation(event, container) {
+  if (isExistingCalendarItem(event.target)) return;
+  const column = event.target.closest('.week-agenda-day-column[data-calendar-date]');
+  if (!column || !container.contains(column)) return;
+  void chooseCalendarCreation(column.dataset.calendarDate, timeFromAgendaPosition(column, event.clientY));
+}
+
 async function load() {
   await managedContextReady;
   if (managedContextUnavailable) return;
@@ -307,4 +366,7 @@ document.getElementById('next-month').onclick = () => change(1);
 Object.entries(buttons).forEach(([key, button]) => { button.onclick = () => { view = key; syncViewControls(); void load(); }; });
 document.getElementById('today-calendar').onclick = () => { const now = new Date(); month = new Date(now.getFullYear(), now.getMonth(), 1); week = calendarUtils.startOfWeek(now); day = now; void load(); };
 document.getElementById('print-calendar').onclick = printCalendar;
+grid.addEventListener('click', handleMonthCreation);
+weekView.addEventListener('click', (event) => handleAgendaCreation(event, weekView));
+dayView.addEventListener('click', (event) => handleAgendaCreation(event, dayView));
 void load();

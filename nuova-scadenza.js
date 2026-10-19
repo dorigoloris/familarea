@@ -90,6 +90,9 @@ const utilityReturnUrl = query.get('return_to') === 'utilities' ? 'gestione-scad
 let isSingleDeadlineFlow = isSingleDeadlineCreate && !isUtilityDeadlineContext;
 const presetTitle = query.get('preset_title')?.trim() || '';
 const presetKind = query.get('preset_kind')?.trim() || '';
+const calendarPrefillDate = /^\d{4}-\d{2}-\d{2}$/.test(query.get('date') || '') ? query.get('date') : '';
+const calendarPrefillTime = /^\d{2}:\d{2}$/.test(query.get('time') || '') ? query.get('time') : '';
+const calendarPrefillAppointment = query.get('calendar_appointment') === '1';
 const deadlineItemCategoryLabels = {
   vehicle: 'Veicolo',
   home: 'Casa',
@@ -1059,6 +1062,11 @@ async function loadDeadlineOccurrence() {
 async function initialiseCreateMode(account, context) {
   if (!isSingleDeadlineFlow) applyStandardCreateDefaults();
   initialiseDraftDeadlineAttachments();
+  if (calendarPrefillDate) document.getElementById('deadline-first-due-on').value = calendarPrefillDate;
+  if (isSingleDeadlineFlow && calendarPrefillAppointment && calendarPrefillTime) {
+    setDeadlineType('appointment');
+    startTimeInput.value = calendarPrefillTime;
+  }
 
   if (context.member) {
     managedMember = context.member;

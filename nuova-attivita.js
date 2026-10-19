@@ -5,6 +5,9 @@ const backLink = document.getElementById('back-link');
 const recurrenceEnabled = document.getElementById('recurrence-enabled');
 const recurrenceFields = document.getElementById('recurrence-fields');
 const saveButton = document.getElementById('save-button');
+const activityQuery = new URLSearchParams(window.location.search);
+const calendarPrefillDate = /^\d{4}-\d{2}-\d{2}$/.test(activityQuery.get('date') || '') ? activityQuery.get('date') : '';
+const calendarPrefillTime = /^\d{2}:\d{2}$/.test(activityQuery.get('time') || '') ? activityQuery.get('time') : '';
 
 function setMessage(text = '') {
   message.textContent = text;
@@ -64,6 +67,8 @@ async function load() {
   }
   backLink.href = 'attivita-globali.html';
   backLink.textContent = 'Torna alle Attività';
+  if (calendarPrefillDate) document.getElementById('activity-date').value = calendarPrefillDate;
+  if (calendarPrefillTime) document.getElementById('start-time').value = calendarPrefillTime;
   form.hidden = false;
   setMessage();
 }

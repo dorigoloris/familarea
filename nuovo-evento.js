@@ -1,6 +1,8 @@
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const eventQuery = new URLSearchParams(location.search);
 const eventKind = eventQuery.get('event_kind') === 'commitment' ? 'commitment' : null;
+const calendarPrefillDate = /^\d{4}-\d{2}-\d{2}$/.test(eventQuery.get('date') || '') ? eventQuery.get('date') : '';
+const calendarPrefillTime = /^\d{2}:\d{2}$/.test(eventQuery.get('time') || '') ? eventQuery.get('time') : '';
 const form = document.getElementById('event-form');
 const backLink = document.getElementById('event-back');
 const message = document.getElementById('message');
@@ -187,6 +189,18 @@ function configureGenericEventV2() {
 }
 
 function localIso(date, time = '00:00') { return new Date(`${date}T${time}`).toISOString(); }
+
+function applyCalendarPrefill() {
+  if (!calendarPrefillDate) return;
+  startDateInput.value = calendarPrefillDate;
+  if (!calendarPrefillTime) return;
+  startTimeInput.value = calendarPrefillTime;
+  if (eventKind === 'commitment') {
+    document.querySelector('input[name="commitment-when"][value="date-time"]')?.click();
+  } else {
+    allDayInput.checked = false;
+  }
+}
 function localIsoWeekday(dateValue) {
   const [year, month, day] = dateValue.split('-').map(Number);
   const weekday = new Date(year, month - 1, day).getDay();
@@ -305,6 +319,7 @@ async function load() {
   document.getElementById('calendar-private-spacing').hidden = eventKind ? privateFieldset.hidden : true;
   if (genericEventOptionsSection) genericEventOptionsSection.hidden = privateFieldset.hidden;
   document.getElementById('calendar-private').checked = false;
+  applyCalendarPrefill();
   if (eventKind === 'commitment') syncCommitmentWhenLayout();
   else syncMultiDayLayout();
   syncRecurrenceEndMode();
