@@ -2,6 +2,7 @@
   const allowedReturnPages = new Set([
     'dashboard.html',
     'contatto-condiviso.html',
+    'invito-album.html',
     'invito-evento.html',
     'inviti-area.html',
     'mfa.html'

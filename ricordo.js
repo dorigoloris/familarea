@@ -31,6 +31,9 @@ const documentMimeTypes = ['application/pdf'];
 // Single switch for the future return of PDF attachments inside photo albums.
 // Keep the existing document markup and controller code intact while disabled.
 const memoryDocumentsEnabled = false;
+// Kept false until the activation SQL patch and the invitation Edge Function are deployed.
+// The UI and its server calls are ready, but no email invitation can be created meanwhile.
+const memoryShareEmailInvitesEnabled = true;
 
 function setMessage(text = '', isError = false) {
   memoryMessage.textContent = text;
@@ -279,6 +282,38 @@ function createMemorySharingRow(account, { status = '', actionLabel = '', action
   return row;
 }
 
+
+
+function memoryShareInvitationStatusLabel(status) {
+  return ({ pending: 'In attesa', accepted: 'Accettato', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto', cancelled: 'Annullato' })[status] || 'Stato non disponibile';
+}
+
+function createMemoryShareEmailContactRow(contact, { selected = false, onSelect = null } = {}) {
+  const row = document.createElement('div');
+  row.className = 'fa-v2-list-row fa-v2-list-row--media memory-share-email-row';
+  const avatar = document.createElement('span');
+  avatar.className = 'contact-directory-avatar';
+  avatar.textContent = memorySharingInitials(contact.display_name || 'Contatto');
+  const details = document.createElement('div');
+  const name = document.createElement('strong');
+  name.textContent = contact.display_name || 'Contatto senza nome';
+  const email = document.createElement('p');
+  email.className = 'fa-v2-status';
+  email.textContent = contact.recipient_email;
+  details.append(name, email);
+  const actions = document.createElement('div');
+  actions.className = 'fa-v2-card-actions';
+  const select = document.createElement('button');
+  select.type = 'button';
+  select.className = 'fa-v2-button fa-v2-button--secondary';
+  select.textContent = selected ? 'Selezionato' : 'Seleziona';
+  select.disabled = selected;
+  if (onSelect) select.addEventListener('click', onSelect);
+  actions.append(select);
+  row.append(avatar, details, actions);
+  return row;
+}
+
 function openMemorySharingDialog() {
   if (!memoryId || document.getElementById('memory-sharing-overlay')) return;
 
@@ -292,7 +327,7 @@ function openMemorySharingDialog() {
   overlay.id = 'memory-sharing-overlay';
   overlay.className = 'confirm-modal-overlay';
   const dialog = document.createElement('section');
-  dialog.className = 'confirm-modal';
+  dialog.className = 'confirm-modal memory-share-email-dialog';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-labelledby', 'memory-sharing-title');
@@ -308,44 +343,67 @@ function openMemorySharingDialog() {
   close.textContent = '×';
   const intro = document.createElement('p');
   intro.className = 'confirm-modal-message';
-  intro.textContent = 'Invita un contatto FamilArea: potrà solo visualizzare questo album e le sue fotografie.';
+  intro.textContent = 'Cerca un contatto della tua rubrica e invia l’invito al suo indirizzo email.';
+  const availability = document.createElement('p');
+  availability.className = 'confirm-modal-warning';
+  availability.hidden = memoryShareEmailInvitesEnabled;
+  availability.textContent = 'Gli inviti via email sono in preparazione. Potrai cercare, selezionare e inviare quando il servizio sarà attivato.';
   const status = document.createElement('p');
   status.className = 'fa-v2-status';
   status.setAttribute('aria-live', 'polite');
   const searchLabel = document.createElement('label');
   searchLabel.htmlFor = 'memory-sharing-search';
-  searchLabel.textContent = 'Cerca tra i Contatti';
+  searchLabel.textContent = 'Cerca un contatto';
   const search = document.createElement('input');
   search.id = 'memory-sharing-search';
   search.type = 'search';
   search.className = 'fa-v2-input';
-  search.placeholder = 'Nome dell’account o organizzazione';
+  search.placeholder = 'Nome o indirizzo email';
   search.autocomplete = 'off';
+  search.disabled = !memoryShareEmailInvitesEnabled;
   const results = document.createElement('div');
-  results.className = 'fa-v2-list';
+  results.className = 'fa-v2-list memory-share-email-results';
+  const selected = document.createElement('div');
+  selected.className = 'memory-share-email-selected';
+  selected.hidden = true;
+  const sendInvite = document.createElement('button');
+  sendInvite.type = 'button';
+  sendInvite.className = 'fa-v2-button fa-v2-button--primary';
+  sendInvite.textContent = 'Invia invito';
+  sendInvite.disabled = true;
+  const emailInvitesTitle = document.createElement('h3');
+  emailInvitesTitle.textContent = 'Inviti via email';
+  const emailInvites = document.createElement('div');
+  emailInvites.className = 'fa-v2-list';
   const pendingTitle = document.createElement('h3');
-  pendingTitle.textContent = 'Inviti in attesa';
+  pendingTitle.textContent = 'Inviti FamilArea esistenti';
   const pending = document.createElement('div');
   pending.className = 'fa-v2-list';
   const acceptedTitle = document.createElement('h3');
-  acceptedTitle.textContent = 'Accesso attivo';
+  acceptedTitle.textContent = 'Accessi FamilArea esistenti';
   const accepted = document.createElement('div');
   accepted.className = 'fa-v2-list';
-  dialog.append(close, title, intro, status, searchLabel, search, results, pendingTitle, pending, acceptedTitle, accepted);
+  dialog.append(close, title, intro, availability, status, searchLabel, search, results, selected, sendInvite, emailInvitesTitle, emailInvites, pendingTitle, pending, acceptedTitle, accepted);
   overlay.append(dialog);
   document.body.append(overlay);
 
   let searchTimer;
   let actionPending = false;
+  let selectedContact = null;
   const setStatus = (message = '', isError = false) => {
     status.textContent = message;
     status.classList.toggle('is-error', isError);
+  };
+  const syncInvitationControls = () => {
+    search.disabled = actionPending || !memoryShareEmailInvitesEnabled;
+    sendInvite.disabled = actionPending || !memoryShareEmailInvitesEnabled || !selectedContact;
   };
   const setBusy = (busy) => {
     actionPending = busy;
     dialog.querySelectorAll('button, input').forEach((element) => {
       if (element !== close) element.disabled = busy;
     });
+    if (!busy) syncInvitationControls();
   };
   const closeDialog = () => {
     window.clearTimeout(searchTimer);
@@ -364,11 +422,26 @@ function openMemorySharingDialog() {
   });
   document.addEventListener('keydown', onKeyDown);
 
-  const refreshManagement = async () => {
-    setStatus('Caricamento condivisioni…');
+  const renderSelectedContact = () => {
+    selected.replaceChildren();
+    selected.hidden = !selectedContact;
+    if (!selectedContact) return;
+    const caption = document.createElement('p');
+    caption.className = 'fa-v2-status';
+    caption.textContent = 'Invito da inviare a';
+    const identity = document.createElement('strong');
+    identity.textContent = selectedContact.display_name || 'Contatto senza nome';
+    const email = document.createElement('p');
+    email.className = 'memory-share-email-address';
+    email.textContent = selectedContact.recipient_email;
+    selected.append(caption, identity, email);
+    syncInvitationControls();
+  };
+
+  const refreshLegacyManagement = async () => {
     const { data, error } = await memoryClient.rpc('get_memory_collaboration_management', { p_memory_id: memoryId });
     if (error) {
-      setStatus(rpcMessage('caricare le condivisioni', error), true);
+      setStatus(rpcMessage('caricare le condivisioni esistenti', error), true);
       return;
     }
     pending.replaceChildren();
@@ -376,11 +449,7 @@ function openMemorySharingDialog() {
     const pendingItems = Array.isArray(data?.pending) ? data.pending : [];
     const acceptedItems = Array.isArray(data?.collaborators) ? data.collaborators : [];
     const appendManagement = (container, item, label, rpcName, confirmation) => {
-      const account = {
-        display_name: item.display_name,
-        account_type: item.account_type,
-        avatar_path: item.avatar_path
-      };
+      const account = { display_name: item.display_name, account_type: item.account_type, avatar_path: item.avatar_path };
       container.append(createMemorySharingRow(account, {
         status: label,
         actionLabel: confirmation.confirmText,
@@ -396,7 +465,8 @@ function openMemorySharingDialog() {
             setStatus(rpcMessage(confirmation.subject, actionError), true);
             return;
           }
-          await refreshManagement();
+          await refreshLegacyManagement();
+          setStatus('');
         }
       }));
     };
@@ -406,59 +476,98 @@ function openMemorySharingDialog() {
     acceptedItems.forEach((item) => appendManagement(accepted, item, 'Può visualizzare l’album', 'revoke_memory_collaboration', {
       variant: 'danger', title: 'Revocare accesso?', message: 'Il destinatario non potrà più aprire questo album.', confirmText: 'Revoca accesso', subject: 'revocare l’accesso'
     }));
-    if (!pendingItems.length) pending.textContent = 'Nessun invito in attesa.';
-    if (!acceptedItems.length) accepted.textContent = 'Nessun collaboratore con accesso attivo.';
-    setStatus('');
+    if (!pendingItems.length) pending.textContent = 'Nessun invito FamilArea in attesa.';
+    if (!acceptedItems.length) accepted.textContent = 'Nessun accesso FamilArea attivo.';
   };
+
+  const refreshEmailManagement = async () => {
+    emailInvites.replaceChildren();
+    if (!memoryShareEmailInvitesEnabled) {
+      emailInvites.textContent = 'Gli stati degli inviti via email saranno disponibili qui dopo l’attivazione.';
+      return;
+    }
+    const { data, error } = await memoryClient.rpc('get_memory_share_invitation_management', { p_memory_id: memoryId });
+    if (error) {
+      setStatus(rpcMessage('caricare gli inviti via email', error), true);
+      return;
+    }
+    const invitations = Array.isArray(data) ? data : [];
+    if (!invitations.length) {
+      emailInvites.textContent = 'Nessun invito via email.';
+      return;
+    }
+    invitations.forEach((invite) => {
+      const row = document.createElement('div');
+      row.className = 'fa-v2-list-row memory-share-email-row';
+      const details = document.createElement('div');
+      const email = document.createElement('strong');
+      email.textContent = invite.recipient_email;
+      const meta = document.createElement('p');
+      meta.className = 'fa-v2-status';
+      meta.textContent = memoryShareInvitationStatusLabel(invite.status);
+      details.append(email, meta);
+      row.append(details);
+      emailInvites.append(row);
+    });
+  };
+
   const searchRecipients = async () => {
     const query = search.value.trim();
     results.replaceChildren();
-    if (query.length < 2) return;
-    setStatus('Ricerca Contatti…');
-    const { data, error } = await memoryClient.rpc('search_invitable_memory_collaboration_accounts', {
-      p_memory_id: memoryId,
-      p_query: query
-    });
+    selectedContact = null;
+    renderSelectedContact();
+    if (!memoryShareEmailInvitesEnabled || query.length < 2) return;
+    setStatus('Ricerca contatti…');
+    const { data, error } = await memoryClient.rpc('search_my_memory_share_contacts', { p_memory_id: memoryId, p_query: query });
     if (error) {
-      setStatus(rpcMessage('cercare i Contatti', error), true);
+      setStatus(rpcMessage('cercare i contatti', error), true);
       return;
     }
-    const accounts = Array.isArray(data) ? data : [];
-    if (!accounts.length) {
-      results.textContent = 'Nessun Contatto disponibile.';
+    const contacts = Array.isArray(data) ? data : [];
+    if (!contacts.length) {
+      results.textContent = 'Nessun contatto con un indirizzo email valido.';
       setStatus('');
       return;
     }
-    accounts.forEach((account) => {
-      results.append(createMemorySharingRow(account, {
-        actionLabel: 'Invita',
-        action: async () => {
-          if (actionPending) return;
-          setBusy(true);
-          setStatus('Invio invito…');
-          const { error: inviteError } = await memoryClient.rpc('create_memory_collaboration', {
-            p_memory_id: memoryId,
-            p_recipient_account_id: account.account_id
-          });
-          setBusy(false);
-          if (inviteError) {
-            setStatus(rpcMessage('inviare l’invito', inviteError), true);
-            return;
-          }
-          search.value = '';
-          results.replaceChildren();
-          await refreshManagement();
-          setStatus('Invito inviato.');
+    contacts.forEach((contact) => {
+      results.append(createMemoryShareEmailContactRow(contact, {
+        onSelect: () => {
+          selectedContact = contact;
+          renderSelectedContact();
+          [...results.querySelectorAll('button')].forEach((button) => { button.disabled = true; });
+          setStatus('');
         }
       }));
     });
     setStatus('');
   };
+
+  sendInvite.addEventListener('click', async () => {
+    if (!memoryShareEmailInvitesEnabled || !selectedContact || actionPending) return;
+    setBusy(true);
+    setStatus('Creazione e consegna dell’invito…');
+    const { data, error } = await memoryClient.functions.invoke('send-memory-share-invitation', {
+      body: { memory_id: memoryId, contact_id: selectedContact.contact_id }
+    });
+    setBusy(false);
+    if (error || !data?.invitation_id || data.status !== 'pending') {
+      setStatus(rpcMessage('inviare l’invito via email', error || new Error('Consegna non confermata')), true);
+      return;
+    }
+    selectedContact = null;
+    search.value = '';
+    results.replaceChildren();
+    renderSelectedContact();
+    await refreshEmailManagement();
+    setStatus('Invito consegnato.');
+  });
   search.addEventListener('input', () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => { void searchRecipients(); }, 250);
   });
-  void refreshManagement();
+  syncInvitationControls();
+  void refreshLegacyManagement();
+  void refreshEmailManagement();
   dialog.focus();
 }
 
