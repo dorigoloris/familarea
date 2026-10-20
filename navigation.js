@@ -57,11 +57,12 @@
   brandMain.className = 'app-brand fa-v2-brand-main';
   brandMain.href = 'dashboard.html';
   brandMain.setAttribute('aria-label', 'FamilArea, Dashboard');
-  brandMain.append(document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
-  const brandRound = document.createElement('span');
-  brandRound.className = 'fa-v2-brand-round';
-  brandRound.setAttribute('aria-hidden', 'true');
-  brand.append(brandMain, brandRound);
+  const brandLogo = document.createElement('img');
+  brandLogo.className = 'fa-v2-brand-logo';
+  brandLogo.src = 'Logo Avatar Verde.png';
+  brandLogo.alt = '';
+  brandMain.append(brandLogo, document.createTextNode('Famil'), Object.assign(document.createElement('span'), { textContent: 'Area' }));
+  brand.append(brandMain);
   const actions = document.createElement('div');
   actions.className = 'header-actions';
   const existingLogout = document.querySelector('[data-logout]');
@@ -74,6 +75,7 @@
 
   const topNav = document.createElement('nav');
   topNav.className = 'shared-top-nav fa-v2-top-nav';
+  topNav.tabIndex = 0;
   topNav.setAttribute('aria-label', 'Navigazione principale');
   let invitesLink;
   function renderNavigation(accountType) {
@@ -114,6 +116,7 @@
       }
       topNav.appendChild(link);
     });
+    requestAnimationFrame(() => topNav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
   }
 
   async function renderSystemAdministrationLink() {

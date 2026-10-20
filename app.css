@@ -981,8 +981,9 @@ button:disabled,.btn:disabled{cursor:not-allowed!important;opacity:.55!important
 body.fa-v2-app{margin:0;padding:0}
 .fa-v2-app .fa-v2-app-header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;min-height:var(--fa-v2-shared-header-height);height:auto;padding:0 max(24px,4vw);gap:var(--fa-v2-space-4);background:rgba(255,255,255,.98);border-bottom:1px solid var(--fa-v2-border);box-shadow:none}
 .fa-v2-app .fa-v2-brand{display:flex;align-items:center;gap:var(--fa-v2-space-3);min-width:0}
-.fa-v2-app .fa-v2-brand-main{display:inline-flex;align-items:center;color:var(--fa-v2-text);font-size:28px}
+.fa-v2-app .fa-v2-brand-main{display:inline-flex;align-items:center;flex:0 0 auto;color:var(--fa-v2-text);font-size:28px;white-space:nowrap}
 .fa-v2-app .fa-v2-brand-main::after{display:none}
+.fa-v2-app .fa-v2-brand-logo{display:block;flex:0 0 30px;width:30px;height:30px;object-fit:contain;margin-right:8px}
 .fa-v2-app .fa-v2-brand-round{display:block;flex:0 0 38px;width:38px;height:38px}
 .fa-v2-app .fa-v2-app-header .shared-top-nav{justify-self:center}
 .fa-v2-app .fa-v2-app-header .header-actions{margin-left:0}
@@ -1193,6 +1194,7 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
 .fa-v2-empty-state[hidden]{display:none}
 .fa-v2-section-heading h2{margin:0;color:var(--fa-v2-text);font-size:20px;line-height:1.25}
 .fa-v2-section-heading p{margin:var(--fa-v2-space-1) 0 0;color:var(--fa-v2-muted);font-size:13px}
+#timeline-collection .fa-v2-section-heading{margin-bottom:var(--fa-v2-space-3)}
 .fa-v2-header-card{
   margin:0;
   padding:var(--fa-v2-space-6);
@@ -1590,3 +1592,16 @@ a.fa-v2-card-media-layout{
 html.fa-mfa-pending body > *{visibility:hidden}
 .fa-mfa-qr{display:block;width:min(100%,240px);height:auto;margin:0 auto;padding:var(--fa-v2-space-3);border:1px solid var(--fa-v2-border);border-radius:10px;background:#fff}
 .fa-mfa-code{max-width:18rem;letter-spacing:.22em;text-align:center}
+/* Shared navbar: only the central navigation scrolls; brand and account stay fixed. */
+.fa-v2-app .fa-v2-app-header{grid-template-columns:auto minmax(0,1fr) auto;align-items:center}
+.fa-v2-app .fa-v2-app-header .shared-top-nav{position:static;left:auto;right:auto;bottom:auto;grid-column:auto;grid-row:auto;justify-self:stretch;width:100%;min-width:0;margin:0;padding:2px 2px 7px;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#8fa7ba #edf1f3;-webkit-overflow-scrolling:touch}
+.fa-v2-app .fa-v2-app-header .shared-top-nav::-webkit-scrollbar{height:5px}
+.fa-v2-app .fa-v2-app-header .shared-top-nav::-webkit-scrollbar-track{border-radius:999px;background:#edf1f3}
+.fa-v2-app .fa-v2-app-header .shared-top-nav::-webkit-scrollbar-thumb{border-radius:999px;background:#8fa7ba}
+.fa-v2-app .fa-v2-app-header .shared-top-nav::-webkit-scrollbar-thumb:hover{background:#718da4}
+.fa-v2-app .fa-v2-app-header .shared-top-nav .top-nav-link{flex:0 0 auto;min-height:40px;padding:10px 12px;font-size:14px;line-height:20px}
+.fa-v2-app .fa-v2-app-header .header-actions{min-width:0;margin-left:0;justify-self:end}
+@media(max-width:1120px){.fa-v2-app .fa-v2-app-header{grid-template-columns:auto minmax(0,1fr) auto;align-items:center;padding-top:0;padding-bottom:0}.fa-v2-app .fa-v2-app-header .shared-top-nav{grid-column:auto;grid-row:auto;justify-content:flex-start;order:initial;width:100%}.fa-v2-app .fa-v2-app-header .header-actions{justify-self:end}}
+@media(max-width:900px){.fa-v2-app .fa-v2-app-header .account-menu-name{display:none}}
+@media(max-width:820px){:root{--fa-v2-shared-header-height:72px}.fa-v2-app .fa-v2-app-header{min-height:var(--fa-v2-shared-header-height);padding-right:18px;padding-left:18px;gap:var(--fa-v2-space-2)}}
+@media(max-width:480px){.fa-v2-app .fa-v2-app-header{padding-right:12px;padding-left:12px}.fa-v2-app .fa-v2-brand-round{display:none}}

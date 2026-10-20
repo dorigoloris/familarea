@@ -22,14 +22,46 @@ function dateLabel(value) {
   return new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(date);
 }
 
+function plainText(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function deadlineType(deadline) {
+  return plainText(deadline.title) || 'Scadenza FamilArea';
+}
+
+function sharedDeadlineTitle(deadline) {
+  const itemName = plainText(deadline.shared_item_name);
+  const type = deadlineType(deadline);
+  return itemName ? `${itemName} · ${type}` : type;
+}
+
+function itemLabel(category) {
+  if (category === 'vehicle') return 'Veicolo';
+  if (category === 'home') return 'Immobile';
+  return 'Elemento associato';
+}
+
 function statusLabel(status) {
   return ({ active: 'Attiva', completed: 'Completata', expired: 'Scaduta', cancelled: 'Annullata' })[status] || status || 'Non disponibile';
 }
 
 function render(deadline) {
   collaborationId = deadline.collaboration_id || null;
-  document.getElementById('shared-deadline-title').textContent = deadline.title || 'Scadenza FamilArea';
+  const itemName = plainText(deadline.shared_item_name);
+  const isVehicle = deadline.shared_item_category === 'vehicle';
+  const vehiclePlate = isVehicle ? plainText(deadline.shared_vehicle_plate) : '';
+  const itemRow = document.getElementById('shared-deadline-item-row');
+  const plateRow = document.getElementById('shared-deadline-plate-row');
+
+  document.getElementById('shared-deadline-title').textContent = sharedDeadlineTitle(deadline);
   document.getElementById('shared-deadline-owner').textContent = deadline.owner_display_name ? `Condivisa da ${deadline.owner_display_name}` : 'Scadenza condivisa';
+  document.getElementById('shared-deadline-item-label').textContent = itemLabel(deadline.shared_item_category);
+  document.getElementById('shared-deadline-item').textContent = itemName;
+  itemRow.hidden = !itemName;
+  document.getElementById('shared-deadline-plate').textContent = vehiclePlate;
+  plateRow.hidden = !vehiclePlate;
+  document.getElementById('shared-deadline-type').textContent = deadlineType(deadline);
   document.getElementById('shared-deadline-category').textContent = categoryLabel(deadline.category);
   document.getElementById('shared-deadline-date').textContent = dateLabel(deadline.first_due_on);
   document.getElementById('shared-deadline-status').textContent = statusLabel(deadline.status);
