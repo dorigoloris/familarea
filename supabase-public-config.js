@@ -16,7 +16,7 @@ window.FamilAreaCaptchaConfig = Object.freeze({
   const page = window.location.pathname.split('/').pop() || 'index.html';
   const exemptPages = new Set([
     'index.html', 'login.html', 'registrati.html', 'recupera-password.html',
-    'nuova-password.html', 'contatto-condiviso.html', 'invito-evento.html',
+    'nuova-password.html', 'contatto-condiviso.html', 'invito-evento.html', 'invito-collegamento.html',
     'mfa.html', 'mfa-verifica.html'
   ]);
 

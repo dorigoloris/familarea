@@ -3,6 +3,7 @@
     'dashboard.html',
     'contatto-condiviso.html',
     'invito-album.html',
+    'invito-collegamento.html',
     'invito-evento.html',
     'inviti-area.html',
     'mfa.html'
