@@ -26,26 +26,76 @@ const deadlineItemImageEditor = deadlineItemImageService.createEditor({ client: 
 
 function itemDeadlineHref(path) { const url = new URL(path, window.location.href); url.searchParams.set('deadline_item_id', deadlineItemId); return `${url.pathname.split('/').pop()}${url.search}`; }
 function itemDeadlineCreateHref(title = '', kind = '') { const url = new URL(itemDeadlineHref('nuova-scadenza.html'), window.location.href); if (title) url.searchParams.set('preset_title', title); if (kind) url.searchParams.set('preset_kind', kind); return `${url.pathname.split('/').pop()}${url.search}`; }
+function deadlineDetailsHref(deadline) { return `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}`; }
+function isCardControl(target) { return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [data-card-control]')); }
+function navigateToDeadline(href) { window.location.assign(href); }
+
+async function openDeadlineAttachment(attachment, button) {
+  button.disabled = true;
+  try {
+    const signedUrl = await window.FamilAreaAttachmentPreview.getSignedUrl(deadlineItemClient, attachment, 60);
+    window.open(signedUrl, '_blank', 'noopener');
+  } catch (_) {
+    deadlineItemMessage.textContent = 'Non è stato possibile aprire l’allegato. Riprova.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function addDeadlineAttachmentControl(deadline, visual) {
+  try {
+    const { data, error } = await deadlineItemClient.rpc('get_attachments', {
+      p_target_type: 'deadline',
+      p_target_id: deadline.id
+    });
+    if (error) return;
+    const attachment = (data || []).find((row) => window.FamilAreaAttachmentPreview.isSupportedMimeType(row.mime_type));
+    if (!attachment || !visual.isConnected) return;
+
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'fa-v2-card-visual deadline-card-attachment-preview';
+    open.setAttribute('data-card-control', 'attachment-preview');
+    open.setAttribute('aria-label', `Apri allegato di ${deadline.title || 'questa scadenza'}`);
+    open.textContent = attachment.mime_type === 'application/pdf' ? 'PDF' : 'Apri allegato';
+    open.addEventListener('click', (event) => {
+      event.stopPropagation();
+      void openDeadlineAttachment(attachment, open);
+    });
+    visual.replaceWith(open);
+    await window.FamilAreaAttachmentPreview.renderCardPreview({ client: deadlineItemClient, attachment, container: open });
+  } catch (_) {
+    // The card stays usable even when its optional preview is unavailable.
+  }
+}
+
 function createDeadlineCard({ title, kind, icon, deadline, presetTitle = title }) {
-  const card = document.createElement('a');
-  const href = deadline ? `nuova-scadenza.html?deadline_id=${encodeURIComponent(deadline.id)}&deadline_item_id=${encodeURIComponent(deadlineItemId)}` : itemDeadlineCreateHref(presetTitle, kind);
-  card.href = href;
+  const href = deadline ? deadlineDetailsHref(deadline) : itemDeadlineCreateHref(presetTitle, kind);
+  const card = document.createElement('article');
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
-  const image = document.createElement('span'); image.className = 'fa-v2-card-visual'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
-  if (deadline) void window.FamilAreaAttachmentPreview.renderTargetCardPreview({
-    client: deadlineItemClient,
-    targetType: 'deadline',
-    targetId: deadline.id,
-    container: image
+  card.tabIndex = 0;
+  card.setAttribute('role', 'link');
+  card.setAttribute('aria-label', `${deadline ? 'Modifica' : 'Aggiungi'} ${title}`);
+  card.addEventListener('click', (event) => {
+    if (!isCardControl(event.target)) navigateToDeadline(href);
   });
+  card.addEventListener('keydown', (event) => {
+    if (event.target !== card || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    navigateToDeadline(href);
+  });
+
+  const image = document.createElement('span'); image.className = 'fa-v2-card-visual'; image.setAttribute('aria-hidden', 'true'); image.textContent = icon;
+  if (deadline) void addDeadlineAttachmentControl(deadline, image);
   const heading = document.createElement('h2'); heading.className = 'fa-v2-card-title'; heading.textContent = title;
   const detail = document.createElement('div'); detail.className = 'fa-v2-card-description';
   const type = document.createElement('div'); type.textContent = currentConfiguration?.label || '';
   const due = document.createElement('div'); due.textContent = deadline ? window.FamilAreaDateUtils.formatDateDisplay(deadline.first_due_on) : 'Nessuna scadenza';
   detail.append(type, due);
   const content = document.createElement('div'); content.className = 'fa-v2-card-content'; content.append(heading, detail);
-  const actions = document.createElement('span'); actions.className = 'fa-v2-card-actions';
-  const action = document.createElement('span'); action.className = 'fa-button fa-button-secondary fa-button-compact'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
+  const actions = document.createElement('div'); actions.className = 'fa-v2-card-actions';
+  const action = document.createElement('button'); action.type = 'button'; action.className = 'fa-button fa-button-secondary fa-button-compact'; action.textContent = deadline ? 'Modifica' : 'Aggiungi';
+  action.addEventListener('click', (event) => { event.stopPropagation(); navigateToDeadline(href); });
   actions.append(action);
   card.append(image, content, actions);
   return card;

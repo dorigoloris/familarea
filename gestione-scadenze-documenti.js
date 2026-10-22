@@ -38,27 +38,70 @@ function documentHref(documentId) {
     : path;
 }
 
-async function renderDocumentThumbnail(record, image) {
-  await window.FamilAreaAttachmentPreview.renderTargetCardPreview({
-    client: personalDocumentsClient,
-    targetType: 'personal_document',
-    targetId: record.id,
-    container: image
-  });
+function isPersonalDocumentCardControl(target) { return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [data-card-control]')); }
+function openPersonalDocumentDetails(href) { window.location.assign(href); }
+
+async function openPersonalDocumentAttachment(attachment, button) {
+  button.disabled = true;
+  try {
+    const signedUrl = await window.FamilAreaAttachmentPreview.getSignedUrl(personalDocumentsClient, attachment, 60);
+    window.open(signedUrl, '_blank', 'noopener');
+  } catch (_) {
+    setPersonalDocumentsMessage('Non è stato possibile aprire l’allegato del documento. Riprova.', true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function renderDocumentThumbnail(record, visual, documentLabel) {
+  try {
+    const { data, error } = await personalDocumentsClient.rpc('get_attachments', {
+      p_target_type: 'personal_document',
+      p_target_id: record.id
+    });
+    if (error) return;
+    const attachment = (data || []).find((row) => window.FamilAreaAttachmentPreview.isSupportedMimeType(row.mime_type));
+    if (!attachment || !visual.isConnected) return;
+
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'fa-v2-card-visual deadline-card-attachment-preview';
+    open.setAttribute('data-card-control', 'attachment-preview');
+    open.setAttribute('aria-label', `Apri allegato di ${documentLabel}`);
+    open.textContent = attachment.mime_type === 'application/pdf' ? 'PDF' : 'Apri allegato';
+    open.addEventListener('click', (event) => {
+      event.stopPropagation();
+      void openPersonalDocumentAttachment(attachment, open);
+    });
+    visual.replaceWith(open);
+    await window.FamilAreaAttachmentPreview.renderCardPreview({ client: personalDocumentsClient, attachment, container: open });
+  } catch (_) {
+    // The document details card remains usable when its optional preview is unavailable.
+  }
 }
 
 function documentRow(record) {
-  const row = document.createElement('a');
-  row.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
-  row.href = documentHref(record.id);
-  row.setAttribute('aria-label', `Apri ${personalDocumentLabels[record.document_type] || 'documento'} di ${holderName(record)}`);
-
+  const href = documentHref(record.id);
   const documentLabel = personalDocumentLabels[record.document_type] || 'Altro documento';
+  const row = document.createElement('article');
+  row.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  row.tabIndex = 0;
+  row.setAttribute('role', 'link');
+  row.setAttribute('aria-label', `Apri ${documentLabel} di ${holderName(record)}`);
+  row.addEventListener('click', (event) => {
+    if (!isPersonalDocumentCardControl(event.target)) openPersonalDocumentDetails(href);
+  });
+  row.addEventListener('keydown', (event) => {
+    if (event.target !== row || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    openPersonalDocumentDetails(href);
+  });
+
   const image = document.createElement('span');
   image.className = 'fa-v2-card-visual';
   image.setAttribute('aria-hidden', 'true');
   image.textContent = (documentLabel.trim().charAt(0) || 'D').toLocaleUpperCase('it-IT');
-  void renderDocumentThumbnail(record, image);
+  void renderDocumentThumbnail(record, image, documentLabel);
   const title = document.createElement('h2');
   title.className = 'fa-v2-card-title';
   title.textContent = documentLabel;
@@ -71,16 +114,17 @@ function documentRow(record) {
   const content = document.createElement('div');
   content.className = 'fa-v2-card-content';
   content.append(title, details);
-  const actions = document.createElement('span');
+  const actions = document.createElement('div');
   actions.className = 'fa-v2-card-actions';
-  const action = document.createElement('span');
+  const action = document.createElement('button');
+  action.type = 'button';
   action.className = 'fa-button fa-button-secondary fa-button-compact';
-  action.textContent = 'Apri';
+  action.textContent = 'Modifica';
+  action.addEventListener('click', (event) => { event.stopPropagation(); openPersonalDocumentDetails(href); });
   actions.append(action);
   row.append(image, content, actions);
   return row;
 }
-
 async function loadPersonalDocuments() {
   const { data, error } = await personalDocumentsClient.rpc('get_my_personal_documents', {
     p_family_id: personalDocumentsFamily.id

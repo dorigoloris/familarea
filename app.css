@@ -1439,6 +1439,11 @@ a.fa-v2-card-media-layout{
 }
 .fa-v2-card-visual img{width:100%;height:100%;object-fit:contain}
 .fa-v2-card-visual canvas{display:block;max-width:100%;max-height:100%;object-fit:contain}
+/* Scadenze: the optional attachment preview is a separate control from the card navigation. */
+.deadline-card-attachment-preview{margin:0;padding:0;cursor:zoom-in;font:inherit;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.deadline-card-attachment-preview:hover{border-color:#9fc6a3;box-shadow:0 6px 14px rgba(44,100,53,.13);transform:scale(1.015)}
+.deadline-card-attachment-preview:focus-visible{outline:3px solid rgba(77,139,79,.3);outline-offset:3px}
+.deadline-card-attachment-preview:disabled{cursor:wait}
 .fa-v2-card-content{display:grid;align-content:center;min-width:0;gap:4px}
 .fa-v2-card-title{
   margin:0;

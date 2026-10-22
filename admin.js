@@ -16,6 +16,9 @@
   const closeDetail = document.getElementById('admin-detail-close');
   let currentAccountId = null;
   let currentAdminUserId = null;
+  // Kept client-side as a second safety barrier while the server-side purge is under maintenance.
+  const accountDeletionEnabled = false;
+  const accountDeletionMaintenanceMessage = 'Eliminazione account temporaneamente non disponibile. Funzione in manutenzione.';
 
   if (!client) {
     setMessage('Impossibile inizializzare l’area amministrativa.', true);
@@ -168,6 +171,22 @@
     const name = subject.first_name ? `${subject.first_name} ${subject.last_name || ''}`.trim() : subject.name || 'questo account';
     accountDelete.replaceChildren();
     accountDelete.hidden = false;
+
+    if (!accountDeletionEnabled) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'fa-v2-button fa-v2-button--danger';
+      button.textContent = 'Elimina account e dati';
+      button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
+      button.title = accountDeletionMaintenanceMessage;
+      accountDelete.append(
+        makeText('h3', 'Eliminazione account'),
+        makeText('p', accountDeletionMaintenanceMessage),
+        button
+      );
+      return;
+    }
 
     if (plan?.is_self) {
       accountDelete.append(
@@ -398,6 +417,11 @@
   }
 
   async function deleteAccount(accountId, name, email, button) {
+    if (!accountDeletionEnabled) {
+      setMessage(accountDeletionMaintenanceMessage, true);
+      return;
+    }
+
     if (!window.FamilAreaConfirm || !email) {
       setMessage('Non è possibile avviare la cancellazione account.', true);
       return;

@@ -834,13 +834,39 @@ async function loadSharedMemories() {
   await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
 }
 
+function isTimelineDocumentCardControl(target) { return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [data-card-control]')); }
+function openTimelineDocumentDetails(href) { window.location.assign(href); }
+
+async function openTimelineDocumentAttachment(attachment, button) {
+  button.disabled = true;
+  try {
+    const signedUrl = await window.FamilAreaAttachmentPreview.getSignedUrl(timelineClient, attachment, 60);
+    window.open(signedUrl, '_blank', 'noopener');
+  } catch (_) {
+    timelineMessage.textContent = 'Non è stato possibile aprire l’allegato del documento. Riprova.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function createTimelineDocumentCard(timelineDocument) {
   const item = document.createElement('div');
   item.className = 'fa-v2-memory-timeline-item';
 
-  const card = document.createElement('a');
+  const href = timelineDocumentHref(timelineDocument);
+  const card = document.createElement('article');
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
-  card.href = timelineDocumentHref(timelineDocument);
+  card.tabIndex = 0;
+  card.setAttribute('role', 'link');
+  card.setAttribute('aria-label', `Apri documento ${timelineDocument.title || 'senza titolo'}`);
+  card.addEventListener('click', (event) => {
+    if (!isTimelineDocumentCardControl(event.target)) openTimelineDocumentDetails(href);
+  });
+  card.addEventListener('keydown', (event) => {
+    if (event.target !== card || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    openTimelineDocumentDetails(href);
+  });
 
   const visual = document.createElement('span');
   visual.className = 'fa-v2-card-visual';
@@ -860,11 +886,13 @@ function createTimelineDocumentCard(timelineDocument) {
   description.textContent = timelineDocument.description || 'Nessuna descrizione.';
   content.append(date, title, description);
 
-  const actions = document.createElement('span');
+  const actions = document.createElement('div');
   actions.className = 'fa-v2-card-actions';
-  const open = document.createElement('span');
+  const open = document.createElement('button');
+  open.type = 'button';
   open.className = 'fa-v2-button fa-v2-button--secondary';
-  open.textContent = 'Apri';
+  open.textContent = 'Modifica';
+  open.addEventListener('click', (event) => { event.stopPropagation(); openTimelineDocumentDetails(href); });
   actions.append(open);
   card.append(visual, content, actions);
   item.append(card);
@@ -873,17 +901,30 @@ function createTimelineDocumentCard(timelineDocument) {
 
 async function renderTimelineDocumentPreview(timelineDocument, visual) {
   try {
-    await window.FamilAreaAttachmentPreview.renderTargetCardPreview({
-      client: timelineClient,
-      targetType: 'timeline_document',
-      targetId: timelineDocument.id,
-      container: visual
+    const { data, error } = await timelineClient.rpc('get_attachments', {
+      p_target_type: 'timeline_document',
+      p_target_id: timelineDocument.id
     });
-  } catch (error) {
-    console.warn('[FamilArea timeline] document preview unavailable', error);
+    if (error) return;
+    const attachment = (data || []).find((row) => window.FamilAreaAttachmentPreview.isSupportedMimeType(row.mime_type));
+    if (!attachment || !visual.isConnected) return;
+
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'fa-v2-card-visual deadline-card-attachment-preview';
+    open.setAttribute('data-card-control', 'attachment-preview');
+    open.setAttribute('aria-label', `Apri allegato di ${timelineDocument.title || 'questo documento'}`);
+    open.textContent = attachment.mime_type === 'application/pdf' ? 'PDF' : 'Apri allegato';
+    open.addEventListener('click', (event) => {
+      event.stopPropagation();
+      void openTimelineDocumentAttachment(attachment, open);
+    });
+    visual.replaceWith(open);
+    await window.FamilAreaAttachmentPreview.renderCardPreview({ client: timelineClient, attachment, container: open });
+  } catch (_) {
+    // The document details card remains usable when its optional preview is unavailable.
   }
 }
-
 async function loadSelectedDocumentTimeline() {
   const timeline = activeTimeline();
   if (!timeline) return;
