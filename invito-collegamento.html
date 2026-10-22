@@ -1,7 +1,49 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Invito contatti - FamilArea</title><link rel="stylesheet" href="app.css"></head>
-<body class="fa-v2-app"><main class="fa-v2-page fa-v2-page-stack"><header class="fa-section-hero fa-v2-header-card fa-v2-card"><div class="fa-section-hero-content"><h1>Invito a collegare i contatti</h1><p>Accetta solo con l'account verificato che usa l'indirizzo email invitato.</p></div></header>
-<p id="connection-message" class="fa-v2-status" aria-live="polite">Verifica invito...</p>
-<section id="connection-auth" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden><div class="fa-v2-section-heading"><h2>Accedi per continuare</h2></div><p>Accedi o registrati con l'indirizzo email invitato.</p><div class="fa-v2-card-actions"><a id="connection-register" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a><a id="connection-login" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a></div></section>
-<section id="connection-response" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden><div class="fa-v2-section-heading"><h2>Rispondi all'invito</h2></div><p id="connection-sender"></p><p>Accettando verrà aggiunto un contatto nella rubrica di entrambi. Nessun Album, Scadenza o altro dato privato sarà condiviso automaticamente.</p><div class="fa-v2-card-actions"><button id="connection-decline" class="fa-v2-button fa-v2-button--secondary" type="button">Rifiuta</button><button id="connection-accept" class="fa-v2-button fa-v2-button--primary" type="button">Accetta</button></div></section>
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-public-config.js"></script><script src="auth-utils.js"></script><script src="invito-collegamento.js"></script></body></html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Invito contatti - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app">
+  <main class="fa-v2-page fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card">
+      <div class="fa-section-hero-content">
+        <h1>Invito a collegare i contatti</h1>
+        <p>Accetta solo con l'account verificato che usa l'indirizzo email invitato.</p>
+      </div>
+    </header>
+    <p id="connection-message" class="fa-v2-status" aria-live="polite">Verifica invito...</p>
+    <section id="connection-auth" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-section-heading"><h2>Accedi per continuare</h2></div>
+      <p>Accedi o registrati con l'indirizzo email invitato.</p>
+      <div class="fa-v2-card-actions">
+        <a id="connection-register" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a>
+        <a id="connection-login" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a>
+      </div>
+    </section>
+    <section id="connection-response" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-section-heading"><h2>Rispondi all'invito</h2></div>
+      <p id="connection-sender"></p>
+      <p>Accettando verr&agrave; aggiunto un contatto nella rubrica di entrambi. Nessun Album, Scadenza o altro dato privato sar&agrave; condiviso automaticamente.</p>
+      <div class="fa-v2-card-actions">
+        <button id="connection-decline" class="fa-v2-button fa-v2-button--secondary" type="button">Rifiuta</button>
+        <button id="connection-accept" class="fa-v2-button fa-v2-button--primary" type="button">Accetta</button>
+      </div>
+    </section>
+    <section id="connection-complete" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" hidden>
+      <div class="fa-v2-section-heading"><h2>Collegamento completato</h2></div>
+      <p>Ora siete presenti nelle rispettive rubriche.</p>
+      <div class="fa-v2-card-actions">
+        <a class="fa-v2-button fa-v2-button--primary" href="contatti.html">Vai ai miei Contatti</a>
+        <a class="fa-v2-button fa-v2-button--secondary" href="dashboard.html">Torna alla Dashboard</a>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="auth-utils.js"></script>
+  <script src="invito-collegamento.js"></script>
+</body>
+</html>
