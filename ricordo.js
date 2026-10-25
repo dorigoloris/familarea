@@ -284,7 +284,9 @@ function createMemorySharingRow(account, { status = '', actionLabel = '', action
 
 
 
-function memoryShareInvitationStatusLabel(status) {
+function memoryShareInvitationStatusLabel(status, collaborationStatus) {
+  if (status === 'accepted' && collaborationStatus === 'revoked') return 'Abbandonato dal destinatario';
+  if (status === 'accepted' && collaborationStatus !== undefined && collaborationStatus !== 'accepted') return 'Accesso non disponibile';
   return ({ pending: 'In attesa', accepted: 'Accettato', declined: 'Rifiutato', revoked: 'Revocato', expired: 'Scaduto', cancelled: 'Annullato' })[status] || 'Stato non disponibile';
 }
 
@@ -504,7 +506,7 @@ function openMemorySharingDialog() {
       email.textContent = invite.recipient_email;
       const meta = document.createElement('p');
       meta.className = 'fa-v2-status';
-      meta.textContent = memoryShareInvitationStatusLabel(invite.status);
+      meta.textContent = memoryShareInvitationStatusLabel(invite.status, invite.collaboration_status);
       details.append(email, meta);
       row.append(details);
       emailInvites.append(row);

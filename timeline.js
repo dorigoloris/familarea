@@ -298,7 +298,7 @@ async function deleteActiveTimeline() {
   }
 }
 
-function createMemoryCard(memory, { shared = false, onOpen = null } = {}) {
+function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = null } = {}) {
   const item = shared ? null : document.createElement('div');
   if (item) item.className = 'fa-v2-memory-timeline-item';
   const card = document.createElement('article');
@@ -354,7 +354,15 @@ function createMemoryCard(memory, { shared = false, onOpen = null } = {}) {
       event.stopPropagation();
       open();
     });
-    actions.append(openButton);
+    const leaveButton = document.createElement('button');
+    leaveButton.type = 'button';
+    leaveButton.className = 'fa-v2-button fa-v2-button--danger';
+    leaveButton.textContent = 'Abbandona condivisione';
+    leaveButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (onLeave) void onLeave(memory, leaveButton);
+    });
+    actions.append(openButton, leaveButton);
   } else {
     const edit = document.createElement('a');
     edit.className = 'fa-v2-button fa-v2-button--secondary';
@@ -809,6 +817,31 @@ async function openSharedMemoryGallery(memory, trigger) {
   await openMemoryGallery(data, trigger);
 }
 
+async function leaveSharedMemory(memory, button) {
+  if (!memory?.collaboration_id || button.disabled) return;
+
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Abbandonare la condivisione?',
+    message: 'Non potrai più aprire questo album né le sue fotografie. L’album resterà disponibile al proprietario e agli altri destinatari.',
+    confirmText: 'Abbandona condivisione'
+  });
+  if (!confirmed) return;
+
+  button.disabled = true;
+  const { error } = await timelineClient.rpc('leave_my_memory_collaboration', {
+    p_collaboration_id: memory.collaboration_id
+  });
+  if (error) {
+    button.disabled = false;
+    sharedMemoriesMessage.textContent = timelineRpcMessage('abbandonare la condivisione', error);
+    return;
+  }
+
+  await loadSharedMemories();
+  sharedMemoriesMessage.textContent = 'Condivisione abbandonata.';
+}
+
 async function loadSharedMemories() {
   if (selectedTimelineType !== 'memory' || selectedTimelineId) return;
   sharedMemoriesCollection.hidden = false;
@@ -826,7 +859,7 @@ async function loadSharedMemories() {
   }
   const cards = data.map((memory) => ({
     memory,
-    ...createMemoryCard(memory, { shared: true, onOpen: openSharedMemoryGallery })
+    ...createMemoryCard(memory, { shared: true, onOpen: openSharedMemoryGallery, onLeave: leaveSharedMemory })
   }));
   sharedMemoriesList.replaceChildren(...cards.map(({ item }) => item));
   sharedMemoriesEmpty.hidden = data.length > 0;
