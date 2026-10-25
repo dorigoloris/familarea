@@ -52,10 +52,18 @@ const lightboxPosition = document.getElementById('memory-lightbox-position');
 
 const memoryPhotoMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const memoryDocumentMimeTypes = new Set(['application/pdf']);
+const galleryInitialPhotoCount = 8;
+const galleryUrlSigningConcurrency = 3;
 let galleryPhotosData = [];
 let galleryPhotoIndex = 0;
 let galleryPreviousFocus = null;
 let lightboxHistoryEntry = false;
+let galleryPhotoLoadGeneration = 0;
+let galleryPhotoSignQueue = [];
+let galleryPhotoSignInFlight = 0;
+let galleryInitialPhotoIndexes = new Set();
+let galleryThumbnailObserver = null;
+let galleryThumbnailScrollHandler = null;
 let selectedTimelines = [];
 const lightboxGesture = {
   scale: 1,
@@ -411,8 +419,117 @@ function photoPositionText() {
   return galleryPhotosData.length ? `${galleryPhotoIndex + 1} di ${galleryPhotosData.length}` : '';
 }
 
+function stopGalleryThumbnailObservation() {
+  galleryThumbnailObserver?.disconnect();
+  galleryThumbnailObserver = null;
+  if (galleryThumbnailScrollHandler) {
+    galleryThumbnails.removeEventListener('scroll', galleryThumbnailScrollHandler);
+    galleryThumbnailScrollHandler = null;
+  }
+}
+
+function resetGalleryPhotoLoading() {
+  galleryPhotoLoadGeneration += 1;
+  galleryPhotoSignQueue = [];
+  galleryInitialPhotoIndexes = new Set();
+  stopGalleryThumbnailObservation();
+  return galleryPhotoLoadGeneration;
+}
+
+function queueGalleryPhotoUrl(index, { priority = false } = {}) {
+  const photo = galleryPhotosData[index];
+  if (!photo || photo.urlState === 'ready' || photo.urlState === 'queued' || photo.urlState === 'loading' || photo.urlState === 'failed') return;
+
+  photo.urlState = 'queued';
+  const task = { index, generation: galleryPhotoLoadGeneration };
+  if (priority) galleryPhotoSignQueue.unshift(task);
+  else galleryPhotoSignQueue.push(task);
+  drainGalleryPhotoSignQueue();
+}
+
+function settleInitialGalleryPhoto(index, generation) {
+  if (generation !== galleryPhotoLoadGeneration || !galleryInitialPhotoIndexes.delete(index)) return;
+  if (!galleryInitialPhotoIndexes.size) observeGalleryThumbnails();
+}
+
+function drainGalleryPhotoSignQueue() {
+  while (galleryPhotoSignInFlight < galleryUrlSigningConcurrency && galleryPhotoSignQueue.length) {
+    const task = galleryPhotoSignQueue.shift();
+    const photo = galleryPhotosData[task.index];
+    if (task.generation !== galleryPhotoLoadGeneration || !photo || photo.urlState !== 'queued') continue;
+
+    photo.urlState = 'loading';
+    galleryPhotoSignInFlight += 1;
+    void signGalleryPhoto(task, photo);
+  }
+}
+
+async function signGalleryPhoto(task, photo) {
+  try {
+    const signedUrl = await window.FamilAreaAttachmentPreview.getSignedUrl(timelineClient, photo);
+    if (task.generation !== galleryPhotoLoadGeneration || galleryPhotosData[task.index] !== photo) return;
+
+    photo.signedUrl = signedUrl;
+    photo.urlState = 'ready';
+  } catch (error) {
+    if (task.generation !== galleryPhotoLoadGeneration || galleryPhotosData[task.index] !== photo) return;
+
+    photo.urlState = 'failed';
+    console.warn('[FamilArea timeline] memory photograph unavailable', error);
+  } finally {
+    galleryPhotoSignInFlight = Math.max(0, galleryPhotoSignInFlight - 1);
+    if (task.generation === galleryPhotoLoadGeneration && galleryPhotosData[task.index] === photo) {
+      settleInitialGalleryPhoto(task.index, task.generation);
+      renderGalleryPhoto();
+      if (!lightbox.hidden) renderLightboxPhoto();
+    }
+    drainGalleryPhotoSignQueue();
+  }
+}
+
+function queueVisibleGalleryThumbnails() {
+  const rootRect = galleryThumbnails.getBoundingClientRect();
+  galleryThumbnails.querySelectorAll('[data-gallery-photo-index]').forEach((thumbnail) => {
+    const index = Number(thumbnail.dataset.galleryPhotoIndex);
+    const rect = thumbnail.getBoundingClientRect();
+    if (rect.right >= rootRect.left - 180 && rect.left <= rootRect.right + 180) queueGalleryPhotoUrl(index);
+  });
+}
+
+function observeGalleryThumbnails() {
+  stopGalleryThumbnailObservation();
+  if (galleryModal.hidden || galleryInitialPhotoIndexes.size) return;
+
+  const thumbnails = [...galleryThumbnails.querySelectorAll('[data-gallery-photo-index]')];
+  if (!thumbnails.length) return;
+
+  if ('IntersectionObserver' in window) {
+    galleryThumbnailObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const index = Number(entry.target.dataset.galleryPhotoIndex);
+        queueGalleryPhotoUrl(index);
+        galleryThumbnailObserver?.unobserve(entry.target);
+      });
+    }, { root: galleryThumbnails, rootMargin: '0px 180px', threshold: 0.01 });
+    thumbnails.forEach((thumbnail) => galleryThumbnailObserver.observe(thumbnail));
+    return;
+  }
+
+  galleryThumbnailScrollHandler = () => queueVisibleGalleryThumbnails();
+  galleryThumbnails.addEventListener('scroll', galleryThumbnailScrollHandler, { passive: true });
+  queueVisibleGalleryThumbnails();
+}
+
+function preloadInitialGalleryPhotos() {
+  galleryInitialPhotoIndexes = new Set(galleryPhotosData.slice(0, galleryInitialPhotoCount).map((_, index) => index));
+  galleryInitialPhotoIndexes.forEach((index) => queueGalleryPhotoUrl(index, { priority: index === galleryPhotoIndex }));
+  if (!galleryInitialPhotoIndexes.size) observeGalleryThumbnails();
+}
+
 function renderGalleryPhoto() {
   const photo = galleryPhotosData[galleryPhotoIndex];
+  stopGalleryThumbnailObservation();
   galleryPhotoStage.replaceChildren();
   galleryThumbnails.replaceChildren();
   if (!photo) {
@@ -425,7 +542,7 @@ function renderGalleryPhoto() {
   photoButton.type = 'button';
   photoButton.className = 'memory-gallery-image-button';
   photoButton.setAttribute('aria-label', 'Apri fotografia a schermo intero');
-  if (photo.signedUrl) {
+  if (photo.urlState === 'ready' && photo.signedUrl) {
     const image = document.createElement('img');
     image.src = photo.signedUrl;
     image.alt = photo.original_filename || 'Fotografia del ricordo';
@@ -434,9 +551,13 @@ function renderGalleryPhoto() {
       photoButton.disabled = true;
     });
     photoButton.append(image);
-  } else {
+  } else if (photo.urlState === 'failed') {
     photoButton.disabled = true;
     photoButton.textContent = 'Impossibile caricare questa fotografia.';
+  } else {
+    photoButton.disabled = true;
+    photoButton.textContent = 'Caricamento fotografia…';
+    queueGalleryPhotoUrl(galleryPhotoIndex, { priority: true });
   }
   photoButton.addEventListener('click', openLightbox);
   galleryPhotoStage.append(photoButton);
@@ -448,33 +569,47 @@ function renderGalleryPhoto() {
     const thumbnail = document.createElement('button');
     thumbnail.type = 'button';
     thumbnail.className = 'memory-gallery-thumbnail';
+    thumbnail.dataset.galleryPhotoIndex = String(index);
     thumbnail.setAttribute('aria-label', `Mostra fotografia ${index + 1}`);
     thumbnail.setAttribute('aria-current', String(index === galleryPhotoIndex));
-    if (thumbnailPhoto.signedUrl) {
+    if (thumbnailPhoto.urlState === 'ready' && thumbnailPhoto.signedUrl) {
       const thumbnailImage = document.createElement('img');
       thumbnailImage.src = thumbnailPhoto.signedUrl;
       thumbnailImage.alt = '';
+      thumbnailImage.loading = 'lazy';
       thumbnailImage.addEventListener('error', () => thumbnail.replaceChildren(String(index + 1)));
       thumbnail.append(thumbnailImage);
-    } else {
+    } else if (thumbnailPhoto.urlState === 'failed') {
       thumbnail.textContent = String(index + 1);
       thumbnail.disabled = true;
+    } else {
+      thumbnail.textContent = String(index + 1);
     }
     thumbnail.addEventListener('click', () => setGalleryPhoto(index));
     galleryThumbnails.append(thumbnail);
   });
+
+  if (!galleryInitialPhotoIndexes.size) observeGalleryThumbnails();
 }
 
 function setGalleryPhoto(index) {
   if (!galleryPhotosData.length) return;
   galleryPhotoIndex = (index + galleryPhotosData.length) % galleryPhotosData.length;
+  queueGalleryPhotoUrl(galleryPhotoIndex, { priority: true });
   renderGalleryPhoto();
   if (!lightbox.hidden) renderLightboxPhoto();
 }
 
 function renderLightboxPhoto() {
   const photo = galleryPhotosData[galleryPhotoIndex];
-  if (!photo?.signedUrl) return closeLightbox();
+  if (!photo) return closeLightbox();
+  if (photo.urlState !== 'ready' || !photo.signedUrl) {
+    queueGalleryPhotoUrl(galleryPhotoIndex, { priority: true });
+    lightboxImage.removeAttribute('src');
+    lightboxImage.alt = 'Caricamento fotografia';
+    lightboxPosition.textContent = photoPositionText();
+    return;
+  }
   resetLightboxTransform();
   lightboxImage.style.removeProperty('width');
   lightboxImage.style.removeProperty('height');
@@ -502,7 +637,7 @@ function exitLightboxFullscreen() {
 }
 
 function openLightbox() {
-  if (!galleryPhotosData[galleryPhotoIndex]?.signedUrl) return;
+  if (galleryPhotosData[galleryPhotoIndex]?.urlState !== 'ready') return;
   lightbox.hidden = false;
   lightbox.classList.toggle('memory-lightbox--immersive', useImmersiveLightbox());
   if (useImmersiveLightbox() && !lightboxHistoryEntry) {
@@ -676,16 +811,6 @@ function renderGalleryDocuments(documents) {
     galleryDocuments.append(row);
   });
 }
-
-async function signedPhoto(attachment) {
-  try {
-    return { ...attachment, signedUrl: await window.FamilAreaAttachmentPreview.getSignedUrl(timelineClient, attachment) };
-  } catch (error) {
-    console.warn('[FamilArea timeline] memory photograph unavailable', error);
-    return { ...attachment, signedUrl: null };
-  }
-}
-
 async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   galleryPreviousFocus = trigger;
   galleryModal.hidden = false;
@@ -701,6 +826,7 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
     href.searchParams.set('share', '1');
     galleryShare.href = `${href.pathname}${href.search}`;
   }
+  const loadGeneration = resetGalleryPhotoLoading();
   galleryPhotosData = [];
   galleryPhotoIndex = 0;
   galleryPhotos.hidden = true;
@@ -711,6 +837,7 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   setGalleryMessage('Caricamento fotografie e documenti...');
 
   const { data, error } = await timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id });
+  if (loadGeneration !== galleryPhotoLoadGeneration || galleryModal.hidden) return;
   if (error) {
     console.error('[FamilArea timeline] gallery attachments failed', error);
     setGalleryMessage('Impossibile caricare gli allegati del ricordo.', true);
@@ -720,10 +847,11 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   const photos = attachments.filter((attachment) => memoryPhotoMimeTypes.has(attachment.mime_type));
   const coverIndex = photos.findIndex((attachment) => attachment.id === memory.cover_attachment_id);
   if (coverIndex > 0) photos.unshift(photos.splice(coverIndex, 1)[0]);
-  galleryPhotosData = await Promise.all(photos.map(signedPhoto));
+  galleryPhotosData = photos.map((attachment) => ({ ...attachment, signedUrl: null, urlState: 'idle' }));
+  preloadInitialGalleryPhotos();
   renderGalleryPhoto();
   renderGalleryDocuments(attachments.filter((attachment) => memoryDocumentMimeTypes.has(attachment.mime_type)));
-  setGalleryMessage(galleryPhotosData.some((photo) => !photo.signedUrl) ? 'Alcune fotografie non sono disponibili al momento.' : '');
+  setGalleryMessage('');
 }
 
 function closeMemoryGallery() {
@@ -731,6 +859,7 @@ function closeMemoryGallery() {
   if (galleryModal.hidden) return;
   galleryModal.hidden = true;
   setTimelineInert(false);
+  resetGalleryPhotoLoading();
   galleryPhotosData = [];
   galleryShare.hidden = true;
   galleryPreviousFocus?.focus?.();
