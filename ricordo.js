@@ -10,6 +10,9 @@ let coverUpdateInProgress = false;
 let formBaseline = null;
 let leavePromptInProgress = false;
 let browserBackGuardArmed = false;
+let memoryParticipants = [];
+let memoryContacts = [];
+let memoryParticipantsLoading = false;
 
 const memoryForm = document.getElementById('memory-form');
 const memoryMessage = document.getElementById('memory-message');
@@ -25,6 +28,20 @@ const memoryPhotosSection = document.getElementById('memory-photos-section');
 const memoryDocumentsSection = document.getElementById('memory-documents-section');
 const memoryBackLink = document.getElementById('memory-back-link');
 const memoryCancel = document.getElementById('memory-cancel');
+const memoryParticipantsNote = document.getElementById('memory-participants-note');
+const memoryParticipantsControls = document.getElementById('memory-participants-controls');
+const memoryParticipantsMessage = document.getElementById('memory-participants-message');
+const memoryParticipantsEmpty = document.getElementById('memory-participants-empty');
+const memoryParticipantsList = document.getElementById('memory-participants-list');
+const memoryParticipantSearch = document.getElementById('memory-participant-search');
+const memoryParticipantSearchResults = document.getElementById('memory-participant-search-results');
+const memoryParticipantCreateToggle = document.getElementById('memory-participant-create-toggle');
+const memoryParticipantCreate = document.getElementById('memory-participant-create');
+const memoryParticipantFirstName = document.getElementById('memory-participant-first-name');
+const memoryParticipantLastName = document.getElementById('memory-participant-last-name');
+const memoryParticipantEmail = document.getElementById('memory-participant-email');
+const memoryParticipantCreateSubmit = document.getElementById('memory-participant-create-submit');
+const memoryParticipantCreateCancel = document.getElementById('memory-participant-create-cancel');
 
 const photoMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentMimeTypes = ['application/pdf'];
@@ -106,6 +123,245 @@ async function verifyMemoryTimeline(timelineId = requestedTimelineId) {
   }
 }
 
+function participantName(person) {
+  return [person.first_name, person.last_name].filter(Boolean).join(' ') || 'Contatto senza nome';
+}
+
+function setParticipantsMessage(text = '', isError = false) {
+  memoryParticipantsMessage.textContent = text;
+  memoryParticipantsMessage.classList.toggle('is-error', isError);
+}
+
+function setParticipantsBusy(inProgress) {
+  memoryParticipantsLoading = inProgress;
+  memoryParticipantSearch.disabled = inProgress;
+  memoryParticipantCreateToggle.disabled = inProgress;
+  memoryParticipantCreateSubmit.disabled = inProgress;
+  memoryParticipantCreateCancel.disabled = inProgress;
+}
+
+function renderParticipantSearch() {
+  const query = memoryParticipantSearch.value.trim().toLocaleLowerCase('it-IT');
+  memoryParticipantSearchResults.replaceChildren();
+  if (!memoryId || !query) {
+    memoryParticipantSearchResults.hidden = true;
+    return;
+  }
+
+  const selectedContactIds = new Set(memoryParticipants.map((participant) => participant.contact_id));
+  const matches = memoryContacts.filter((contact) => (
+    !selectedContactIds.has(contact.id)
+    && participantName(contact).toLocaleLowerCase('it-IT').includes(query)
+  )).slice(0, 8);
+
+  if (!matches.length) {
+    const empty = document.createElement('p');
+    empty.className = 'fa-v2-status';
+    empty.textContent = 'Nessun contatto disponibile.';
+    memoryParticipantSearchResults.append(empty);
+  } else {
+    matches.forEach((contact) => {
+      const row = document.createElement('div');
+      row.className = 'fa-v2-list-row';
+      const details = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = participantName(contact);
+      details.append(name);
+      const actions = document.createElement('div');
+      actions.className = 'fa-v2-card-actions';
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'fa-v2-button fa-v2-button--secondary';
+      add.textContent = 'Aggiungi';
+      add.disabled = memoryParticipantsLoading;
+      add.addEventListener('click', () => { void addMemoryParticipant(contact.id); });
+      actions.append(add);
+      row.append(details, actions);
+      memoryParticipantSearchResults.append(row);
+    });
+  }
+  memoryParticipantSearchResults.hidden = false;
+}
+
+function renderMemoryParticipants() {
+  memoryParticipantsList.replaceChildren();
+  memoryParticipantsEmpty.hidden = Boolean(memoryParticipants.length) || !memoryId;
+  memoryParticipants.forEach((participant) => {
+    const row = document.createElement('div');
+    row.className = 'fa-v2-list-row';
+    const details = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = participantName(participant);
+    details.append(name);
+    if (participant.email) {
+      const email = document.createElement('p');
+      email.className = 'fa-v2-status';
+      email.textContent = participant.email;
+      details.append(email);
+    }
+    const actions = document.createElement('div');
+    actions.className = 'fa-v2-card-actions';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'fa-v2-button fa-v2-button--secondary list-item-delete';
+    remove.textContent = 'Rimuovi dall’album';
+    remove.disabled = memoryParticipantsLoading;
+    remove.addEventListener('click', () => { void removeMemoryParticipant(participant.contact_id); });
+    actions.append(remove);
+    row.append(details, actions);
+    memoryParticipantsList.append(row);
+  });
+  renderParticipantSearch();
+}
+
+async function loadMemoryContacts() {
+  const { data, error } = await memoryClient.rpc('get_my_contacts');
+  if (error) throw error;
+  memoryContacts = Array.isArray(data) ? data : [];
+}
+
+async function loadMemoryParticipants() {
+  if (!memoryId) {
+    memoryParticipants = [];
+    memoryParticipantsNote.hidden = false;
+    memoryParticipantsControls.hidden = true;
+    memoryParticipantsEmpty.hidden = true;
+    memoryParticipantsList.replaceChildren();
+    memoryParticipantSearchResults.hidden = true;
+    return;
+  }
+
+  setParticipantsBusy(true);
+  try {
+    const [{ data: participants, error: participantsError }] = await Promise.all([
+      memoryClient.rpc('get_memory_participants', { p_memory_id: memoryId }),
+      loadMemoryContacts()
+    ]);
+    if (participantsError) throw participantsError;
+    memoryParticipants = Array.isArray(participants) ? participants : [];
+    memoryParticipantsNote.hidden = true;
+    memoryParticipantsControls.hidden = false;
+    setParticipantsMessage('');
+    renderMemoryParticipants();
+  } catch (error) {
+    memoryParticipants = [];
+    memoryParticipantsControls.hidden = true;
+    memoryParticipantsEmpty.hidden = true;
+    memoryParticipantsList.replaceChildren();
+    setParticipantsMessage(rpcMessage('caricare i partecipanti', error), true);
+  } finally {
+    setParticipantsBusy(false);
+    if (!memoryParticipantsControls.hidden) renderMemoryParticipants();
+  }
+}
+
+async function addMemoryParticipant(contactId) {
+  if (!memoryId || memoryParticipantsLoading) return;
+  setParticipantsBusy(true);
+  setParticipantsMessage('Aggiunta partecipante...');
+  try {
+    const { error } = await memoryClient.rpc('add_memory_participant', {
+      p_memory_id: memoryId,
+      p_contact_id: contactId
+    });
+    if (error) {
+      if (error.message === 'memory_participant_already_exists') {
+        await loadMemoryParticipants();
+        setParticipantsMessage('Questo contatto partecipa già all’album.', true);
+        return;
+      }
+      throw error;
+    }
+    memoryParticipantSearch.value = '';
+    setParticipantsMessage('Partecipante aggiunto.');
+    await loadMemoryParticipants();
+  } catch (error) {
+    setParticipantsMessage(rpcMessage('aggiungere il partecipante', error), true);
+  } finally {
+    setParticipantsBusy(false);
+  }
+}
+
+async function removeMemoryParticipant(contactId) {
+  if (!memoryId || memoryParticipantsLoading) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    title: 'Rimuovere il partecipante?',
+    message: 'Il contatto resterà nella tua rubrica.',
+    confirmText: 'Rimuovi'
+  });
+  if (!confirmed) return;
+
+  setParticipantsBusy(true);
+  setParticipantsMessage('Rimozione partecipante...');
+  try {
+    const { error } = await memoryClient.rpc('remove_memory_participant', {
+      p_memory_id: memoryId,
+      p_contact_id: contactId
+    });
+    if (error) throw error;
+    setParticipantsMessage('Partecipante rimosso dall’album.');
+    await loadMemoryParticipants();
+  } catch (error) {
+    setParticipantsMessage(rpcMessage('rimuovere il partecipante', error), true);
+  } finally {
+    setParticipantsBusy(false);
+  }
+}
+
+function closeMemoryParticipantCreate() {
+  memoryParticipantCreate.hidden = true;
+  memoryParticipantFirstName.value = '';
+  memoryParticipantLastName.value = '';
+  memoryParticipantEmail.value = '';
+}
+
+async function createAndAddMemoryParticipant() {
+  if (!memoryId || memoryParticipantsLoading) return;
+  const firstName = memoryParticipantFirstName.value.trim();
+  const lastName = memoryParticipantLastName.value.trim();
+  const email = memoryParticipantEmail.value.trim();
+  if (!firstName) {
+    setParticipantsMessage('Inserisci il nome del contatto.', true);
+    memoryParticipantFirstName.focus();
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setParticipantsMessage('Inserisci un indirizzo email valido.', true);
+    memoryParticipantEmail.focus();
+    return;
+  }
+
+  setParticipantsBusy(true);
+  setParticipantsMessage('Creazione contatto...');
+  try {
+    const { data: contactId, error: contactError } = await memoryClient.rpc('create_contact', {
+      p_first_name: firstName,
+      p_last_name: lastName || null,
+      p_birth_date: null
+    });
+    if (contactError || !contactId) throw contactError || new Error('Contatto non creato');
+    if (email) {
+      const { error: methodsError } = await memoryClient.rpc('replace_contact_methods', {
+        p_contact_id: contactId,
+        p_methods: [{ type: 'email', value: email, is_primary: true }]
+      });
+      if (methodsError) throw methodsError;
+    }
+    const { error: participantError } = await memoryClient.rpc('add_memory_participant', {
+      p_memory_id: memoryId,
+      p_contact_id: contactId
+    });
+    if (participantError) throw participantError;
+    closeMemoryParticipantCreate();
+    memoryParticipantSearch.value = '';
+    setParticipantsMessage('Contatto creato e aggiunto all’album.');
+    await loadMemoryParticipants();
+  } catch (error) {
+    setParticipantsMessage(rpcMessage('creare il contatto', error), true);
+  } finally {
+    setParticipantsBusy(false);
+  }
+}
 function createCoverActions(attachment) {
   if (!memoryId) return null;
 
@@ -597,6 +853,7 @@ async function loadMemory() {
       return;
     }
     initialiseDraftPhotoAttachments();
+    await loadMemoryParticipants();
     memoryForm.hidden = false;
     setMessage('');
     captureFormBaseline();
@@ -622,6 +879,7 @@ async function loadMemory() {
   memoryForm.hidden = false;
   setMessage('');
   await initialiseAttachments();
+  await loadMemoryParticipants();
   captureFormBaseline();
   updateTimelineLinks();
   openRequestedMemorySharing();
@@ -655,6 +913,7 @@ async function saveMemory({ redirectOnSuccess = true } = {}) {
     requestedTimelineId = data.timeline_id || timelineId;
     window.history.replaceState({}, '', `ricordo.html?${new URLSearchParams({ memory_id: memoryId, timeline_id: requestedTimelineId })}`);
     updatePageForStoredMemory({ showDocuments: false });
+    await loadMemoryParticipants();
 
     let uploadResult = { ok: true, failed: 0 };
     if (draftPhotoAttachments?.pendingCount()) {
@@ -682,6 +941,13 @@ async function saveMemory({ redirectOnSuccess = true } = {}) {
   }
 }
 
+memoryParticipantSearch.addEventListener('input', renderParticipantSearch);
+memoryParticipantCreateToggle.addEventListener('click', () => {
+  memoryParticipantCreate.hidden = !memoryParticipantCreate.hidden;
+  if (!memoryParticipantCreate.hidden) memoryParticipantFirstName.focus();
+});
+memoryParticipantCreateCancel.addEventListener('click', closeMemoryParticipantCreate);
+memoryParticipantCreateSubmit.addEventListener('click', () => { void createAndAddMemoryParticipant(); });
 memoryForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await saveMemory();

@@ -169,7 +169,9 @@ $('delete-button').onclick = async () => {
   button.disabled = true;
   const { error } = await supabaseClient.rpc('delete_contact', { p_contact_id: contactId });
   if (error) {
-    $('message').textContent = 'Impossibile eliminare il contatto.';
+    $('message').textContent = error.message === 'contact_is_memory_participant'
+      ? 'Non puoi eliminare questo contatto perché partecipa a uno o più Album. Rimuovilo prima dagli Album.'
+      : 'Impossibile eliminare il contatto.';
     button.disabled = false;
     return;
   }

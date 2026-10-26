@@ -47,6 +47,51 @@
         </div>
       </div>
 
+      <div class="form-actions">
+        <button id="memory-delete" class="fa-v2-button fa-v2-button--danger" type="button" hidden>Elimina album</button>
+        <button id="memory-share" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Condividi</button>
+        <a id="memory-cancel" class="btn secondary-button fa-v2-button fa-v2-button--secondary" href="timeline.html">Annulla</a>
+        <button id="memory-submit" class="fa-v2-button fa-v2-button--primary" type="submit">Salva album</button>
+      </div>
+
+      <section id="memory-participants-section" class="fa-v2-section-card fa-v2-section-card--compact fa-v2-card fa-v2-page-stack" aria-labelledby="memory-participants-title">
+        <div class="deadline-attachments-heading">
+          <div>
+            <h2 id="memory-participants-title">Partecipanti</h2>
+            <p class="deadline-attachments-intro">Le persone restano nella tua rubrica e non ricevono accesso all’album.</p>
+          </div>
+        </div>
+        <p id="memory-participants-note" class="deadline-attachments-message">Salva prima l’album per aggiungere partecipanti.</p>
+        <div id="memory-participants-controls" hidden>
+          <label for="memory-participant-search">Cerca nella rubrica</label>
+          <input id="memory-participant-search" class="fa-v2-input" type="search" autocomplete="off" placeholder="Nome o cognome">
+          <div id="memory-participant-search-results" class="fa-v2-list" hidden></div>
+          <div class="form-actions">
+            <button id="memory-participant-create-toggle" class="fa-v2-button fa-v2-button--secondary" type="button">+ Nuovo contatto</button>
+          </div>
+          <div id="memory-participant-create" class="deadline-form-grid" hidden>
+            <div>
+              <label for="memory-participant-first-name">Nome *</label>
+              <input id="memory-participant-first-name" class="fa-v2-input" type="text" maxlength="200" autocomplete="given-name">
+            </div>
+            <div>
+              <label for="memory-participant-last-name">Cognome</label>
+              <input id="memory-participant-last-name" class="fa-v2-input" type="text" maxlength="200" autocomplete="family-name">
+            </div>
+            <div class="form-field-wide">
+              <label for="memory-participant-email">Email</label>
+              <input id="memory-participant-email" class="fa-v2-input" type="email" maxlength="320" autocomplete="email">
+            </div>
+            <div class="form-actions form-field-wide">
+              <button id="memory-participant-create-submit" class="fa-v2-button fa-v2-button--primary" type="button">Crea e aggiungi</button>
+              <button id="memory-participant-create-cancel" class="fa-v2-button fa-v2-button--secondary" type="button">Annulla</button>
+            </div>
+          </div>
+        </div>
+        <p id="memory-participants-message" class="deadline-attachments-message" aria-live="polite"></p>
+        <p id="memory-participants-empty" class="deadline-attachments-empty" hidden>Nessun partecipante.</p>
+        <div id="memory-participants-list" class="fa-v2-list"></div>
+      </section>
       <section id="memory-photos-section" class="fa-v2-section-card fa-v2-section-card--compact fa-v2-card fa-v2-page-stack" aria-labelledby="memory-photos-title">
         <div class="deadline-attachments-heading">
           <div>
@@ -75,12 +120,6 @@
         <div id="memory-documents-list" class="deadline-attachments-list"></div>
       </section>
 
-      <div class="form-actions">
-        <button id="memory-delete" class="fa-v2-button fa-v2-button--danger" type="button" hidden>Elimina album</button>
-        <button id="memory-share" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Condividi</button>
-        <a id="memory-cancel" class="btn secondary-button fa-v2-button fa-v2-button--secondary" href="timeline.html">Annulla</a>
-        <button id="memory-submit" class="fa-v2-button fa-v2-button--primary" type="submit">Salva album</button>
-      </div>
     </form>
   </main>
 
