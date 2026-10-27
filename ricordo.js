@@ -13,6 +13,14 @@ let browserBackGuardArmed = false;
 let memoryParticipants = [];
 let memoryContacts = [];
 let memoryParticipantsLoading = false;
+let memoryPhotoParticipantTags = new Map();
+let memoryPhotoTagStates = new Map();
+let memoryPhotoTagsLoaded = false;
+let activeMemoryPhotoAttachmentId = '';
+let memoryPhotoTagsSaving = false;
+let memoryPhotoShareableAttachments = new Map();
+let memoryPhotoShareOwner = false;
+
 
 const memoryForm = document.getElementById('memory-form');
 const memoryMessage = document.getElementById('memory-message');
@@ -22,6 +30,7 @@ const memoryDescription = document.getElementById('memory-description');
 const memorySubmit = document.getElementById('memory-submit');
 const memoryDelete = document.getElementById('memory-delete');
 const memoryShare = document.getElementById('memory-share');
+const memoryPhotoShare = document.getElementById('memory-photo-share');
 const memoryPageTitle = document.getElementById('memory-page-title');
 const memoryPageIntro = document.getElementById('memory-page-intro');
 const memoryPhotosSection = document.getElementById('memory-photos-section');
@@ -42,6 +51,15 @@ const memoryParticipantLastName = document.getElementById('memory-participant-la
 const memoryParticipantEmail = document.getElementById('memory-participant-email');
 const memoryParticipantCreateSubmit = document.getElementById('memory-participant-create-submit');
 const memoryParticipantCreateCancel = document.getElementById('memory-participant-create-cancel');
+const memoryPhotoTagsDialog = document.getElementById('memory-photo-tags-dialog');
+const memoryPhotoTagsClose = document.getElementById('memory-photo-tags-close');
+const memoryPhotoTagsIntro = document.getElementById('memory-photo-tags-intro');
+const memoryPhotoTagsList = document.getElementById('memory-photo-tags-list');
+const memoryPhotoTagsEmpty = document.getElementById('memory-photo-tags-empty');
+const memoryPhotoTagsMessage = document.getElementById('memory-photo-tags-message');
+const memoryPhotoTagsCancel = document.getElementById('memory-photo-tags-cancel');
+const memoryPhotoTagsSave = document.getElementById('memory-photo-tags-save');
+
 
 const photoMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentMimeTypes = ['application/pdf'];
@@ -61,6 +79,7 @@ function setSaving(inProgress) {
   memorySubmit.disabled = inProgress;
   memoryDelete.disabled = inProgress;
   memoryShare.disabled = inProgress;
+  memoryPhotoShare.disabled = inProgress;
   memorySubmit.textContent = inProgress ? 'Salvataggio...' : (memoryId ? 'Salva modifiche' : 'Salva album');
 }
 
@@ -362,6 +381,163 @@ async function createAndAddMemoryParticipant() {
     setParticipantsBusy(false);
   }
 }
+function setMemoryPhotoTagsMessage(text = '', isError = false) {
+  memoryPhotoTagsMessage.textContent = text;
+  memoryPhotoTagsMessage.classList.toggle('is-error', isError);
+}
+
+function photoTagIdsForAttachment(id) {
+  return memoryPhotoParticipantTags.get(id) || [];
+}
+
+function photoTagStateForAttachment(id) {
+  return memoryPhotoTagStates.get(id) || null;
+}
+
+function isOwnerTaggedForAttachment(id) {
+  const state = photoTagStateForAttachment(id);
+  if (state?.statePresent) return state.ownerTagged;
+  return photoTagIdsForAttachment(id).length === 0;
+}
+
+function photoTagCountForAttachment(id) {
+  const state = photoTagStateForAttachment(id);
+  return photoTagIdsForAttachment(id).length + (state?.statePresent && state.ownerTagged ? 1 : 0);
+}
+
+async function loadMemoryPhotoParticipantTags() {
+  memoryPhotoParticipantTags = new Map();
+  memoryPhotoTagStates = new Map();
+  memoryPhotoTagsLoaded = false;
+  if (!memoryId) return false;
+
+  const { data, error } = await memoryClient.rpc('get_memory_photo_tags', {
+    p_memory_id: memoryId
+  });
+  if (error) {
+    console.error('[FamilArea memories] caricare i tag delle fotografie', error);
+    return false;
+  }
+
+  (Array.isArray(data) ? data : []).forEach((tag) => {
+    if (!tag?.attachment_id) return;
+    const participantIds = Array.isArray(tag.memory_participant_ids)
+      ? tag.memory_participant_ids.filter((id) => typeof id === 'string')
+      : [];
+    memoryPhotoParticipantTags.set(tag.attachment_id, participantIds);
+    memoryPhotoTagStates.set(tag.attachment_id, {
+      statePresent: tag.state_present === true,
+      ownerTagged: tag.owner_tagged === true
+    });
+  });
+
+  memoryPhotoTagsLoaded = true;
+  return true;
+}
+
+function renderMemoryPhotoTagChoices() {
+  memoryPhotoTagsList.replaceChildren();
+
+  const selected = new Set(photoTagIdsForAttachment(activeMemoryPhotoAttachmentId));
+  const ownerRow = document.createElement('label');
+  ownerRow.className = 'fa-v2-list-row';
+  const ownerInput = document.createElement('input');
+  ownerInput.type = 'checkbox';
+  ownerInput.dataset.memoryPhotoOwner = 'true';
+  ownerInput.checked = isOwnerTaggedForAttachment(activeMemoryPhotoAttachmentId);
+  ownerInput.disabled = memoryPhotoTagsSaving;
+  const ownerName = document.createElement('strong');
+  ownerName.textContent = 'Io';
+  ownerRow.append(ownerInput, ownerName);
+  memoryPhotoTagsList.append(ownerRow);
+
+  memoryPhotoTagsEmpty.hidden = Boolean(memoryParticipants.length);
+  memoryParticipants.forEach((participant) => {
+    const row = document.createElement('label');
+    row.className = 'fa-v2-list-row';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = participant.id;
+    input.dataset.memoryParticipantId = 'true';
+    input.checked = selected.has(participant.id);
+    input.disabled = memoryPhotoTagsSaving;
+    const name = document.createElement('strong');
+    name.textContent = participantName(participant);
+    row.append(input, name);
+    memoryPhotoTagsList.append(row);
+  });
+
+  memoryPhotoTagsSave.disabled = memoryPhotoTagsSaving;
+}
+
+function closeMemoryPhotoTagsDialog() {
+  if (memoryPhotoTagsSaving) return;
+  activeMemoryPhotoAttachmentId = '';
+  memoryPhotoTagsDialog.hidden = true;
+  document.body.classList.remove('confirm-modal-open');
+}
+
+function openMemoryPhotoTagsDialog(attachment) {
+  if (!memoryId || !attachment?.id || !memoryPhotoTagsLoaded) return;
+  activeMemoryPhotoAttachmentId = attachment.id;
+  memoryPhotoTagsIntro.textContent = `Seleziona le persone presenti in "${attachment.original_filename}".`;
+  setMemoryPhotoTagsMessage('');
+  renderMemoryPhotoTagChoices();
+  memoryPhotoTagsDialog.hidden = false;
+  document.body.classList.add('confirm-modal-open');
+  memoryPhotoTagsList.querySelector('input')?.focus();
+}
+
+async function saveMemoryPhotoTags() {
+  if (!memoryId || !activeMemoryPhotoAttachmentId || memoryPhotoTagsSaving) return;
+
+  const ownerTagged = memoryPhotoTagsList.querySelector('[data-memory-photo-owner="true"]')?.checked === true;
+  const ids = [...memoryPhotoTagsList.querySelectorAll('[data-memory-participant-id="true"]:checked')]
+    .map((input) => input.value);
+  memoryPhotoTagsSaving = true;
+  memoryPhotoTagsSave.disabled = true;
+  setMemoryPhotoTagsMessage('Salvataggio tag...');
+
+  try {
+    const { error } = await memoryClient.rpc('replace_memory_photo_tags', {
+      p_memory_id: memoryId,
+      p_attachment_id: activeMemoryPhotoAttachmentId,
+      p_owner_tagged: ownerTagged,
+      p_memory_participant_ids: ids
+    });
+    if (error) throw error;
+
+    memoryPhotoParticipantTags.set(activeMemoryPhotoAttachmentId, ids);
+    memoryPhotoTagStates.set(activeMemoryPhotoAttachmentId, {
+      statePresent: true,
+      ownerTagged
+    });
+    memoryPhotoTagsSaving = false;
+    closeMemoryPhotoTagsDialog();
+    await photoAttachments?.load();
+    setMessage('Tag della fotografia aggiornati.');
+  } catch (error) {
+    memoryPhotoTagsSaving = false;
+    memoryPhotoTagsSave.disabled = false;
+    setMemoryPhotoTagsMessage(rpcMessage('salvare i tag della fotografia', error), true);
+  }
+}
+
+function createPhotoActions(attachment) {
+  if (attachment?.id && photoMimeTypes.includes(attachment.mime_type)) memoryPhotoShareableAttachments.set(attachment.id, attachment);
+  const cover = createCoverActions(attachment);
+  const actions = Array.isArray(cover) ? [...cover] : (cover ? [cover] : []);
+  if (!memoryPhotoTagsLoaded) return actions;
+
+  const tag = document.createElement('button');
+  tag.type = 'button';
+  tag.className = 'secondary-button';
+  const count = photoTagCountForAttachment(attachment.id);
+  tag.textContent = count ? `Tag persone (${count})` : 'Tag persone';
+  tag.addEventListener('click', () => openMemoryPhotoTagsDialog(attachment));
+  actions.push(tag);
+  return actions;
+}
 function createCoverActions(attachment) {
   if (!memoryId) return null;
 
@@ -414,6 +590,7 @@ function updatePageForStoredMemory() {
   memorySubmit.textContent = 'Salva modifiche';
   memoryDelete.hidden = false;
   memoryShare.hidden = false;
+  memoryPhotoShare.hidden = !memoryPhotoShareOwner;
   memoryPhotosSection.hidden = false;
   memoryDocumentsSection.hidden = !memoryDocumentsEnabled;
   updateTimelineLinks();
@@ -456,8 +633,9 @@ async function initialiseAttachments() {
     list: document.getElementById('memory-photos-list'),
     allowedMimeTypes: photoMimeTypes,
     allowMultiple: true,
-    renderAttachmentActions: createCoverActions,
+    renderAttachmentActions: createPhotoActions,
     onAttachmentDeleted: async (attachment) => {
+      memoryPhotoShareableAttachments.delete(attachment.id);
       if (attachment.id === coverAttachmentId) {
         coverAttachmentId = null;
         setMessage('Fotografia eliminata. La copertina è stata rimossa.');
@@ -829,6 +1007,383 @@ function openMemorySharingDialog() {
   dialog.focus();
 }
 
+const memoryPhotoShareEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function memoryPhotoShareStatusLabel(status) {
+  return ({ pending: 'In attesa di accettazione', accepted: 'Accettata', declined: 'Rifiutata', revoked: 'Revocata', expired: 'Scaduta', cancelled: 'Annullata' })[status] || 'Stato non disponibile';
+}
+
+function normalizedMemoryPhotoShareEmail(value) {
+  const email = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return email && email.length <= 254 && memoryPhotoShareEmailPattern.test(email) ? email : '';
+}
+
+function availableMemoryPhotoSharePhotos() {
+  return [...memoryPhotoShareableAttachments.values()]
+    .filter((attachment) => attachment?.id && photoMimeTypes.includes(attachment.mime_type));
+}
+
+async function getMemoryPhotoShares() {
+  const { data, error } = await memoryClient.rpc('get_memory_photo_shares', { p_memory_id: memoryId });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
+async function getMemoryPhotoShareAttachmentIds(shareId) {
+  const { data, error } = await memoryClient.rpc('get_memory_photo_share_attachments', { p_share_id: shareId });
+  if (error) throw error;
+  return new Set((Array.isArray(data) ? data : []).map((attachment) => attachment?.attachment_id).filter(Boolean));
+}
+
+function openMemoryPhotoShareDialog(editShare = null) {
+  if (!memoryId || !memoryPhotoShareOwner || document.getElementById('memory-photo-share-overlay')) return;
+
+  const photos = availableMemoryPhotoSharePhotos();
+  if (!photos.length) {
+    setMessage('Aggiungi almeno una fotografia all’album prima di condividerla.', true);
+    return;
+  }
+
+  const previousFocus = document.activeElement;
+  const background = [...document.body.children].filter((element) => element.id !== 'memory-photo-share-overlay');
+  const previousInert = background.map((element) => ({ element, inert: element.inert }));
+  previousInert.forEach(({ element }) => { element.inert = true; });
+  document.body.classList.add('confirm-modal-open');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'memory-photo-share-overlay';
+  overlay.className = 'confirm-modal-overlay';
+  const dialog = document.createElement('section');
+  dialog.className = 'confirm-modal memory-share-email-dialog';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'memory-photo-share-title');
+  dialog.tabIndex = -1;
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'confirm-modal-close';
+  close.setAttribute('aria-label', 'Chiudi');
+  close.textContent = '×';
+  const title = document.createElement('h2');
+  title.id = 'memory-photo-share-title';
+  title.className = 'confirm-modal-title';
+  title.textContent = editShare ? 'Modifica fotografie condivise' : 'Condividi fotografie';
+  const intro = document.createElement('p');
+  intro.className = 'confirm-modal-message';
+  intro.textContent = editShare
+    ? 'Scegli le fotografie che resteranno accessibili a questo destinatario.'
+    : 'Seleziona le fotografie e i destinatari. La consegna dell’email verrà messa in coda.';
+  const status = document.createElement('p');
+  status.className = 'fa-v2-status';
+  status.setAttribute('aria-live', 'polite');
+  const photoHeading = document.createElement('h3');
+  photoHeading.textContent = 'Fotografie da condividere';
+  const photoList = document.createElement('div');
+  photoList.className = 'fa-v2-list';
+  const recipientArea = document.createElement('div');
+  const sharesHeading = document.createElement('h3');
+  sharesHeading.textContent = 'Condivisioni esistenti';
+  const sharesList = document.createElement('div');
+  sharesList.className = 'fa-v2-list';
+  const actions = document.createElement('div');
+  actions.className = 'confirm-modal-actions';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'fa-v2-button fa-v2-button--secondary confirm-modal-cancel';
+  cancel.textContent = 'Annulla';
+  const submit = document.createElement('button');
+  submit.type = 'button';
+  submit.className = 'fa-v2-button fa-v2-button--primary confirm-modal-confirm';
+  submit.textContent = editShare ? 'Salva selezione' : 'Invia';
+  actions.append(cancel, submit);
+  dialog.append(close, title, intro, status, photoHeading, photoList);
+  if (!editShare) dialog.append(recipientArea, sharesHeading, sharesList);
+  dialog.append(actions);
+  overlay.append(dialog);
+  document.body.append(overlay);
+
+  let busy = false;
+  let selectionLoading = Boolean(editShare);
+  let searchTimer;
+  let selectedPhotoIds = new Set(photos.map((photo) => photo.id));
+  const recipients = [];
+  const setStatus = (message = '', isError = false) => {
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+  const closeDialog = () => {
+    if (busy) return;
+    window.clearTimeout(searchTimer);
+    document.removeEventListener('keydown', onKeyDown);
+    overlay.remove();
+    document.body.classList.remove('confirm-modal-open');
+    previousInert.forEach(({ element, inert }) => { element.inert = inert; });
+    if (previousFocus instanceof HTMLElement) previousFocus.focus();
+  };
+  const onKeyDown = (event) => { if (event.key === 'Escape') closeDialog(); };
+  const setBusy = (inProgress) => {
+    busy = inProgress;
+    dialog.querySelectorAll('button, input').forEach((element) => { element.disabled = inProgress; });
+    if (!inProgress) render();
+  };
+  close.addEventListener('click', closeDialog);
+  cancel.addEventListener('click', closeDialog);
+  overlay.addEventListener('click', (event) => { if (event.target === overlay) closeDialog(); });
+  document.addEventListener('keydown', onKeyDown);
+
+  const selectedPhotoCount = () => selectedPhotoIds.size;
+  const renderPhotos = () => {
+    photoList.replaceChildren();
+    photos.forEach((photo) => {
+      const row = document.createElement('label');
+      row.className = 'fa-v2-list-row';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = selectedPhotoIds.has(photo.id);
+      input.disabled = busy || selectionLoading || (editShare?.status === 'pending' && selectedPhotoCount() === 1 && input.checked);
+      input.addEventListener('change', () => {
+        if (input.checked) selectedPhotoIds.add(photo.id);
+        else selectedPhotoIds.delete(photo.id);
+        renderPhotos();
+      });
+      const details = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = photo.original_filename || 'Fotografia';
+      const meta = document.createElement('p');
+      meta.className = 'fa-v2-status';
+      meta.textContent = input.checked ? 'Inclusa nella condivisione' : 'Esclusa';
+      details.append(name, meta);
+      row.append(input, details);
+      photoList.append(row);
+    });
+  };
+
+  const addRecipient = (recipient) => {
+    const email = normalizedMemoryPhotoShareEmail(recipient?.email);
+    if (!email) return false;
+    if (recipients.some((item) => item.email === email)) return false;
+    recipients.push({ email, contactId: typeof recipient.contactId === 'string' ? recipient.contactId : null, label: recipient.label || email });
+    return true;
+  };
+  const renderRecipients = () => {
+    recipientArea.replaceChildren();
+    const heading = document.createElement('h3');
+    heading.textContent = 'Destinatari';
+    const note = document.createElement('p');
+    note.className = 'confirm-modal-message';
+    note.textContent = 'Scegli contatti con email oppure aggiungi un indirizzo email.';
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'fa-v2-input';
+    search.placeholder = 'Cerca nella rubrica';
+    search.autocomplete = 'off';
+    const results = document.createElement('div');
+    results.className = 'fa-v2-list';
+    const manualEmail = document.createElement('input');
+    manualEmail.type = 'email';
+    manualEmail.className = 'fa-v2-input';
+    manualEmail.placeholder = 'nome@esempio.it';
+    manualEmail.autocomplete = 'email';
+    const addEmail = document.createElement('button');
+    addEmail.type = 'button';
+    addEmail.className = 'fa-v2-button fa-v2-button--secondary';
+    addEmail.textContent = 'Aggiungi email';
+    const selected = document.createElement('div');
+    selected.className = 'fa-v2-list';
+    const renderResults = () => {
+      const query = search.value.trim().toLocaleLowerCase('it-IT');
+      results.replaceChildren();
+      if (query.length < 2) return;
+      const matches = memoryContacts
+        .map((contact) => ({ contact, email: normalizedMemoryPhotoShareEmail(contact.primary_email || contact.email) }))
+        .filter(({ contact, email }) => email && (`${participantName(contact)} ${email}`).toLocaleLowerCase('it-IT').includes(query))
+        .slice(0, 12);
+      if (!matches.length) {
+        results.textContent = 'Nessun contatto con un indirizzo email valido.';
+        return;
+      }
+      matches.forEach(({ contact, email }) => {
+        const row = document.createElement('div');
+        row.className = 'fa-v2-list-row';
+        const details = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = participantName(contact);
+        const address = document.createElement('p');
+        address.className = 'fa-v2-status';
+        address.textContent = email;
+        details.append(name, address);
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'fa-v2-button fa-v2-button--secondary';
+        add.textContent = recipients.some((item) => item.email === email) ? 'Aggiunto' : 'Aggiungi';
+        add.disabled = busy || recipients.some((item) => item.email === email);
+        add.addEventListener('click', () => { if (addRecipient({ email, contactId: contact.id, label: participantName(contact) })) render(); });
+        row.append(details, add);
+        results.append(row);
+      });
+    };
+    recipients.forEach((recipient) => {
+      const row = document.createElement('div');
+      row.className = 'fa-v2-list-row';
+      const details = document.createElement('div');
+      const label = document.createElement('strong');
+      label.textContent = recipient.label;
+      const email = document.createElement('p');
+      email.className = 'fa-v2-status';
+      email.textContent = recipient.email;
+      details.append(label, email);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'fa-v2-button fa-v2-button--secondary list-item-delete';
+      remove.textContent = 'Rimuovi';
+      remove.disabled = busy;
+      remove.addEventListener('click', () => { recipients.splice(recipients.indexOf(recipient), 1); render(); });
+      row.append(details, remove);
+      selected.append(row);
+    });
+    search.addEventListener('input', () => {
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(renderResults, 200);
+    });
+    addEmail.addEventListener('click', () => {
+      if (!addRecipient({ email: manualEmail.value, label: manualEmail.value.trim() })) {
+        setStatus('Inserisci un indirizzo email valido e non già selezionato.', true);
+        return;
+      }
+      setStatus('');
+      render();
+    });
+    recipientArea.append(heading, note, search, results, manualEmail, addEmail, selected);
+  };
+
+  const renderShares = async () => {
+    sharesList.replaceChildren();
+    try {
+      const shares = await getMemoryPhotoShares();
+      if (!shares.length) {
+        sharesList.textContent = 'Nessuna condivisione fotografica.';
+        return;
+      }
+      shares.forEach((share) => {
+        const row = document.createElement('div');
+        row.className = 'fa-v2-list-row';
+        const details = document.createElement('div');
+        const email = document.createElement('strong');
+        email.textContent = share.recipient_email || 'Destinatario non disponibile';
+        const meta = document.createElement('p');
+        meta.className = 'fa-v2-status';
+        meta.textContent = `${memoryPhotoShareStatusLabel(share.status)} · ${Number(share.photo_count) || 0} fotografi${Number(share.photo_count) === 1 ? 'a' : 'e'}`;
+        details.append(email, meta);
+        const rowActions = document.createElement('div');
+        rowActions.className = 'fa-v2-card-actions';
+        if (share.status === 'pending' || share.status === 'accepted') {
+          const edit = document.createElement('button');
+          edit.type = 'button';
+          edit.className = 'fa-v2-button fa-v2-button--secondary';
+          edit.textContent = 'Modifica foto';
+          edit.disabled = busy;
+          edit.addEventListener('click', () => { closeDialog(); openMemoryPhotoShareDialog(share); });
+          const revoke = document.createElement('button');
+          revoke.type = 'button';
+          revoke.className = 'fa-v2-button fa-v2-button--secondary list-item-delete';
+          revoke.textContent = 'Revoca';
+          revoke.disabled = busy;
+          revoke.addEventListener('click', async () => {
+            const confirmed = await FamilAreaConfirm.confirm({ variant: 'danger', title: 'Revocare la condivisione?', message: 'Il destinatario non potrà più visualizzare queste fotografie.', confirmText: 'Revoca' });
+            if (!confirmed || busy) return;
+            setBusy(true);
+            setStatus('Revoca in corso...');
+            const { error } = await memoryClient.rpc('revoke_memory_photo_share', { p_share_id: share.share_id });
+            setBusy(false);
+            if (error) setStatus(rpcMessage('revocare la condivisione fotografica', error), true);
+            else {
+              setStatus('Condivisione revocata.');
+              await renderShares();
+            }
+          });
+          rowActions.append(edit, revoke);
+        }
+        row.append(details, rowActions);
+        sharesList.append(row);
+      });
+    } catch (error) {
+      setStatus(rpcMessage('caricare le condivisioni fotografiche', error), true);
+    }
+  };
+
+  const render = () => {
+    renderPhotos();
+    if (!editShare) renderRecipients();
+    submit.disabled = busy || selectionLoading || (!editShare && (selectedPhotoCount() === 0 || recipients.length === 0)) || (editShare?.status === 'pending' && selectedPhotoCount() === 0);
+  };
+
+  submit.addEventListener('click', async () => {
+    if (busy || selectionLoading || (!editShare && (selectedPhotoCount() === 0 || recipients.length === 0)) || (editShare?.status === 'pending' && selectedPhotoCount() === 0)) return;
+    setBusy(true);
+    const attachmentIds = [...selectedPhotoIds];
+    try {
+      if (editShare) {
+        setStatus('Aggiornamento della selezione...');
+        const { data, error } = await memoryClient.rpc('replace_memory_photo_share_attachments', {
+          p_share_id: editShare.share_id,
+          p_attachment_ids: attachmentIds
+        });
+        if (error) throw error;
+        const added = Number(data?.added_photo_count) || 0;
+        const removed = Number(data?.removed_photo_count) || 0;
+        setStatus(added
+          ? `Selezione aggiornata: ${added} fotografi${added === 1 ? 'a aggiunta' : 'e aggiunte'}. L’email di aggiornamento è in coda.`
+          : removed ? 'Selezione aggiornata. L’accesso alle fotografie rimosse è stato revocato.' : 'La selezione non è cambiata.');
+      } else {
+        setStatus('Creazione delle condivisioni in corso...');
+        let queued = 0;
+        const failures = [];
+        for (const recipient of recipients) {
+          const { data, error } = await memoryClient.functions.invoke('send-memory-photo-share', {
+            body: {
+              memory_id: memoryId,
+              recipient: { email: recipient.email, contact_id: recipient.contactId },
+              attachment_ids: attachmentIds
+            }
+          });
+          if (error || !data?.share_id || data.status !== 'pending' || data.delivery_queued !== true) failures.push(recipient.email);
+          else queued += 1;
+        }
+        if (failures.length) {
+          setStatus(queued
+            ? `${queued} condivision${queued === 1 ? 'e creata' : 'i create'} e consegna email in coda. Alcuni destinatari non sono stati aggiunti.`
+            : 'Impossibile creare le condivisioni richieste.', true);
+        } else {
+          setStatus(`${queued} condivision${queued === 1 ? 'e creata' : 'i create'}: la consegna email è in coda.`);
+        }
+        recipients.splice(0, recipients.length);
+      }
+      if (!editShare) await renderShares();
+    } catch (error) {
+      setStatus(rpcMessage(editShare ? 'aggiornare la selezione fotografica' : 'creare la condivisione fotografica', error), true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  render();
+  if (editShare) {
+    setStatus('Caricamento della selezione...');
+    void getMemoryPhotoShareAttachmentIds(editShare.share_id).then((ids) => {
+      selectedPhotoIds = ids;
+      selectionLoading = false;
+      setStatus('');
+      render();
+    }).catch((error) => {
+      selectionLoading = false;
+      setStatus(rpcMessage('caricare la selezione fotografica', error), true);
+      render();
+    });
+  } else {
+    void renderShares();
+  }
+  dialog.focus();
+}
 function openRequestedMemorySharing() {
   if (memoryParams.get('share') !== '1' || !memoryId) return;
   const url = new URL(window.location.href);
@@ -869,6 +1424,10 @@ async function loadMemory() {
   }
 
   populateMemory(data);
+  const { data: currentAccount, error: currentAccountError } = await memoryClient.rpc('get_current_account');
+  memoryPhotoShareOwner = !currentAccountError
+    && typeof currentAccount?.account_id === 'string'
+    && currentAccount.account_id === data.owner_account_id;
   try {
     await verifyMemoryTimeline(data.timeline_id);
   } catch (timelineError) {
@@ -880,6 +1439,7 @@ async function loadMemory() {
   setMessage('');
   await initialiseAttachments();
   await loadMemoryParticipants();
+  if (await loadMemoryPhotoParticipantTags()) await photoAttachments?.load();
   captureFormBaseline();
   updateTimelineLinks();
   openRequestedMemorySharing();
@@ -948,6 +1508,11 @@ memoryParticipantCreateToggle.addEventListener('click', () => {
 });
 memoryParticipantCreateCancel.addEventListener('click', closeMemoryParticipantCreate);
 memoryParticipantCreateSubmit.addEventListener('click', () => { void createAndAddMemoryParticipant(); });
+memoryPhotoTagsClose.addEventListener('click', closeMemoryPhotoTagsDialog);
+memoryPhotoTagsCancel.addEventListener('click', closeMemoryPhotoTagsDialog);
+memoryPhotoTagsSave.addEventListener('click', () => { void saveMemoryPhotoTags(); });
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !memoryPhotoTagsDialog.hidden) closeMemoryPhotoTagsDialog(); });
+
 memoryForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await saveMemory();
@@ -1033,5 +1598,6 @@ memoryDelete.addEventListener('click', async () => {
 });
 
 memoryShare.addEventListener('click', openMemorySharingDialog);
+memoryPhotoShare.addEventListener('click', () => { openMemoryPhotoShareDialog(); });
 
 void loadMemory().then(setupBrowserBackGuard);

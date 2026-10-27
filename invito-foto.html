@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <script>
+    (() => {
+      const key = 'familarea:memory-photo-share-invite-token';
+      const url = new URL(window.location.href);
+      const token = url.searchParams.get('token');
+      if (token === null) return;
+
+      if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
+        try {
+          window.sessionStorage.setItem(key, token);
+        } catch {
+          window.__familareaMemoryPhotoInviteToken = token;
+        }
+      }
+
+      url.searchParams.delete('token');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    })();
+  </script>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d2b4f">
+  <title>Fotografie condivise - FamilArea</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="fa-v2-app">
+  <main class="fa-v2-page fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="photo-invite-title">
+      <div class="fa-section-hero-content">
+        <h1 id="photo-invite-title">Fotografie condivise</h1>
+        <p>Accedi con l'indirizzo email a cui è stato inviato l'invito.</p>
+      </div>
+    </header>
+
+    <p id="photo-invite-message" class="fa-v2-status" aria-live="polite">Verifica invito...</p>
+
+    <section id="photo-invite-auth" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="photo-invite-auth-title" hidden>
+      <div class="fa-v2-section-heading">
+        <h2 id="photo-invite-auth-title">Accedi per continuare</h2>
+      </div>
+      <p>Accedi o registrati con lo stesso indirizzo email invitato e verifica l'indirizzo prima di rispondere.</p>
+      <div class="fa-v2-card-actions">
+        <a id="photo-invite-register" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a>
+        <a id="photo-invite-login" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a>
+        <button id="photo-invite-switch-account" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Cambia account</button>
+      </div>
+    </section>
+
+    <section id="photo-invite-response" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="photo-invite-response-title" hidden>
+      <div class="fa-v2-section-heading">
+        <h2 id="photo-invite-response-title">Invito alle fotografie</h2>
+      </div>
+      <p>Puoi visualizzare soltanto le fotografie incluse in questa condivisione.</p>
+      <div class="fa-v2-card-actions">
+        <button id="photo-invite-decline" class="fa-v2-button fa-v2-button--secondary" type="button">Rifiuta</button>
+        <button id="photo-invite-accept" class="fa-v2-button fa-v2-button--primary" type="button">Accetta</button>
+      </div>
+    </section>
+
+    <section id="photo-invite-complete" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="photo-invite-complete-title" hidden>
+      <div class="fa-v2-section-heading">
+        <h2 id="photo-invite-complete-title">Invito rifiutato</h2>
+      </div>
+      <p>Non avrai accesso alle fotografie condivise con questo invito.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-public-config.js"></script>
+  <script src="auth-utils.js"></script>
+  <script src="invito-foto.js"></script>
+</body>
+</html>
