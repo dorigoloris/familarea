@@ -115,7 +115,18 @@ async function loadPhotoInvite() {
     p_token: photoInviteToken,
   });
 
-  if (error || !data || !isUuid(data.share_id) || data.status !== 'pending') {
+  if (error || !data || !isUuid(data.share_id)) {
+    showPhotoInviteUnavailable();
+    return;
+  }
+
+  if (data.status === 'accepted') {
+    removePhotoInviteToken();
+    window.location.replace(`foto-condivise.html?share=${encodeURIComponent(data.share_id)}`);
+    return;
+  }
+
+  if (data.status !== 'pending') {
     showPhotoInviteUnavailable();
     return;
   }
