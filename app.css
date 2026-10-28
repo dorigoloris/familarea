@@ -1625,11 +1625,10 @@ html.fa-mfa-pending body > *{visibility:hidden}
 @media(max-width:600px){.memory-share-email-dialog>.fa-v2-button--primary{justify-self:stretch;width:100%}.memory-share-email-row{align-items:flex-start}.memory-share-email-row .fa-v2-card-actions{margin-left:auto}}
 
 /* Selective photo sharing: photo grid with a separate selection row. */
-.memory-photo-share-dialog{width:min(100%,900px)}
-.memory-photo-share-dialog .memory-photo-share-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--fa-v2-space-3)}
+.memory-share-email-dialog .memory-photo-share-grid{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--fa-v2-space-2)}
 .memory-photo-share-card{min-width:0;overflow:hidden;border:1px solid var(--fa-v2-border);border-radius:12px;background:var(--fa-v2-surface);box-shadow:none;transition:border-color .16s ease,box-shadow .16s ease}
 .memory-photo-share-card.is-selected{border-color:var(--fa-v2-primary);box-shadow:0 0 0 2px #dcebdc}
-.memory-photo-share-thumbnail{display:grid;aspect-ratio:4/3;place-items:center;overflow:hidden;background:#edf4f6;color:var(--fa-v2-muted)}
+.memory-photo-share-thumbnail{display:grid;aspect-ratio:1;place-items:center;overflow:hidden;background:#edf4f6;color:var(--fa-v2-muted)}
 .memory-photo-share-thumbnail img{display:block;width:100%;height:100%;object-fit:cover}
 .memory-photo-share-thumbnail-fallback{padding:var(--fa-v2-space-2);font-size:12px;line-height:1.35;text-align:center}
 .memory-photo-share-selection{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;margin:0;padding:10px 12px;color:var(--fa-v2-text);cursor:pointer}
@@ -1637,4 +1636,4 @@ html.fa-mfa-pending body > *{visibility:hidden}
 .memory-photo-share-selection input:disabled{cursor:not-allowed}
 .memory-photo-share-filename{min-width:0;overflow:hidden;font-size:13px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
 .memory-photo-share-selection:has(input:focus-visible){outline:3px solid rgba(77,139,79,.45);outline-offset:-3px}
-@media(max-width:700px){.memory-photo-share-dialog .memory-photo-share-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-v2-space-2)}.memory-photo-share-selection{padding:9px 10px}.memory-photo-share-filename{font-size:12px}}
+@media(max-width:700px){.memory-photo-share-selection{padding:9px 10px}.memory-photo-share-filename{font-size:12px}}

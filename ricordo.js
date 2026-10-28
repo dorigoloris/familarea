@@ -1054,7 +1054,7 @@ function openMemoryPhotoShareDialog(editShare = null) {
   overlay.id = 'memory-photo-share-overlay';
   overlay.className = 'confirm-modal-overlay';
   const dialog = document.createElement('section');
-  dialog.className = 'confirm-modal memory-share-email-dialog memory-photo-share-dialog';
+  dialog.className = 'confirm-modal memory-share-email-dialog';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-labelledby', 'memory-photo-share-title');
@@ -1079,7 +1079,7 @@ function openMemoryPhotoShareDialog(editShare = null) {
   const photoHeading = document.createElement('h3');
   photoHeading.textContent = 'Fotografie da condividere';
   const photoList = document.createElement('div');
-  photoList.className = 'fa-v2-list';
+  photoList.className = 'fa-v2-list memory-photo-share-grid';
   const recipientArea = document.createElement('div');
   const sharesHeading = document.createElement('h3');
   sharesHeading.textContent = 'Condivisioni esistenti';
