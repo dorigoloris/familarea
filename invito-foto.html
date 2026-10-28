@@ -7,6 +7,8 @@
   <script>
     (() => {
       const key = 'familarea:memory-photo-share-invite-token';
+      const authResumeKey = 'familarea:memory-photo-share-invite-auth-resume';
+      const resumeParameter = 'photo_invite_resume';
       const url = new URL(window.location.href);
       const token = url.searchParams.get('token');
       if (token === null) return;
@@ -14,12 +16,25 @@
       if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
         try {
           window.sessionStorage.setItem(key, token);
+          window.sessionStorage.removeItem(authResumeKey);
         } catch {
-          window.__familareaMemoryPhotoInviteToken = token;
+          // Il token resta soltanto nella memoria della pagina se sessionStorage non è disponibile.
         }
+        window.__familareaMemoryPhotoInviteToken = token;
+        window.__familareaMemoryPhotoInviteTokenFromUrl = true;
+      } else {
+        try {
+          window.sessionStorage.removeItem(key);
+          window.sessionStorage.removeItem(authResumeKey);
+        } catch {
+          // Nessuno stato precedente deve essere riutilizzato per un URL non valido.
+        }
+        window.__familareaMemoryPhotoInviteToken = undefined;
+        window.__familareaMemoryPhotoInviteTokenFromUrl = false;
       }
 
       url.searchParams.delete('token');
+      url.searchParams.delete(resumeParameter);
       window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     })();
   </script>
