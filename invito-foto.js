@@ -44,7 +44,7 @@ function removePhotoInviteToken() {
     window.sessionStorage.removeItem(photoInviteTokenStorageKey);
     window.sessionStorage.removeItem(photoInviteAuthResumeStorageKey);
   } catch {
-    // Il token resta soltanto nella memoria della pagina quando sessionStorage non Ã¨ disponibile.
+    // Il token resta soltanto nella memoria della pagina quando sessionStorage non è disponibile.
   }
   try {
     delete window.__familareaMemoryPhotoInviteToken;
@@ -150,7 +150,7 @@ function showPhotoInviteUnavailable() {
   photoInviteComplete.hidden = true;
   photoInviteAuth.hidden = false;
   photoInviteSwitchAccount.hidden = false;
-  setPhotoInviteMessage('Questo invito non Ã¨ disponibile. Verifica di usare lâ€™indirizzo email invitato e che sia stato verificato.', true);
+  setPhotoInviteMessage('Questo invito non è disponibile. Verifica di usare l’indirizzo email invitato e che sia stato verificato.', true);
 }
 
 async function loadPhotoInvite() {
@@ -158,21 +158,21 @@ async function loadPhotoInvite() {
 
   if (!photoInviteToken) {
     photoInviteAuth.hidden = true;
-    setPhotoInviteMessage('Invito non valido o non piÃ¹ disponibile.', true);
+    setPhotoInviteMessage('Invito non valido o non più disponibile.', true);
     return;
   }
 
   const { data: { session } } = await photoInviteClient.auth.getSession();
   if (!session) {
     configurePhotoInviteAuthenticationReturn();
-    showPhotoInviteAuthentication('Accedi o registrati per verificare lâ€™invito.');
+    showPhotoInviteAuthentication('Accedi o registrati per verificare l’invito.');
     return;
   }
 
   const { data: { user }, error: userError } = await photoInviteClient.auth.getUser();
   if (userError || !user) {
     configurePhotoInviteAuthenticationReturn();
-    showPhotoInviteAuthentication('La sessione non Ã¨ piÃ¹ valida. Accedi di nuovo.');
+    showPhotoInviteAuthentication('La sessione non è più valida. Accedi di nuovo.');
     return;
   }
 
@@ -214,7 +214,7 @@ async function acceptPhotoInvite() {
 
   photoInviteResponsePending = true;
   setPhotoInviteButtonsDisabled(true);
-  setPhotoInviteMessage('Accettazione dellâ€™invito in corso...');
+  setPhotoInviteMessage('Accettazione dell’invito in corso...');
 
   const { data, error } = await photoInviteClient.rpc('accept_my_memory_photo_share', {
     p_token: photoInviteToken,
@@ -230,7 +230,7 @@ async function acceptPhotoInvite() {
   if (!isUuid(data)) {
     removePhotoInviteToken();
     photoInviteResponse.hidden = true;
-    setPhotoInviteMessage('Lâ€™invito non puÃ² piÃ¹ essere accettato.', true);
+    setPhotoInviteMessage('L’invito non può più essere accettato.', true);
     return;
   }
 
@@ -243,7 +243,7 @@ async function declinePhotoInvite() {
 
   photoInviteResponsePending = true;
   setPhotoInviteButtonsDisabled(true);
-  setPhotoInviteMessage('Rifiuto dellâ€™invito in corso...');
+  setPhotoInviteMessage('Rifiuto dell’invito in corso...');
 
   const { error } = await photoInviteClient.rpc('decline_my_memory_photo_share', {
     p_token: photoInviteToken,
