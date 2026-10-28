@@ -13,20 +13,42 @@
   <title>Fotografie condivise - FamilArea</title>
   <link rel="stylesheet" href="app.css">
   <style>
+    .shared-photos-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--fa-v2-space-5)}
+    .shared-photos-kicker{margin:0 0 var(--fa-v2-space-1);color:var(--fa-v2-primary);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .shared-photos-album-date{margin:0;color:var(--fa-v2-muted);font-size:14px;font-weight:700}
+    .shared-photos-album-description{margin:var(--fa-v2-space-2) 0 0;color:var(--fa-v2-muted);line-height:1.5;white-space:pre-wrap}
+    .shared-photos-hero-actions{display:flex;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end;gap:var(--fa-v2-space-2)}
+    .shared-photos-hero-actions .fa-v2-button{margin:0;white-space:nowrap}
+    .shared-photos-logout-message{width:100%;margin:0;color:var(--fa-v2-muted);font-size:13px;text-align:right}
     .shared-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--fa-v2-space-3)}
     .shared-photo-tile{display:grid;min-height:132px;place-items:center;overflow:hidden;border:1px solid var(--fa-v2-border);border-radius:12px;background:#f4f8fa;color:var(--fa-v2-muted);cursor:pointer}
-    .shared-photo-tile:focus-visible{outline:3px solid rgba(77,139,79,.3);outline-offset:2px}.shared-photo-tile img{display:block;width:100%;height:100%;min-height:132px;object-fit:cover}
-    .shared-photo-tile[disabled]{cursor:default;opacity:.72}.shared-photo-viewer{margin-top:var(--fa-v2-space-5)}
-    .shared-photo-viewer .memory-gallery-photo-stage{min-height:280px}.shared-photo-viewer[hidden]{display:none}
-    @media(max-width:700px){.shared-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-v2-space-2)}.shared-photo-tile,.shared-photo-tile img{min-height:112px}}
+    .shared-photo-tile:focus-visible{outline:3px solid rgba(77,139,79,.3);outline-offset:2px}
+    .shared-photo-tile img{display:block;width:100%;height:100%;min-height:132px;object-fit:cover}
+    .shared-photo-tile[disabled]{cursor:default;opacity:.72}
+    .shared-photo-viewer[hidden]{display:none}
+    @media(max-width:700px){
+      .shared-photos-hero{display:grid;gap:var(--fa-v2-space-4)}
+      .shared-photos-hero-actions{justify-content:stretch}
+      .shared-photos-hero-actions .fa-v2-button{flex:1 1 100%}
+      .shared-photos-logout-message{text-align:left}
+      .shared-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-v2-space-2)}
+      .shared-photo-tile,.shared-photo-tile img{min-height:112px}
+    }
   </style>
 </head>
 <body class="fa-v2-app">
-  <main class="fa-v2-page fa-v2-page-stack">
-    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="shared-photos-title">
+  <main id="shared-photos-main" class="fa-v2-page fa-v2-page-stack">
+    <header class="fa-section-hero fa-v2-header-card fa-v2-card shared-photos-hero" aria-labelledby="shared-photos-title">
       <div class="fa-section-hero-content">
+        <p class="shared-photos-kicker">Album condiviso</p>
+        <p id="shared-photos-date" class="shared-photos-album-date" hidden></p>
         <h1 id="shared-photos-title">Fotografie condivise</h1>
-        <p>Puoi visualizzare soltanto le fotografie incluse in questa condivisione.</p>
+        <p id="shared-photos-description" class="shared-photos-album-description" hidden></p>
+      </div>
+      <div class="shared-photos-hero-actions">
+        <a class="fa-v2-button fa-v2-button--secondary" href="dashboard.html">Vai a FamilArea</a>
+        <button class="fa-v2-button fa-v2-button--secondary" type="button" data-logout>Esci</button>
+        <p id="logout-message" class="shared-photos-logout-message" aria-live="polite"></p>
       </div>
     </header>
 
@@ -41,24 +63,35 @@
     </section>
 
     <section id="shared-photos-content" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="shared-photos-content-title" hidden>
-      <div class="fa-v2-section-heading"><h2 id="shared-photos-content-title">Fotografie</h2></div>
+      <div class="fa-v2-section-heading">
+        <div>
+          <h2 id="shared-photos-content-title">Fotografie</h2>
+          <p>Solo le fotografie incluse in questa condivisione.</p>
+        </div>
+      </div>
       <p id="shared-photos-empty" class="fa-v2-empty-state" hidden>Al momento non ci sono fotografie disponibili.</p>
       <div id="shared-photos-grid" class="shared-photo-grid" aria-label="Fotografie condivise"></div>
-
-      <section id="shared-photo-viewer" class="shared-photo-viewer memory-gallery-photos" aria-label="Fotografia selezionata" hidden>
-        <div class="memory-gallery-photo-stage">
-          <img id="shared-photo-viewer-image" alt="Fotografia condivisa">
-        </div>
-        <div class="fa-v2-card-actions">
-          <button id="shared-photo-viewer-close" class="fa-v2-button fa-v2-button--secondary" type="button">Chiudi fotografia</button>
-        </div>
-      </section>
     </section>
   </main>
+
+  <div id="shared-photo-viewer" class="shared-photo-viewer memory-lightbox" role="dialog" aria-modal="true" aria-label="Fotografia condivisa ingrandita" hidden>
+    <header class="memory-lightbox-header">
+      <button id="shared-photo-viewer-close" class="confirm-modal-close" type="button" aria-label="Chiudi fotografia">&times;</button>
+    </header>
+    <div class="memory-lightbox-stage">
+      <img id="shared-photo-viewer-image" alt="">
+    </div>
+    <footer class="memory-lightbox-footer">
+      <button id="shared-photo-viewer-previous" class="memory-lightbox-nav memory-lightbox-nav--previous" type="button" aria-label="Fotografia precedente">&larr;</button>
+      <p id="shared-photo-viewer-position" class="memory-lightbox-position" aria-live="polite"></p>
+      <button id="shared-photo-viewer-next" class="memory-lightbox-nav memory-lightbox-nav--next" type="button" aria-label="Fotografia successiva">&rarr;</button>
+    </footer>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-public-config.js"></script>
   <script src="auth-utils.js"></script>
+  <script src="logout.js"></script>
   <script src="foto-condivise.js"></script>
 </body>
 </html>
