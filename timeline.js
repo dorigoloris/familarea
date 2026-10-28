@@ -98,6 +98,11 @@ function formatMemoryDate(value) {
   return Number.isNaN(date.getTime()) ? 'Data non disponibile' : date.toLocaleDateString('it-IT');
 }
 
+function isUuid(value) {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function timelineRpcMessage(subject, error) {
   console.error(`[FamilArea timeline] ${subject}`, error);
   const code = error?.code ? ` (${error.code})` : '';
@@ -385,6 +390,70 @@ function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = nul
     return { item, visual };
   }
   return { item: card, visual };
+}
+
+function isReceivedMemoryPhotoShare(share) {
+  return Boolean(share)
+    && typeof share === 'object'
+    && isUuid(share.share_id)
+    && (typeof share.title === 'string' || share.title === null)
+    && (typeof share.occurred_on === 'string' || share.occurred_on === null)
+    && Number.isSafeInteger(share.photo_count)
+    && share.photo_count >= 0;
+}
+
+function createReceivedMemoryPhotoShareCard(share) {
+  const href = `foto-condivise.html?share=${encodeURIComponent(share.share_id)}`;
+  const card = document.createElement('article');
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', `Apri fotografie condivise dell'album ${share.title || 'senza titolo'}`);
+  const open = () => window.location.assign(href);
+  card.addEventListener('click', (event) => {
+    if (!event.target.closest('a, button')) open();
+  });
+  card.addEventListener('keydown', (event) => {
+    if (event.target.closest('a, button') || !['Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    open();
+  });
+
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = memoryInitial(share.title);
+
+  const content = document.createElement('div');
+  content.className = 'fa-v2-card-content';
+  if (share.occurred_on) {
+    const date = document.createElement('p');
+    date.className = 'fa-v2-card-description';
+    date.textContent = formatMemoryDate(share.occurred_on);
+    content.append(date);
+  }
+  const title = document.createElement('h3');
+  title.className = 'fa-v2-card-title';
+  title.textContent = share.title || 'Album senza titolo';
+  const kind = document.createElement('p');
+  kind.className = 'fa-v2-card-description';
+  kind.textContent = 'Fotografie condivise \u00b7 Condivisione parziale';
+  const count = document.createElement('p');
+  count.className = 'fa-v2-card-description';
+  count.textContent = `${share.photo_count} ${share.photo_count === 1 ? 'fotografia autorizzata' : 'fotografie autorizzate'}`;
+  content.append(title, kind, count);
+
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
+  const openButton = document.createElement('a');
+  openButton.className = 'fa-v2-button fa-v2-button--secondary';
+  openButton.href = href;
+  openButton.textContent = 'Apri';
+  openButton.addEventListener('click', (event) => event.stopPropagation());
+  actions.append(openButton);
+
+  card.append(visual, content, actions);
+  return { item: card };
 }
 
 async function renderMemoryCover(memory, visual) {
@@ -977,23 +1046,47 @@ async function loadSharedMemories() {
   sharedMemoriesList.replaceChildren();
   sharedMemoriesEmpty.hidden = true;
   sharedMemoriesMessage.textContent = 'Caricamento album condivisi…';
-  const { data, error } = await timelineClient.rpc('get_my_shared_memories');
-  if (error) {
-    sharedMemoriesMessage.textContent = timelineRpcMessage('caricare gli album condivisi', error);
-    return;
+  const [fullSharesRequest, partialSharesRequest] = await Promise.allSettled([
+    timelineClient.rpc('get_my_shared_memories'),
+    timelineClient.rpc('get_my_received_memory_photo_shares')
+  ]);
+  const fullSharesResult = fullSharesRequest.status === 'fulfilled'
+    ? fullSharesRequest.value
+    : { data: null, error: fullSharesRequest.reason };
+  const partialSharesResult = partialSharesRequest.status === 'fulfilled'
+    ? partialSharesRequest.value
+    : { data: null, error: partialSharesRequest.reason };
+  const errors = [];
+  const fullShares = Array.isArray(fullSharesResult.data) && !fullSharesResult.error
+    ? fullSharesResult.data
+    : [];
+  const partialShares = Array.isArray(partialSharesResult.data) && !partialSharesResult.error
+    ? partialSharesResult.data.filter(isReceivedMemoryPhotoShare)
+    : [];
+
+  if (fullSharesResult.error) {
+    errors.push(timelineRpcMessage('caricare gli album condivisi', fullSharesResult.error));
+  } else if (!Array.isArray(fullSharesResult.data)) {
+    errors.push('Impossibile caricare gli album condivisi: risposta RPC incompatibile.');
   }
-  if (!Array.isArray(data)) {
-    sharedMemoriesMessage.textContent = 'Impossibile caricare gli album condivisi: risposta RPC incompatibile.';
-    return;
+  if (partialSharesResult.error) {
+    errors.push(timelineRpcMessage('caricare le fotografie condivise', partialSharesResult.error));
+  } else if (!Array.isArray(partialSharesResult.data)) {
+    errors.push('Impossibile caricare le fotografie condivise: risposta RPC incompatibile.');
   }
-  const cards = data.map((memory) => ({
+
+  const fullCards = fullShares.map((memory) => ({
     memory,
     ...createMemoryCard(memory, { shared: true, onOpen: openSharedMemoryGallery, onLeave: leaveSharedMemory })
   }));
-  sharedMemoriesList.replaceChildren(...cards.map(({ item }) => item));
-  sharedMemoriesEmpty.hidden = data.length > 0;
-  sharedMemoriesMessage.textContent = '';
-  await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+  const partialCards = partialShares.map(createReceivedMemoryPhotoShareCard);
+  sharedMemoriesList.replaceChildren(
+    ...fullCards.map(({ item }) => item),
+    ...partialCards.map(({ item }) => item)
+  );
+  sharedMemoriesEmpty.hidden = fullCards.length + partialCards.length > 0;
+  sharedMemoriesMessage.textContent = errors.join(' ');
+  await Promise.all(fullCards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
 }
 
 function isTimelineDocumentCardControl(target) { return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [data-card-control]')); }
