@@ -943,6 +943,35 @@ function openMemorySharingDialog() {
       meta.textContent = memoryShareInvitationStatusLabel(invite.status, invite.collaboration_status);
       details.append(email, meta);
       row.append(details);
+      const isPendingAndValid = invite.status === 'pending'
+        && typeof invite.invitation_id === 'string'
+        && Number.isFinite(Date.parse(invite.expires_at))
+        && Date.parse(invite.expires_at) > Date.now();
+      if (isPendingAndValid) {
+        const actions = document.createElement('div');
+        actions.className = 'fa-v2-card-actions';
+        const resend = document.createElement('button');
+        resend.type = 'button';
+        resend.className = 'fa-v2-button fa-v2-button--secondary';
+        resend.textContent = 'Reinvia email';
+        resend.addEventListener('click', async () => {
+          if (actionPending) return;
+          setBusy(true);
+          setStatus('Reinvio dellâ€™email in corsoâ€¦');
+          const { data, error: resendError } = await memoryClient.functions.invoke('send-memory-share-invitation', {
+            body: { invitation_id: invite.invitation_id }
+          });
+          setBusy(false);
+          if (resendError || !data?.invitation_id || data.status !== 'pending') {
+            setStatus(rpcMessage('reinviare lâ€™email di invito', resendError || new Error('Consegna non confermata')), true);
+            return;
+          }
+          await refreshEmailManagement();
+          setStatus('Email di invito reinviata.');
+        });
+        actions.append(resend);
+        row.append(actions);
+      }
       emailInvites.append(row);
     });
   };
