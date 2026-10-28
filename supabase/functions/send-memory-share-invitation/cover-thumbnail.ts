@@ -14,12 +14,14 @@ export type AttachmentCoverContext = {
   byteSize: number;
 };
 
-export type CoverThumbnail = {
+export type EmailPhotoThumbnail = {
   base64: string;
   filename: string;
   contentType: "image/jpeg";
-  contentId: "album-preview";
+  contentId: string;
 };
+
+export type CoverThumbnail = EmailPhotoThumbnail & { contentId: "album-preview" };
 
 /** The only Supabase capability needed to read an already-authorized cover. */
 type PrivateStorageReader = {
@@ -40,6 +42,10 @@ const preferredOutputBytes = 100 * 1024;
 const maxOutputBytes = 150 * 1024;
 const maxWidth = 600;
 const maxHeight = 400;
+const photoPreviewPreferredOutputBytes = 36 * 1024;
+const photoPreviewMaxOutputBytes = 60 * 1024;
+const photoPreviewMaxWidth = 160;
+const photoPreviewMaxHeight = 120;
 const maxDecodeDimension = 6000n;
 // This is ImageMagick's pixel-cache cap, not an unrestricted Function-memory
 // allowance. Disk remains disabled, so exceeding it falls back without a photo.
@@ -198,27 +204,35 @@ function toBase64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
+type ThumbnailOptions = {
+  contentId: string;
+  filename: string;
+  preferredOutputBytes: number;
+  maxOutputBytes: number;
+  maxWidth: number;
+  maxHeight: number;
+};
+
 /**
- * Returns only a re-encoded, metadata-free JPEG derivative. Any cover error is
- * deliberately a no-photo fallback and is never reported with personal data.
+ * Returns only a re-encoded, metadata-free JPEG derivative. Any source-image
+ * error is a no-photo fallback and is never reported with personal data.
  */
-export async function createMemoryCoverThumbnail(
+async function createMemoryAttachmentThumbnail(
   service: PrivateStorageReader,
   ownerAccountId: string,
   memoryId: string,
-  memory: MemoryCoverContext,
-  attachment: AttachmentCoverContext
-): Promise<CoverThumbnail | null> {
+  attachment: AttachmentCoverContext,
+  options: ThumbnailOptions,
+): Promise<EmailPhotoThumbnail | null> {
   try {
-    if (memory.ownerAccountId !== ownerAccountId) return omitCover("COVER_MEMORY_OWNERSHIP_INVALID");
-    if (!isUuid(memory.coverAttachmentId)) return omitCover("COVER_ID_UNAVAILABLE");
+    if (!/^[A-Za-z0-9._-]{1,127}$/.test(options.contentId)) return omitCover("COVER_CONTENT_ID_INVALID");
     if (attachment.ownerAccountId !== ownerAccountId) return omitCover("COVER_ATTACHMENT_OWNERSHIP_INVALID");
     if (attachment.targetType !== "memory" || attachment.targetId !== memoryId) return omitCover("COVER_ATTACHMENT_TARGET_INVALID");
     if (typeof attachment.storagePath !== "string" || !attachment.storagePath.trim()) return omitCover("COVER_STORAGE_PATH_INVALID");
     if (!imageMimeTypes.has(attachment.mimeType)) return omitCover("COVER_MIME_UNSUPPORTED");
     if (!Number.isSafeInteger(attachment.byteSize) || attachment.byteSize <= 0 || attachment.byteSize > maxSourceBytes) return omitCover("COVER_SOURCE_METADATA_INVALID");
 
-    // Initialize only after the cover has passed every database validation.
+    // Initialize only after the attachment has passed every database validation.
     if (!await initializeMagick()) return null;
 
     const { data: source, error: sourceError } = await service.storage.from(bucket).download(attachment.storagePath);
@@ -241,21 +255,18 @@ export async function createMemoryCoverThumbnail(
           throw new Error(diagnosticCode);
         }
         image.autoOrient();
-        const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+        const scale = Math.min(1, options.maxWidth / image.width, options.maxHeight / image.height);
         image.resize(Math.max(1, Math.round(image.width * scale)), Math.max(1, Math.round(image.height * scale)));
         image.strip();
         phase = "encode";
-        // Prefer a light email payload without lowering quality unnecessarily.
-        // The first candidate below 100 KiB wins; otherwise retain the best
-        // higher-quality candidate below the mandatory 150 KiB ceiling.
         let bestWithinMaximum: Uint8Array | null = null;
         let lastCandidate = new Uint8Array();
         for (const quality of [78, 70, 62, 54]) {
           image.quality = quality;
           const candidate = image.write(MagickFormat.Jpeg, (bytes) => new Uint8Array(bytes));
           lastCandidate = candidate;
-          if (candidate.byteLength <= preferredOutputBytes) return candidate;
-          if (!bestWithinMaximum && candidate.byteLength <= maxOutputBytes) bestWithinMaximum = candidate;
+          if (candidate.byteLength <= options.preferredOutputBytes) return candidate;
+          if (!bestWithinMaximum && candidate.byteLength <= options.maxOutputBytes) bestWithinMaximum = candidate;
         }
         return bestWithinMaximum ?? lastCandidate;
       });
@@ -264,14 +275,14 @@ export async function createMemoryCoverThumbnail(
       return omitCover(phase === "decode" ? decodeFailureCode(error) : phase === "encode" ? "COVER_ENCODE_FAILED" : "COVER_TRANSFORM_FAILED");
     }
     if (jpeg.byteLength === 0) return omitCover("COVER_OUTPUT_EMPTY");
-    if (jpeg.byteLength > maxOutputBytes) return omitCover("COVER_OUTPUT_TOO_LARGE");
+    if (jpeg.byteLength > options.maxOutputBytes) return omitCover("COVER_OUTPUT_TOO_LARGE");
 
     try {
       return {
         base64: toBase64(jpeg),
-        filename: "familarea-album-preview.jpg",
+        filename: options.filename,
         contentType: "image/jpeg",
-        contentId: "album-preview"
+        contentId: options.contentId,
       };
     } catch {
       return omitCover("COVER_BASE64_FAILED");
@@ -279,4 +290,54 @@ export async function createMemoryCoverThumbnail(
   } catch {
     return omitCover("COVER_UNEXPECTED_FAILED");
   }
+}
+
+/**
+ * Returns a preview for the full-Album invitation while preserving its existing
+ * cover-specific ownership and cover-selection checks.
+ */
+export async function createMemoryCoverThumbnail(
+  service: PrivateStorageReader,
+  ownerAccountId: string,
+  memoryId: string,
+  memory: MemoryCoverContext,
+  attachment: AttachmentCoverContext,
+): Promise<CoverThumbnail | null> {
+  try {
+    if (memory.ownerAccountId !== ownerAccountId) return omitCover("COVER_MEMORY_OWNERSHIP_INVALID");
+    if (!isUuid(memory.coverAttachmentId)) return omitCover("COVER_ID_UNAVAILABLE");
+
+    const thumbnail = await createMemoryAttachmentThumbnail(service, ownerAccountId, memoryId, attachment, {
+      contentId: "album-preview",
+      filename: "familarea-album-preview.jpg",
+      preferredOutputBytes,
+      maxOutputBytes,
+      maxWidth,
+      maxHeight,
+    });
+    return thumbnail ? { ...thumbnail, contentId: "album-preview" } : null;
+  } catch {
+    return omitCover("COVER_UNEXPECTED_FAILED");
+  }
+}
+
+/**
+ * Creates a small CID preview only after the caller has verified that the
+ * attachment belongs to the selected photo share.
+ */
+export async function createMemoryPhotoShareThumbnail(
+  service: PrivateStorageReader,
+  ownerAccountId: string,
+  memoryId: string,
+  attachment: AttachmentCoverContext,
+  contentId: string,
+): Promise<EmailPhotoThumbnail | null> {
+  return createMemoryAttachmentThumbnail(service, ownerAccountId, memoryId, attachment, {
+    contentId,
+    filename: "familarea-photo-preview.jpg",
+    preferredOutputBytes: photoPreviewPreferredOutputBytes,
+    maxOutputBytes: photoPreviewMaxOutputBytes,
+    maxWidth: photoPreviewMaxWidth,
+    maxHeight: photoPreviewMaxHeight,
+  });
 }
