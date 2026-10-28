@@ -1054,7 +1054,7 @@ function openMemoryPhotoShareDialog(editShare = null) {
   overlay.id = 'memory-photo-share-overlay';
   overlay.className = 'confirm-modal-overlay';
   const dialog = document.createElement('section');
-  dialog.className = 'confirm-modal memory-share-email-dialog';
+  dialog.className = 'confirm-modal memory-share-email-dialog memory-photo-share-dialog';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-labelledby', 'memory-photo-share-title');
@@ -1106,6 +1106,8 @@ function openMemoryPhotoShareDialog(editShare = null) {
   let selectionLoading = Boolean(editShare);
   let searchTimer;
   let selectedPhotoIds = new Set(photos.map((photo) => photo.id));
+  const photoThumbnailUrls = new Map();
+  const photoThumbnailRequests = new Map();
   const recipients = [];
   const setStatus = (message = '', isError = false) => {
     status.textContent = message;
@@ -1132,13 +1134,67 @@ function openMemoryPhotoShareDialog(editShare = null) {
   document.addEventListener('keydown', onKeyDown);
 
   const selectedPhotoCount = () => selectedPhotoIds.size;
+  const getPhotoThumbnailUrl = (photo) => {
+    if (photoThumbnailUrls.has(photo.id)) return Promise.resolve(photoThumbnailUrls.get(photo.id));
+    const pendingRequest = photoThumbnailRequests.get(photo.id);
+    if (pendingRequest) return pendingRequest;
+
+    const request = window.FamilAreaAttachmentPreview.getSignedUrl(memoryClient, photo, 300)
+      .then((signedUrl) => {
+        photoThumbnailUrls.set(photo.id, signedUrl);
+        return signedUrl;
+      })
+      .catch(() => {
+        photoThumbnailUrls.set(photo.id, null);
+        return null;
+      })
+      .finally(() => photoThumbnailRequests.delete(photo.id));
+    photoThumbnailRequests.set(photo.id, request);
+    return request;
+  };
+  const renderPhotoThumbnail = (photo, thumbnail, filename) => {
+    const setUnavailable = () => {
+      thumbnail.replaceChildren();
+      thumbnail.setAttribute('aria-busy', 'false');
+      const fallback = document.createElement('span');
+      fallback.className = 'memory-photo-share-thumbnail-fallback';
+      fallback.textContent = 'Anteprima non disponibile';
+      thumbnail.append(fallback);
+    };
+
+    void getPhotoThumbnailUrl(photo).then((signedUrl) => {
+      if (!thumbnail.isConnected) return;
+      if (!signedUrl) {
+        setUnavailable();
+        return;
+      }
+      const image = document.createElement('img');
+      image.src = signedUrl;
+      image.alt = `Miniatura di ${filename}`;
+      image.addEventListener('error', setUnavailable, { once: true });
+      thumbnail.setAttribute('aria-busy', 'false');
+      thumbnail.replaceChildren(image);
+    });
+  };
   const renderPhotos = () => {
     photoList.replaceChildren();
     photos.forEach((photo) => {
+      const filename = photo.original_filename || 'Fotografia';
+      const card = document.createElement('article');
+      card.className = 'memory-photo-share-card';
+      card.classList.toggle('is-selected', selectedPhotoIds.has(photo.id));
+      const thumbnail = document.createElement('div');
+      thumbnail.className = 'memory-photo-share-thumbnail';
+      thumbnail.setAttribute('aria-busy', 'true');
+      const loading = document.createElement('span');
+      loading.className = 'memory-photo-share-thumbnail-fallback';
+      loading.textContent = 'Caricamento anteprima...';
+      thumbnail.append(loading);
       const row = document.createElement('label');
-      row.className = 'fa-v2-list-row';
+      row.className = 'memory-photo-share-selection';
       const input = document.createElement('input');
       input.type = 'checkbox';
+      input.id = `memory-photo-share-selection-${photo.id}`;
       input.checked = selectedPhotoIds.has(photo.id);
       input.disabled = busy || selectionLoading || (editShare?.status === 'pending' && selectedPhotoCount() === 1 && input.checked);
       input.addEventListener('change', () => {
@@ -1146,15 +1202,13 @@ function openMemoryPhotoShareDialog(editShare = null) {
         else selectedPhotoIds.delete(photo.id);
         renderPhotos();
       });
-      const details = document.createElement('div');
-      const name = document.createElement('strong');
-      name.textContent = photo.original_filename || 'Fotografia';
-      const meta = document.createElement('p');
-      meta.className = 'fa-v2-status';
-      meta.textContent = input.checked ? 'Inclusa nella condivisione' : 'Esclusa';
-      details.append(name, meta);
-      row.append(input, details);
-      photoList.append(row);
+      const name = document.createElement('span');
+      name.className = 'memory-photo-share-filename';
+      name.textContent = filename;
+      row.append(input, name);
+      card.append(thumbnail, row);
+      photoList.append(card);
+      renderPhotoThumbnail(photo, thumbnail, filename);
     });
   };
 
