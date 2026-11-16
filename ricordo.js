@@ -63,6 +63,7 @@ const memoryPhotoTagsSave = document.getElementById('memory-photo-tags-save');
 
 const photoMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentMimeTypes = ['application/pdf'];
+const photoFilenameCollator = new Intl.Collator('it-IT', { numeric: true, sensitivity: 'base' });
 // Single switch for the future return of PDF attachments inside photo albums.
 // Keep the existing document markup and controller code intact while disabled.
 const memoryDocumentsEnabled = false;
@@ -73,6 +74,10 @@ const memoryShareEmailInvitesEnabled = true;
 function setMessage(text = '', isError = false) {
   memoryMessage.textContent = text;
   memoryMessage.classList.toggle('is-error', isError);
+}
+
+function comparePhotoAttachmentFilenames(first, second) {
+  return photoFilenameCollator.compare(first?.original_filename || '', second?.original_filename || '');
 }
 
 function setSaving(inProgress) {
@@ -633,6 +638,8 @@ async function initialiseAttachments() {
     list: document.getElementById('memory-photos-list'),
     allowedMimeTypes: photoMimeTypes,
     allowMultiple: true,
+    sortAttachments: comparePhotoAttachmentFilenames,
+    refreshAfterUpload: true,
     renderAttachmentActions: createPhotoActions,
     onAttachmentDeleted: async (attachment) => {
       memoryPhotoShareableAttachments.delete(attachment.id);
@@ -1049,7 +1056,8 @@ function normalizedMemoryPhotoShareEmail(value) {
 
 function availableMemoryPhotoSharePhotos() {
   return [...memoryPhotoShareableAttachments.values()]
-    .filter((attachment) => attachment?.id && photoMimeTypes.includes(attachment.mime_type));
+    .filter((attachment) => attachment?.id && photoMimeTypes.includes(attachment.mime_type))
+    .sort(comparePhotoAttachmentFilenames);
 }
 
 async function getMemoryPhotoShares() {

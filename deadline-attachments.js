@@ -41,7 +41,7 @@
     }
   }
 
-  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list, allowedMimeTypes = null, allowMultiple = false, multipleProgressLabel = 'fotografie', multipleCompleteLabel = 'Fotografie caricate', renderAttachmentActions = null, onAttachmentDeleted = null }) {
+  function create({ client, deadlineId, targetId = deadlineId, targetType = 'deadline', canManage = true, input, uploadControl, message, empty, list, allowedMimeTypes = null, allowMultiple = false, multipleProgressLabel = 'fotografie', multipleCompleteLabel = 'Fotografie caricate', renderAttachmentActions = null, onAttachmentDeleted = null, sortAttachments = null, refreshAfterUpload = false }) {
     let uploadInProgress = false;
 
     function setMessage(text = '', isError = false) {
@@ -153,6 +153,7 @@
         return;
       }
       const rows = (data || []).filter((attachment) => !allowedMimeTypes || allowedMimeTypes.includes(attachment.mime_type));
+      if (typeof sortAttachments === 'function') rows.sort(sortAttachments);
       list.replaceChildren(...rows.map(renderAttachment));
       empty.hidden = rows.length > 0;
     }
@@ -186,6 +187,7 @@
         try {
           await uploadFile({ client, targetType, targetId, file });
           uploadedCount += 1;
+          if (refreshAfterUpload) await load();
         } catch (error) {
           console.error('deadline attachment upload failed', error);
           failedFiles.push(file.name);

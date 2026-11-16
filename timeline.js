@@ -52,6 +52,7 @@ const lightboxPosition = document.getElementById('memory-lightbox-position');
 
 const memoryPhotoMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const memoryDocumentMimeTypes = new Set(['application/pdf']);
+const memoryPhotoFilenameCollator = new Intl.Collator('it-IT', { numeric: true, sensitivity: 'base' });
 const galleryInitialPhotoCount = 8;
 const galleryUrlSigningConcurrency = 3;
 let galleryPhotosData = [];
@@ -913,9 +914,12 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
     return;
   }
   const attachments = Array.isArray(data) ? data : [];
-  const photos = attachments.filter((attachment) => memoryPhotoMimeTypes.has(attachment.mime_type));
-  const coverIndex = photos.findIndex((attachment) => attachment.id === memory.cover_attachment_id);
-  if (coverIndex > 0) photos.unshift(photos.splice(coverIndex, 1)[0]);
+  const photos = attachments
+    .filter((attachment) => memoryPhotoMimeTypes.has(attachment.mime_type))
+    .sort((first, second) => memoryPhotoFilenameCollator.compare(
+      first.original_filename || '',
+      second.original_filename || ''
+    ));
   galleryPhotosData = photos.map((attachment) => ({ ...attachment, signedUrl: null, urlState: 'idle' }));
   preloadInitialGalleryPhotos();
   renderGalleryPhoto();
