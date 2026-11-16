@@ -346,24 +346,14 @@
   async function refreshInvitesBadge() {
     if (!invitesLink) return;
     const requestVersion = ++invitesBadgeRequestVersion;
-    const [pendingResult, memoryInvitesResult] = await Promise.all([
-      client.rpc('get_my_pending_invites_count'),
-      client.rpc('get_my_memory_collaboration_invites')
-    ]);
+    const { data, error } = await client.rpc('get_my_pending_invites_count');
     if (requestVersion !== invitesBadgeRequestVersion) return;
 
-    if (pendingResult.error) {
-      console.error('get_my_pending_invites_count badge failed', pendingResult.error);
+    if (error) {
+      console.error('get_my_pending_invites_count badge failed', error);
       return;
     }
-    if (memoryInvitesResult.error) {
-      console.error('get_my_memory_collaboration_invites badge failed', memoryInvitesResult.error);
-    }
-
-    const memoryPendingCount = Array.isArray(memoryInvitesResult.data)
-      ? memoryInvitesResult.data.filter((invite) => invite.status === 'pending').length
-      : 0;
-    const pendingCount = Math.max(0, Number(pendingResult.data) || 0) + memoryPendingCount;
+    const pendingCount = Math.max(0, Number(data) || 0);
 
     invitesLink.querySelectorAll('.top-nav-invites-badge').forEach((badge) => badge.remove());
     if (pendingCount === 0) {
@@ -385,6 +375,13 @@
   window.addEventListener('familarea:invites-changed', () => {
     refreshInvitesBadge().catch(() => {});
   });
+  window.addEventListener('focus', () => { refreshInvitesBadge().catch(() => {}); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshInvitesBadge().catch(() => {});
+  });
+  window.setInterval(() => {
+    if (!document.hidden) refreshInvitesBadge().catch(() => {});
+  }, 60000);
 
   const footer = document.createElement('footer');
   footer.className = 'shared-site-footer';

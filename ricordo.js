@@ -20,6 +20,7 @@ let activeMemoryPhotoAttachmentId = '';
 let memoryPhotoTagsSaving = false;
 let memoryPhotoShareableAttachments = new Map();
 let memoryPhotoShareOwner = false;
+let memorySharingLoadGeneration = 0;
 
 
 const memoryForm = document.getElementById('memory-form');
@@ -42,6 +43,13 @@ const memoryParticipantsControls = document.getElementById('memory-participants-
 const memoryParticipantsMessage = document.getElementById('memory-participants-message');
 const memoryParticipantsEmpty = document.getElementById('memory-participants-empty');
 const memoryParticipantsList = document.getElementById('memory-participants-list');
+const memorySharingSection = document.getElementById('memory-sharing-section');
+const memorySharingSectionMessage = document.getElementById('memory-sharing-section-message');
+const memorySharingActiveSection = document.getElementById('memory-sharing-active-section');
+const memorySharingActiveList = document.getElementById('memory-sharing-active-list');
+const memorySharingPendingSection = document.getElementById('memory-sharing-pending-section');
+const memorySharingPendingList = document.getElementById('memory-sharing-pending-list');
+const memorySharingEmpty = document.getElementById('memory-sharing-empty');
 const memoryParticipantSearch = document.getElementById('memory-participant-search');
 const memoryParticipantSearchResults = document.getElementById('memory-participant-search-results');
 const memoryParticipantCreateToggle = document.getElementById('memory-participant-create-toggle');
@@ -723,6 +731,76 @@ function createMemorySharingRow(account, { status = '', actionLabel = '', action
   return row;
 }
 
+function createMemorySharingInvitationRow(email) {
+  const row = document.createElement('div');
+  row.className = 'fa-v2-list-row';
+  const details = document.createElement('div');
+  const title = document.createElement('strong');
+  title.textContent = email || 'Destinatario non disponibile';
+  const meta = document.createElement('p');
+  meta.className = 'fa-v2-status';
+  meta.textContent = 'Invito inviato · In attesa di accettazione';
+  details.append(title, meta);
+  row.append(details);
+  return row;
+}
+
+async function loadMemorySharingSummary() {
+  if (!memoryId || !memoryPhotoShareOwner) {
+    memorySharingLoadGeneration += 1;
+    memorySharingSection.hidden = true;
+    return;
+  }
+
+  const loadGeneration = ++memorySharingLoadGeneration;
+  memorySharingSection.hidden = false;
+  memorySharingSectionMessage.textContent = 'Caricamento condivisioni…';
+  memorySharingSectionMessage.classList.remove('is-error');
+
+  const [collaborationsResult, invitationsResult] = await Promise.allSettled([
+    memoryClient.rpc('get_memory_collaboration_management', { p_memory_id: memoryId }),
+    memoryShareEmailInvitesEnabled
+      ? memoryClient.rpc('get_memory_share_invitation_management', { p_memory_id: memoryId })
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (loadGeneration !== memorySharingLoadGeneration || !memoryId || !memoryPhotoShareOwner) return;
+
+  const errors = [];
+  const collaborationData = collaborationsResult.status === 'fulfilled'
+    ? collaborationsResult.value
+    : { data: null, error: collaborationsResult.reason };
+  const invitationData = invitationsResult.status === 'fulfilled'
+    ? invitationsResult.value
+    : { data: null, error: invitationsResult.reason };
+  if (collaborationData.error) errors.push(rpcMessage('caricare gli accessi all’album', collaborationData.error));
+  if (invitationData.error) errors.push(rpcMessage('caricare gli inviti dell’album', invitationData.error));
+
+  const activeCollaborators = collaborationData.error ? [] : (Array.isArray(collaborationData.data?.collaborators) ? collaborationData.data.collaborators : []);
+  const pendingCollaborators = collaborationData.error ? [] : (Array.isArray(collaborationData.data?.pending) ? collaborationData.data.pending : []);
+  const pendingEmailInvites = invitationData.error ? [] : (Array.isArray(invitationData.data) ? invitationData.data : [])
+    .filter((invite) => invite?.status === 'pending');
+
+  memorySharingActiveList.replaceChildren(...activeCollaborators.map((item) => createMemorySharingRow({
+    display_name: item.display_name,
+    account_type: item.account_type,
+    avatar_path: item.avatar_path
+  }, { status: 'Può visualizzare l’album · Accesso attivo' })));
+  memorySharingPendingList.replaceChildren(
+    ...pendingCollaborators.map((item) => createMemorySharingRow({
+      display_name: item.display_name,
+      account_type: item.account_type,
+      avatar_path: item.avatar_path
+    }, { status: 'Invito FamilArea · In attesa' })),
+    ...pendingEmailInvites.map((invite) => createMemorySharingInvitationRow(invite.recipient_email))
+  );
+
+  memorySharingActiveSection.hidden = activeCollaborators.length === 0;
+  memorySharingPendingSection.hidden = pendingCollaborators.length + pendingEmailInvites.length === 0;
+  memorySharingEmpty.hidden = Boolean(activeCollaborators.length + pendingCollaborators.length + pendingEmailInvites.length) || Boolean(errors.length);
+  memorySharingSectionMessage.textContent = errors.join(' ');
+  memorySharingSectionMessage.classList.toggle('is-error', Boolean(errors.length));
+}
+
 
 
 function memoryShareInvitationStatusLabel(status, collaborationStatus) {
@@ -921,6 +999,7 @@ function openMemorySharingDialog() {
     }));
     if (!pendingItems.length) pending.textContent = 'Nessun invito FamilArea in attesa.';
     if (!acceptedItems.length) accepted.textContent = 'Nessun accesso FamilArea attivo.';
+    void loadMemorySharingSummary();
   };
 
   const refreshEmailManagement = async () => {
@@ -981,6 +1060,7 @@ function openMemorySharingDialog() {
       }
       emailInvites.append(row);
     });
+    void loadMemorySharingSummary();
   };
 
   const searchRecipients = async () => {
@@ -1530,6 +1610,7 @@ async function loadMemory() {
   setMessage('');
   await initialiseAttachments();
   await loadMemoryParticipants();
+  await loadMemorySharingSummary();
   if (await loadMemoryPhotoParticipantTags()) await photoAttachments?.load();
   captureFormBaseline();
   updateTimelineLinks();
@@ -1690,5 +1771,12 @@ memoryDelete.addEventListener('click', async () => {
 
 memoryShare.addEventListener('click', openMemorySharingDialog);
 memoryPhotoShare.addEventListener('click', () => { openMemoryPhotoShareDialog(); });
+window.addEventListener('focus', () => { void loadMemorySharingSummary(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) void loadMemorySharingSummary();
+});
+window.setInterval(() => {
+  if (!document.hidden) void loadMemorySharingSummary();
+}, 30000);
 
 void loadMemory().then(setupBrowserBackGuard);

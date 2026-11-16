@@ -20,7 +20,7 @@ function setPageMessage(text = '', timeout = 0) {
 }
 
 function acceptedInviteMessage(kind) {
-  return ({ family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', memory: 'Album condiviso disponibile nella Timeline.', contactShare: 'Contatto aggiunto alla tua rubrica.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
+  return ({ family: 'Invito Famiglia accettato.', event: 'Invito Evento accettato.', list: 'Invito Lista accettato.', deadline: 'Collaborazione Scadenza accettata.', memory: 'Album condiviso disponibile nella Timeline.', memoryEmail: 'Album condiviso disponibile nella Timeline.', contactShare: 'Contatto aggiunto alla tua rubrica.', suggestion: 'Suggerimento contatto accettato.' })[kind] || 'Invito accettato.';
 }
 
 function fullName(firstName, lastName, fallback = '') { return `${firstName || ''} ${lastName || ''}`.trim() || fallback; }
@@ -66,7 +66,9 @@ async function respondToInvite(invite, rpcName, card, kind) {
       ? (rpcName === 'accept_my_contact_share'
         ? { p_share_id: invite.share_id, p_existing_contact_id: null }
         : { p_share_id: invite.share_id })
-    : kind === 'deadline' || kind === 'memory'
+    : kind === 'memoryEmail'
+      ? { p_invitation_id: invite.invitation_id }
+      : kind === 'deadline' || kind === 'memory'
       ? { p_collaboration_id: invite.collaboration_id }
     : { p_invite_id: invite.invite_id };
   const { error } = await supabaseClient.rpc(rpcName, params);
@@ -281,6 +283,40 @@ function createMemoryInviteCard(invite) {
   return article;
 }
 
+function createMemoryEmailInviteCard(invite) {
+  const article = document.createElement('article');
+  article.className = 'invite-card fa-list-row fa-v2-list-row';
+  const details = document.createElement('div');
+  const type = document.createElement('p');
+  type.className = 'section-kicker';
+  type.textContent = 'Album fotografico';
+  const title = document.createElement('h3');
+  title.textContent = invite.title || 'Album FamilArea';
+  const inviter = document.createElement('p');
+  inviter.textContent = `Condiviso da ${invite.inviter_display_name || 'un account FamilArea'}`;
+  const date = document.createElement('p');
+  date.textContent = `Data: ${memoryInviteDateLabel(invite)}`;
+  const status = document.createElement('span');
+  status.className = 'invite-status fa-status-badge invite-status-pending';
+  status.textContent = 'In attesa';
+  details.append(type, title, inviter, date, status);
+  article.append(details);
+  const actions = document.createElement('div');
+  actions.className = 'invite-actions';
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'fa-button fa-button-secondary';
+  decline.textContent = 'Rifiuta';
+  decline.addEventListener('click', () => respondToInvite(invite, 'decline_my_memory_share_invitation_by_id', article, 'memoryEmail'));
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accetta';
+  accept.addEventListener('click', () => respondToInvite(invite, 'accept_my_memory_share_invitation_by_id', article, 'memoryEmail'));
+  actions.append(decline, accept);
+  article.append(actions);
+  return article;
+}
+
 function createContactShareInviteCard(share) {
   const article = document.createElement('article');
   article.className = 'invite-card fa-list-row fa-v2-list-row';
@@ -367,7 +403,7 @@ function createContactSuggestionCard(suggestion) {
 
 async function loadInvites(account) {
   const isPersonal = account.account_type === 'personal';
-  const [contactShareResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult, memoryResult] = await Promise.all([
+  const [contactShareResult, familyResult, eventResult, suggestionResult, listResult, deadlineResult, memoryResult, memoryEmailResult] = await Promise.all([
     supabaseClient.rpc('get_my_contact_share_invites'),
     ...(isPersonal ? [
       supabaseClient.rpc('get_my_family_invites'),
@@ -381,7 +417,8 @@ async function loadInvites(account) {
       Promise.resolve({ data: [] })
     ]),
     supabaseClient.rpc('get_my_deadline_collaboration_invites'),
-    supabaseClient.rpc('get_my_memory_collaboration_invites')
+    supabaseClient.rpc('get_my_memory_collaboration_invites'),
+    supabaseClient.rpc('get_my_memory_share_invitations')
   ]);
   if (contactShareResult.error) { setPageMessage(inviteErrorMessage(contactShareResult.error)); return false; }
   if (familyResult.error) console.error('get_my_family_invites failed', familyResult.error);
@@ -390,6 +427,7 @@ async function loadInvites(account) {
   if (listResult.error) console.error('get_my_list_invites failed', listResult.error);
   if (deadlineResult.error) console.error('get_my_deadline_collaboration_invites failed', deadlineResult.error);
   if (memoryResult.error) console.error('get_my_memory_collaboration_invites failed', memoryResult.error);
+  if (memoryEmailResult.error) console.error('get_my_memory_share_invitations failed', memoryEmailResult.error);
   invitesSection.hidden = false;
   invitesList.replaceChildren();
   const visibleFamilyInvites = (familyResult.data || []).filter((invite) => invite.status === 'pending');
@@ -398,19 +436,25 @@ async function loadInvites(account) {
   const visibleContactShares = (contactShareResult.data || []).filter((share) => share.status === 'pending');
   const visibleListInvites = (listResult.data || []).filter((invite) => invite.status === 'pending');
   const visibleDeadlineInvites = (deadlineResult.data || []).filter((invite) => invite.status === 'pending');
-  const visibleMemoryInvites = (memoryResult.data || []).filter((invite) => invite.status === 'pending');
+  const visibleMemoryEmailInvites = (memoryEmailResult.data || []).filter((invite) => invite.status === 'pending');
+  const memoryEmailInviteMemoryIds = new Set(visibleMemoryEmailInvites.map((invite) => invite.memory_id));
+  const visibleMemoryInvites = (memoryResult.data || []).filter((invite) => (
+    invite.status === 'pending' && !memoryEmailInviteMemoryIds.has(invite.memory_id)
+  ));
   const pendingCount = visibleFamilyInvites.length
     + visibleEventInvites.length
     + visibleSuggestions.length
     + visibleContactShares.length
     + visibleListInvites.length
     + visibleDeadlineInvites.length
-    + visibleMemoryInvites.length;
+    + visibleMemoryInvites.length
+    + visibleMemoryEmailInvites.length;
   invitesPendingBadge.hidden = pendingCount === 0;
   if (pendingCount > 0) invitesPendingBadge.textContent = String(pendingCount);
   const acceptedLists = [...recentlyAcceptedLists.values()];
-  invitesEmpty.hidden = visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleContactShares.length + visibleListInvites.length + visibleDeadlineInvites.length + visibleMemoryInvites.length + acceptedLists.length > 0;
+  invitesEmpty.hidden = visibleFamilyInvites.length + visibleEventInvites.length + visibleSuggestions.length + visibleContactShares.length + visibleListInvites.length + visibleDeadlineInvites.length + visibleMemoryInvites.length + visibleMemoryEmailInvites.length + acceptedLists.length > 0;
   acceptedLists.forEach((invite) => invitesList.appendChild(createAcceptedListCard(invite)));
+  visibleMemoryEmailInvites.forEach((invite) => invitesList.appendChild(createMemoryEmailInviteCard(invite)));
   visibleMemoryInvites.forEach((invite) => invitesList.appendChild(createMemoryInviteCard(invite)));
   visibleDeadlineInvites.forEach((invite) => invitesList.appendChild(createDeadlineInviteCard(invite)));
   visibleContactShares.forEach((share) => invitesList.appendChild(createContactShareInviteCard(share)));
@@ -441,3 +485,6 @@ async function loadPage() {
 }
 
 loadPage();
+window.addEventListener('focus', () => { if (currentAccount) void loadInvites(currentAccount); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && currentAccount) void loadInvites(currentAccount); });
+window.setInterval(() => { if (!document.hidden && currentAccount) void loadInvites(currentAccount); }, 30000);
