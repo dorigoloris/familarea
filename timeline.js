@@ -448,7 +448,7 @@ function isReceivedMemoryPhotoShare(share) {
     && share.photo_count >= 0;
 }
 
-function createReceivedMemoryPhotoShareCard(share) {
+function createReceivedMemoryPhotoShareCard(share, { onLeave = null } = {}) {
   const href = `foto-condivise.html?share=${encodeURIComponent(share.share_id)}`;
   const card = document.createElement('article');
   card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
@@ -457,10 +457,10 @@ function createReceivedMemoryPhotoShareCard(share) {
   card.setAttribute('aria-label', `Apri fotografie condivise dell'album ${share.title || 'senza titolo'}`);
   const open = () => window.location.assign(href);
   card.addEventListener('click', (event) => {
-    if (!event.target.closest('a, button')) open();
+    if (!event.target.closest('a, button, summary, details')) open();
   });
   card.addEventListener('keydown', (event) => {
-    if (event.target.closest('a, button') || !['Enter', ' '].includes(event.key)) return;
+    if (event.target.closest('a, button, summary, details') || !['Enter', ' '].includes(event.key)) return;
     event.preventDefault();
     open();
   });
@@ -496,7 +496,27 @@ function createReceivedMemoryPhotoShareCard(share) {
   openButton.href = href;
   openButton.textContent = 'Apri';
   openButton.addEventListener('click', (event) => event.stopPropagation());
-  actions.append(openButton);
+  const overflowMenu = document.createElement('details');
+  overflowMenu.className = 'fa-v2-card-overflow';
+  overflowMenu.addEventListener('click', (event) => event.stopPropagation());
+  overflowMenu.addEventListener('keydown', (event) => event.stopPropagation());
+  const overflowSummary = document.createElement('summary');
+  overflowSummary.setAttribute('aria-label', 'Altre azioni per le fotografie condivise');
+  overflowSummary.textContent = '⋯';
+  const overflowItems = document.createElement('div');
+  overflowItems.className = 'fa-v2-card-overflow-menu';
+  const leaveButton = document.createElement('button');
+  leaveButton.type = 'button';
+  leaveButton.className = 'fa-v2-card-overflow-menu-item';
+  leaveButton.textContent = 'Abbandona condivisione';
+  leaveButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    overflowMenu.open = false;
+    if (onLeave) void onLeave(share, leaveButton);
+  });
+  overflowItems.append(leaveButton);
+  overflowMenu.append(overflowSummary, overflowItems);
+  actions.append(openButton, overflowMenu);
 
   card.append(visual, content, actions);
   return { item: card };
@@ -1133,6 +1153,32 @@ async function leaveSharedMemory(memory, button) {
   sharedMemoriesMessage.textContent = 'Condivisione abbandonata.';
 }
 
+async function leaveReceivedMemoryPhotoShare(share, button) {
+  if (!share?.share_id || button.disabled) return;
+
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Abbandonare la condivisione?',
+    message: 'Non potrai più aprire queste fotografie condivise. L’album e le fotografie resteranno disponibili al proprietario e agli altri destinatari.',
+    cancelText: 'Annulla',
+    confirmText: 'Abbandona condivisione'
+  });
+  if (!confirmed) return;
+
+  button.disabled = true;
+  const { error } = await timelineClient.rpc('leave_my_memory_photo_share', {
+    p_share_id: share.share_id
+  });
+  if (error) {
+    button.disabled = false;
+    sharedMemoriesMessage.textContent = timelineRpcMessage('abbandonare la condivisione', error);
+    return;
+  }
+
+  await loadSharedMemories();
+  sharedMemoriesMessage.textContent = 'Condivisione abbandonata.';
+}
+
 async function loadSharedMemories() {
   if (selectedTimelineType !== 'memory' || selectedTimelineId) return;
   sharedMemoriesCollection.hidden = false;
@@ -1172,7 +1218,9 @@ async function loadSharedMemories() {
     memory,
     ...createMemoryCard(memory, { shared: true, onOpen: openSharedMemoryGallery, onLeave: leaveSharedMemory })
   }));
-  const partialCards = partialShares.map(createReceivedMemoryPhotoShareCard);
+  const partialCards = partialShares.map((share) => createReceivedMemoryPhotoShareCard(share, {
+    onLeave: leaveReceivedMemoryPhotoShare
+  }));
   sharedMemoriesList.replaceChildren(
     ...fullCards.map(({ item }) => item),
     ...partialCards.map(({ item }) => item)
