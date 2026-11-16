@@ -76,9 +76,6 @@ Deno.serve(async (request) => {
       contentTitle: memoryTitle,
       buttonLabel: "Scopri l’Album",
       afterClick: "Potrai accedere o registrarti con lo stesso indirizzo che ha ricevuto l’invito, poi decidere se accettarlo.",
-      privacyNote: coverThumbnail
-        ? "La miniatura della copertina e inclusa in questa email. Le altre fotografie restano private finche non accetti l'invito."
-        : "Le fotografie restano private finche non accetti l'invito.",
       albumCoverCid: coverThumbnail?.contentId
     }),
     ...(coverThumbnail ? { attachments: [{ content: coverThumbnail.base64, filename: coverThumbnail.filename, content_id: coverThumbnail.contentId, content_type: coverThumbnail.contentType }] } : {})
