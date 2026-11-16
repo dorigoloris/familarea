@@ -66,6 +66,7 @@ let galleryInitialPhotoIndexes = new Set();
 let galleryThumbnailObserver = null;
 let galleryThumbnailScrollHandler = null;
 let selectedTimelines = [];
+let generalMemoryTimelineReady = false;
 const lightboxGesture = {
   scale: 1,
   x: 0,
@@ -84,6 +85,9 @@ const selectedTimelineType = ['memory', 'document'].includes(requestedTimelineTy
   ? requestedTimelineType
   : (timelineParams.get('memory_id') ? 'memory' : '');
 let selectedTimelineId = timelineParams.get('timeline_id') || '';
+const isGeneralMemoryTimeline = selectedTimelineType === 'memory'
+  && timelineParams.get('view') === 'general'
+  && !selectedTimelineId;
 
 function memoryInitial(title) {
   return (title || '').trim().charAt(0).toLocaleUpperCase('it-IT') || 'R';
@@ -116,6 +120,10 @@ function timelineHref(type = selectedTimelineType, timelineId = selectedTimeline
   if (type) params.set('type', type);
   if (timelineId) params.set('timeline_id', timelineId);
   return `timeline.html${params.size ? `?${params}` : ''}`;
+}
+
+function generalMemoryTimelineHref() {
+  return `timeline.html?${new URLSearchParams({ type: 'memory', view: 'general' })}`;
 }
 
 function memoryHref(memory) {
@@ -183,6 +191,33 @@ function createTimelineCard(timeline) {
   return card;
 }
 
+function createGeneralMemoryTimelineCard() {
+  const card = document.createElement('a');
+  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
+  card.href = generalMemoryTimelineHref();
+  const visual = document.createElement('span');
+  visual.className = 'fa-v2-card-visual';
+  visual.setAttribute('aria-hidden', 'true');
+  visual.textContent = 'T';
+  const content = document.createElement('span');
+  content.className = 'fa-v2-card-content';
+  const title = document.createElement('strong');
+  title.className = 'fa-v2-card-title';
+  title.textContent = 'Timeline Generale';
+  const description = document.createElement('span');
+  description.className = 'fa-v2-card-description';
+  description.textContent = 'Tutti i tuoi album personali, in ordine cronologico.';
+  content.append(title, description);
+  const actions = document.createElement('span');
+  actions.className = 'fa-v2-card-actions';
+  const open = document.createElement('span');
+  open.className = 'fa-v2-button fa-v2-button--primary';
+  open.textContent = 'Apri';
+  actions.append(open);
+  card.append(visual, content, actions);
+  return card;
+}
+
 function renderTimelineCollection() {
   setRouteView('collection');
   timelineReturn.href = 'timeline.html';
@@ -196,8 +231,11 @@ function renderTimelineCollection() {
     ? 'Apri una Timeline per consultare i suoi ricordi.'
     : 'Apri una Timeline per consultare i suoi documenti cronologici.';
   timelineCreate.textContent = '+ Crea nuova Timeline';
-  timelineCollectionList.replaceChildren(...selectedTimelines.map(createTimelineCard));
-  timelineCollectionEmpty.hidden = selectedTimelines.length > 0;
+  timelineCollectionList.replaceChildren(
+    ...(selectedTimelineType === 'memory' ? [createGeneralMemoryTimelineCard()] : []),
+    ...selectedTimelines.map(createTimelineCard)
+  );
+  timelineCollectionEmpty.hidden = selectedTimelines.length > 0 || selectedTimelineType === 'memory';
   timelineCollectionEmpty.replaceChildren();
   if (!selectedTimelines.length) {
     const heading = document.createElement('strong');
@@ -255,9 +293,32 @@ function renderTimelineDetail() {
   timelineDocumentCreateLink.href = `documento-timeline.html?${new URLSearchParams({ timeline_id: timeline.id })}`;
   timelineDelete.hidden = Boolean(timeline.is_default);
   timelineDelete.disabled = Boolean(timeline.is_default);
+  timelineOptions.hidden = false;
   timelineOptions.open = false;
   memoriesTimeline.hidden = selectedTimelineType !== 'memory';
   timelineDocumentsList.hidden = selectedTimelineType !== 'document';
+  memoriesEmpty.hidden = true;
+}
+
+function renderGeneralMemoryTimeline() {
+  generalMemoryTimelineReady = true;
+  setRouteView('detail');
+  timelineTitle.textContent = 'Timeline Generale';
+  timelineIntro.textContent = 'Tutti i tuoi album personali, in ordine cronologico.';
+  timelineDetailTitle.textContent = 'Timeline Generale';
+  timelineDetailDescription.textContent = 'Gli album condivisi con te non sono inclusi.';
+  timelineReturn.href = timelineHref('memory', null);
+  timelineReturn.textContent = 'Torna alle Timeline Ricordi';
+  const defaultTimeline = selectedTimelines.find((timeline) => timeline.is_default) || null;
+  memoryCreateLink.hidden = !defaultTimeline;
+  if (defaultTimeline) {
+    memoryCreateLink.href = `ricordo.html?${new URLSearchParams({ timeline_id: defaultTimeline.id })}`;
+  }
+  timelineDocumentCreateLink.hidden = true;
+  timelineOptions.hidden = true;
+  timelineOptions.open = false;
+  memoriesTimeline.hidden = false;
+  timelineDocumentsList.hidden = true;
   memoriesEmpty.hidden = true;
 }
 
@@ -1020,6 +1081,49 @@ async function loadSelectedMemoryTimeline() {
   await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
 }
 
+function compareOwnedMemoriesChronologically(first, second) {
+  for (const field of ['occurred_on', 'created_at', 'id']) {
+    const firstValue = String(first?.[field] || '');
+    const secondValue = String(second?.[field] || '');
+    const comparison = secondValue.localeCompare(firstValue);
+    if (comparison) return comparison;
+  }
+  return 0;
+}
+
+async function loadGeneralMemoryTimeline() {
+  memoriesTimeline.replaceChildren();
+  memoriesEmpty.hidden = true;
+  timelineMessage.textContent = 'Caricamento ricordi...';
+  const { data, error } = await timelineClient.rpc('get_my_memories');
+  if (error) {
+    timelineMessage.textContent = loadingError(error);
+    return;
+  }
+  if (!Array.isArray(data)) {
+    timelineMessage.textContent = 'Impossibile caricare i ricordi: risposta RPC incompatibile.';
+    return;
+  }
+
+  const ownedMemories = [...new Map(
+    data.filter((memory) => memory?.id).map((memory) => [memory.id, memory])
+  ).values()].sort(compareOwnedMemoriesChronologically);
+  const cards = ownedMemories.map((memory) => ({ memory, ...createMemoryCard(memory) }));
+  memoriesTimeline.replaceChildren(...cards.map(({ item }) => item));
+  memoriesEmpty.replaceChildren();
+  if (!ownedMemories.length) {
+    const heading = document.createElement('strong');
+    heading.textContent = 'Nessun album.';
+    const text = document.createElement('span');
+    text.textContent = 'Crea il primo album per vederlo anche nella Timeline Generale.';
+    memoriesEmpty.append(heading, text);
+    memoriesEmpty.hidden = false;
+  }
+  timelineMessage.textContent = '';
+  highlightRequestedMemory(cards);
+  await Promise.all(cards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+}
+
 async function openSharedMemoryGallery(memory, trigger) {
   const { data, error } = await timelineClient.rpc('get_shared_memory', { p_memory_id: memory.id });
   if (error || !data?.id) {
@@ -1245,6 +1349,11 @@ async function loadTimeline() {
   }
   try {
     await fetchTimelines();
+    if (isGeneralMemoryTimeline) {
+      renderGeneralMemoryTimeline();
+      await loadGeneralMemoryTimeline();
+      return;
+    }
     if (!selectedTimelineId) {
       renderTimelineCollection();
       timelineMessage.textContent = '';
@@ -1293,6 +1402,13 @@ document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && !lightbox.hidden && lightboxHistoryEntry && useImmersiveLightbox()) {
     closeLightbox();
   }
+});
+window.addEventListener('focus', () => {
+  if (!generalMemoryTimelineReady || !isGeneralMemoryTimeline || !galleryModal.hidden) return;
+  void loadGeneralMemoryTimeline();
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && generalMemoryTimelineReady && isGeneralMemoryTimeline) void loadGeneralMemoryTimeline();
 });
 document.addEventListener('keydown', (event) => {
   if (!lightbox.hidden) {
