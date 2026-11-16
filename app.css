@@ -1195,6 +1195,15 @@ body.fa-v2-app .fa-v2-page.fa-page--wide{width:min(100% - 48px,var(--fa-page-wid
 .fa-v2-section-heading h2{margin:0;color:var(--fa-v2-text);font-size:20px;line-height:1.25}
 .fa-v2-section-heading p{margin:var(--fa-v2-space-1) 0 0;color:var(--fa-v2-muted);font-size:13px}
 #timeline-collection .fa-v2-section-heading{margin-bottom:var(--fa-v2-space-3)}
+.timeline-general-card{position:relative;display:grid;min-height:144px;margin:0 0 var(--fa-v2-space-5);padding:24px 150px;border-color:#bfdcc1;background:linear-gradient(105deg,#f5fbf4,#fff 58%,#f2f8f2);color:var(--fa-v2-text);text-decoration:none}
+.timeline-general-card-main{display:flex;align-items:center;justify-content:center;gap:18px;min-width:0}
+.timeline-general-card .fa-v2-card-visual{flex:0 0 auto;width:86px;height:86px;border-color:#c6dfc7;background:#e7f2e5;color:#356f39;font-size:25px}
+.timeline-general-card .fa-v2-card-content{display:grid;gap:5px;min-width:0}
+.timeline-general-card .fa-v2-card-title{font-size:20px}
+.timeline-general-card .fa-v2-card-description{font-size:14px}
+.timeline-general-card .fa-v2-card-actions{position:absolute;right:24px;top:50%;transform:translateY(-50%)}
+.timeline-general-card .fa-v2-button{min-width:74px}
+@media(max-width:700px){.timeline-general-card{min-height:0;padding:22px;grid-template-columns:1fr;gap:18px}.timeline-general-card-main{flex-direction:column;gap:11px;text-align:center}.timeline-general-card .fa-v2-card-visual{width:72px;height:72px}.timeline-general-card .fa-v2-card-actions{position:static;justify-content:center;transform:none}.timeline-general-card .fa-v2-button{width:auto}}
 .fa-v2-header-card{
   margin:0;
   padding:var(--fa-v2-space-6);

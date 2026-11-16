@@ -8,6 +8,7 @@ const timelineReturn = document.getElementById('timeline-return');
 const timelineCollection = document.getElementById('timeline-collection');
 const timelineCollectionList = document.getElementById('timeline-collection-list');
 const timelineCollectionEmpty = document.getElementById('timeline-collection-empty');
+const timelineGeneralCard = document.getElementById('timeline-general-card');
 const timelineCollectionTitle = document.getElementById('timeline-list-title');
 const timelineCollectionIntro = document.getElementById('timeline-list-intro');
 const timelineCreate = document.getElementById('timeline-create');
@@ -191,50 +192,21 @@ function createTimelineCard(timeline) {
   return card;
 }
 
-function createGeneralMemoryTimelineCard() {
-  const card = document.createElement('a');
-  card.className = 'fa-v2-deadline-card fa-v2-deadline-card--interactive fa-v2-card-media-layout';
-  card.href = generalMemoryTimelineHref();
-  const visual = document.createElement('span');
-  visual.className = 'fa-v2-card-visual';
-  visual.setAttribute('aria-hidden', 'true');
-  visual.textContent = 'T';
-  const content = document.createElement('span');
-  content.className = 'fa-v2-card-content';
-  const title = document.createElement('strong');
-  title.className = 'fa-v2-card-title';
-  title.textContent = 'Timeline Generale';
-  const description = document.createElement('span');
-  description.className = 'fa-v2-card-description';
-  description.textContent = 'Tutti i tuoi album personali, in ordine cronologico.';
-  content.append(title, description);
-  const actions = document.createElement('span');
-  actions.className = 'fa-v2-card-actions';
-  const open = document.createElement('span');
-  open.className = 'fa-v2-button fa-v2-button--primary';
-  open.textContent = 'Apri';
-  actions.append(open);
-  card.append(visual, content, actions);
-  return card;
-}
-
 function renderTimelineCollection() {
   setRouteView('collection');
   timelineReturn.href = 'timeline.html';
   timelineReturn.textContent = 'Torna alla Timeline';
-  timelineTitle.textContent = `Timeline ${timelineLabel()}`;
+  timelineTitle.textContent = selectedTimelineType === 'memory' ? 'La mia Timeline' : `Timeline ${timelineLabel()}`;
   timelineIntro.textContent = selectedTimelineType === 'memory'
     ? 'Scegli un archivio di ricordi.'
     : 'Scegli un archivio di documenti.';
-  timelineCollectionTitle.textContent = `Le tue Timeline ${timelineLabel()}`;
+  timelineCollectionTitle.textContent = selectedTimelineType === 'memory' ? 'I miei Album' : `Le tue Timeline ${timelineLabel()}`;
   timelineCollectionIntro.textContent = selectedTimelineType === 'memory'
     ? 'Apri una Timeline per consultare i suoi ricordi.'
     : 'Apri una Timeline per consultare i suoi documenti cronologici.';
   timelineCreate.textContent = '+ Crea nuova Timeline';
-  timelineCollectionList.replaceChildren(
-    ...(selectedTimelineType === 'memory' ? [createGeneralMemoryTimelineCard()] : []),
-    ...selectedTimelines.map(createTimelineCard)
-  );
+  timelineGeneralCard.hidden = selectedTimelineType !== 'memory';
+  timelineCollectionList.replaceChildren(...selectedTimelines.map(createTimelineCard));
   timelineCollectionEmpty.hidden = selectedTimelines.length > 0 || selectedTimelineType === 'memory';
   timelineCollectionEmpty.replaceChildren();
   if (!selectedTimelines.length) {
