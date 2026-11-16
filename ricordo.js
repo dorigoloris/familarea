@@ -139,7 +139,10 @@ function populateMemory(memory) {
   memoryTitle.value = memory.title || '';
   memoryDescription.value = memory.description || '';
   coverAttachmentId = memory.cover_attachment_id || null;
-  requestedTimelineId = memory.timeline_id || requestedTimelineId;
+  // Keep the Timeline from which the editor was opened.  timeline_id is now
+  // only the historical/origin link and must not move an album between
+  // thematic collections during a normal edit.
+  requestedTimelineId = requestedTimelineId || memory.timeline_id || '';
 }
 
 async function verifyMemoryTimeline(timelineId = requestedTimelineId) {
@@ -1642,7 +1645,7 @@ async function saveMemory({ redirectOnSuccess = true } = {}) {
     const wasNew = !memoryId;
     memoryId = data.id;
     populateMemory(data);
-    requestedTimelineId = data.timeline_id || timelineId;
+    requestedTimelineId = timelineId || data.timeline_id || '';
     window.history.replaceState({}, '', `ricordo.html?${new URLSearchParams({ memory_id: memoryId, timeline_id: requestedTimelineId })}`);
     updatePageForStoredMemory({ showDocuments: false });
     await loadMemoryParticipants();

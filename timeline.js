@@ -345,6 +345,157 @@ async function deleteActiveTimeline() {
   }
 }
 
+async function chooseMemoryTimelineMemberships(memory, trigger) {
+  if (!memory?.id || trigger.disabled) return;
+  trigger.disabled = true;
+  let memberships;
+  try {
+    const { data, error } = await timelineClient.rpc('get_my_memory_timeline_memberships', {
+      p_memory_id: memory.id
+    });
+    if (error || !Array.isArray(data)) throw error || new Error('Risposta RPC incompatibile');
+    memberships = new Set(data.map((item) => item?.timeline_id).filter(isUuid));
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('caricare le Timeline dell’album', error);
+    trigger.disabled = false;
+    return;
+  }
+  trigger.disabled = false;
+
+  const selected = await new Promise((resolve) => {
+    const previousFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    const dialog = document.createElement('section');
+    dialog.className = 'confirm-modal memory-timeline-organizer';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'memory-timeline-organizer-title');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'confirm-modal-close';
+    close.setAttribute('aria-label', 'Chiudi finestra');
+    close.textContent = '×';
+    const title = document.createElement('h2');
+    title.id = 'memory-timeline-organizer-title';
+    title.className = 'confirm-modal-title';
+    title.textContent = 'Organizza nelle Timeline';
+    const message = document.createElement('p');
+    message.className = 'confirm-modal-message';
+    message.textContent = 'Scegli le raccolte tematiche in cui mostrare questo album. Rimarrà sempre nella Timeline Generale.';
+    const list = document.createElement('div');
+    list.className = 'memory-timeline-organizer-list';
+    const inputs = selectedTimelines.map((timeline) => {
+      const label = document.createElement('label');
+      label.className = 'memory-timeline-organizer-option';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = timeline.id;
+      input.checked = memberships.has(timeline.id);
+      const content = document.createElement('span');
+      const name = document.createElement('strong');
+      name.textContent = timeline.name;
+      const description = document.createElement('small');
+      description.textContent = timeline.description || (timeline.is_default ? 'Timeline predefinita.' : 'Nessuna descrizione.');
+      content.append(name, description);
+      label.append(input, content);
+      list.append(label);
+      return input;
+    });
+    const actions = document.createElement('div');
+    actions.className = 'confirm-modal-actions';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'confirm-modal-cancel';
+    cancel.textContent = 'Annulla';
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'confirm-modal-confirm';
+    save.textContent = 'Salva organizzazione';
+    actions.append(cancel, save);
+    dialog.append(close, title, message, list, actions);
+    overlay.append(dialog);
+    const background = [...document.body.children].map((element) => ({
+      element,
+      inert: element.inert,
+      ariaHidden: element.getAttribute('aria-hidden')
+    }));
+    const finish = (value) => {
+      document.removeEventListener('keydown', onKeyDown);
+      overlay.remove();
+      document.body.classList.remove('confirm-modal-open');
+      background.forEach(({ element, inert, ariaHidden }) => {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute('aria-hidden');
+        else element.setAttribute('aria-hidden', ariaHidden);
+      });
+      previousFocus?.focus?.();
+      resolve(value);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finish(null);
+      }
+    };
+    close.addEventListener('click', () => finish(null));
+    cancel.addEventListener('click', () => finish(null));
+    save.addEventListener('click', () => finish(inputs.filter((input) => input.checked).map((input) => input.value)));
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) finish(null); });
+    document.addEventListener('keydown', onKeyDown);
+    background.forEach(({ element }) => {
+      element.inert = true;
+      element.setAttribute('aria-hidden', 'true');
+    });
+    document.body.classList.add('confirm-modal-open');
+    document.body.append(overlay);
+    (inputs[0] || save).focus();
+  });
+  if (!selected) return;
+
+  trigger.disabled = true;
+  try {
+    const { error } = await timelineClient.rpc('replace_my_memory_timeline_memberships', {
+      p_memory_id: memory.id,
+      p_timeline_ids: selected
+    });
+    if (error) throw error;
+    timelineMessage.textContent = 'Organizzazione dell’album aggiornata.';
+    if (isGeneralMemoryTimeline) await loadGeneralMemoryTimeline();
+    else if (selectedTimelineType === 'memory' && selectedTimelineId) await loadSelectedMemoryTimeline();
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('aggiornare l’organizzazione dell’album', error);
+    trigger.disabled = false;
+  }
+}
+
+async function removeMemoryFromActiveTimeline(memory, trigger) {
+  const timeline = activeTimeline();
+  if (!memory?.id || !timeline?.id || trigger.disabled) return;
+  const confirmed = await FamilAreaConfirm.confirm({
+    variant: 'danger',
+    title: 'Rimuovere dalla Timeline?',
+    message: `L’album sarà rimosso solo da “${timeline.name}”. Rimarrà nella Timeline Generale e nelle altre raccolte selezionate.`,
+    cancelText: 'Annulla',
+    confirmText: 'Rimuovi dalla Timeline'
+  });
+  if (!confirmed) return;
+
+  trigger.disabled = true;
+  try {
+    const { error } = await timelineClient.rpc('remove_my_memory_from_timeline', {
+      p_memory_id: memory.id,
+      p_timeline_id: timeline.id
+    });
+    if (error) throw error;
+    await loadSelectedMemoryTimeline();
+    timelineMessage.textContent = 'Album rimosso dalla Timeline.';
+  } catch (error) {
+    timelineMessage.textContent = timelineRpcMessage('rimuovere l’album dalla Timeline', error);
+    trigger.disabled = false;
+  }
+}
+
 function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = null } = {}) {
   const item = shared ? null : document.createElement('div');
   if (item) item.className = 'fa-v2-memory-timeline-item';
@@ -428,7 +579,39 @@ function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = nul
     edit.href = memoryHref(memory);
     edit.textContent = 'Modifica';
     edit.addEventListener('click', (event) => event.stopPropagation());
-    actions.append(edit);
+    const overflowMenu = document.createElement('details');
+    overflowMenu.className = 'fa-v2-card-overflow';
+    overflowMenu.addEventListener('click', (event) => event.stopPropagation());
+    overflowMenu.addEventListener('keydown', (event) => event.stopPropagation());
+    const overflowSummary = document.createElement('summary');
+    overflowSummary.setAttribute('aria-label', 'Organizza album nelle Timeline');
+    overflowSummary.textContent = '⋯';
+    const overflowItems = document.createElement('div');
+    overflowItems.className = 'fa-v2-card-overflow-menu';
+    const organizeButton = document.createElement('button');
+    organizeButton.type = 'button';
+    organizeButton.className = 'fa-v2-card-overflow-menu-item fa-v2-card-overflow-menu-item--secondary';
+    organizeButton.textContent = 'Organizza nelle Timeline';
+    organizeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      overflowMenu.open = false;
+      void chooseMemoryTimelineMemberships(memory, organizeButton);
+    });
+    overflowItems.append(organizeButton);
+    if (selectedTimelineType === 'memory' && selectedTimelineId && !isGeneralMemoryTimeline) {
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'fa-v2-card-overflow-menu-item';
+      removeButton.textContent = 'Rimuovi da questa Timeline';
+      removeButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        overflowMenu.open = false;
+        void removeMemoryFromActiveTimeline(memory, removeButton);
+      });
+      overflowItems.append(removeButton);
+    }
+    overflowMenu.append(overflowSummary, overflowItems);
+    actions.append(edit, overflowMenu);
   }
   card.append(visual, content, actions);
   if (item) {
