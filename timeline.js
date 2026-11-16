@@ -326,10 +326,10 @@ function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = nul
     void opener(memory, card);
   };
   card.addEventListener('click', (event) => {
-    if (!event.target.closest('a, button')) open();
+    if (!event.target.closest('a, button, summary, details')) open();
   });
   card.addEventListener('keydown', (event) => {
-    if (event.target.closest('a, button') || !['Enter', ' '].includes(event.key)) return;
+    if (event.target.closest('a, button, summary, details') || !['Enter', ' '].includes(event.key)) return;
     event.preventDefault();
     open();
   });
@@ -368,15 +368,27 @@ function createMemoryCard(memory, { shared = false, onOpen = null, onLeave = nul
       event.stopPropagation();
       open();
     });
+    const overflowMenu = document.createElement('details');
+    overflowMenu.className = 'fa-v2-card-overflow';
+    overflowMenu.addEventListener('click', (event) => event.stopPropagation());
+    overflowMenu.addEventListener('keydown', (event) => event.stopPropagation());
+    const overflowSummary = document.createElement('summary');
+    overflowSummary.setAttribute('aria-label', 'Altre azioni per l’album condiviso');
+    overflowSummary.textContent = '⋯';
+    const overflowItems = document.createElement('div');
+    overflowItems.className = 'fa-v2-card-overflow-menu';
     const leaveButton = document.createElement('button');
     leaveButton.type = 'button';
-    leaveButton.className = 'fa-v2-button fa-v2-button--danger';
+    leaveButton.className = 'fa-v2-card-overflow-menu-item';
     leaveButton.textContent = 'Abbandona condivisione';
     leaveButton.addEventListener('click', (event) => {
       event.stopPropagation();
+      overflowMenu.open = false;
       if (onLeave) void onLeave(memory, leaveButton);
     });
-    actions.append(openButton, leaveButton);
+    overflowItems.append(leaveButton);
+    overflowMenu.append(overflowSummary, overflowItems);
+    actions.append(openButton, overflowMenu);
   } else {
     const edit = document.createElement('a');
     edit.className = 'fa-v2-button fa-v2-button--secondary';
@@ -1026,6 +1038,7 @@ async function leaveSharedMemory(memory, button) {
     variant: 'danger',
     title: 'Abbandonare la condivisione?',
     message: 'Non potrai più aprire questo album né le sue fotografie. L’album resterà disponibile al proprietario e agli altri destinatari.',
+    cancelText: 'Annulla',
     confirmText: 'Abbandona condivisione'
   });
   if (!confirmed) return;
