@@ -901,19 +901,11 @@ function openMemorySharingDialog() {
   sendInvite.className = 'fa-v2-button fa-v2-button--primary';
   sendInvite.textContent = 'Invia invito';
   sendInvite.disabled = true;
-  const emailInvitesTitle = document.createElement('h3');
-  emailInvitesTitle.textContent = 'Inviti via email';
-  const emailInvites = document.createElement('div');
-  emailInvites.className = 'fa-v2-list';
-  const pendingTitle = document.createElement('h3');
-  pendingTitle.textContent = 'Inviti FamilArea esistenti';
-  const pending = document.createElement('div');
-  pending.className = 'fa-v2-list';
-  const acceptedTitle = document.createElement('h3');
-  acceptedTitle.textContent = 'Accessi FamilArea esistenti';
-  const accepted = document.createElement('div');
-  accepted.className = 'fa-v2-list';
-  dialog.append(close, title, intro, availability, status, searchLabel, search, results, selected, sendInvite, emailInvitesTitle, emailInvites, pendingTitle, pending, acceptedTitle, accepted);
+  const shareManagementTitle = document.createElement('h3');
+  shareManagementTitle.textContent = 'Condivisioni album';
+  const shareManagement = document.createElement('div');
+  shareManagement.className = 'fa-v2-list memory-share-management-list';
+  dialog.append(close, title, intro, availability, status, searchLabel, search, results, selected, sendInvite, shareManagementTitle, shareManagement);
   overlay.append(dialog);
   document.body.append(overlay);
 
@@ -1075,6 +1067,152 @@ function openMemorySharingDialog() {
     void loadMemorySharingSummary();
   };
 
+  const managementStatusLabel = (value) => ({
+    pending: 'In attesa',
+    accepted: 'Accettato',
+    abandoned: 'Abbandonato',
+    declined: 'Rifiutato',
+    cancelled: 'Annullato',
+    revoked: 'Revocato',
+    expired: 'Scaduto',
+    unavailable: 'Accesso non disponibile'
+  })[value] || 'Stato non disponibile';
+
+  const refreshShareManagement = async () => {
+    shareManagement.replaceChildren();
+    const { data, error } = await memoryClient.rpc('get_memory_share_management', { p_memory_id: memoryId });
+    if (error) {
+      setStatus(rpcMessage('caricare le condivisioni dell’album', error), true);
+      return;
+    }
+    const shares = Array.isArray(data) ? data : [];
+    if (!shares.length) {
+      shareManagement.textContent = 'Album non condiviso.';
+      void loadMemorySharingSummary();
+      return;
+    }
+
+    const runShareAction = async ({ confirmation = null, subject, successMessage, run }) => {
+      if (actionPending) return;
+      if (confirmation && !await FamilAreaConfirm.confirm(confirmation)) return;
+      setBusy(true);
+      setStatus('Aggiornamento condivisione in corso…');
+      try {
+        const error = await run();
+        if (error) throw error;
+      } catch (error) {
+        setBusy(false);
+        setStatus(rpcMessage(subject, error), true);
+        return;
+      }
+      setBusy(false);
+      await refreshShareManagement();
+      setStatus(successMessage);
+    };
+
+    const createManagementRow = (share) => {
+      const row = document.createElement('div');
+      row.className = 'fa-v2-list-row memory-share-management-row';
+      const identity = document.createElement('div');
+      identity.className = 'memory-share-management-identity';
+      const name = document.createElement('strong');
+      name.textContent = share.display_name || share.recipient_email || 'Destinatario non disponibile';
+      identity.append(name);
+      if (share.recipient_email) {
+        const email = document.createElement('span');
+        email.className = 'memory-share-management-email';
+        email.textContent = share.recipient_email;
+        identity.append(email);
+      }
+      const state = document.createElement('span');
+      state.className = 'memory-share-management-status';
+      state.textContent = managementStatusLabel(share.status);
+      row.append(identity, state);
+
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'fa-v2-button fa-v2-button--secondary';
+      const actions = document.createElement('div');
+      actions.className = 'fa-v2-card-actions';
+      actions.append(action);
+
+      if (share.action_kind === 'resend_email') {
+        action.textContent = 'Reinvia email';
+        action.addEventListener('click', () => void runShareAction({
+          subject: 'reinviare l’email di invito',
+          successMessage: 'Email di invito reinviata.',
+          run: async () => {
+            const { data, error } = await memoryClient.functions.invoke('send-memory-share-invitation', {
+              body: { invitation_id: share.invitation_id }
+            });
+            return error || !data?.invitation_id || data.status !== 'pending'
+              ? error || new Error('Consegna non confermata')
+              : null;
+          }
+        }));
+      } else if (share.action_kind === 'cancel_collaboration_invitation') {
+        action.textContent = 'Annulla invito';
+        action.addEventListener('click', () => void runShareAction({
+          confirmation: {
+            title: 'Annullare invito?',
+            message: 'Il destinatario non potrà più accettare questo invito.',
+            confirmText: 'Annulla invito'
+          },
+          subject: 'annullare l’invito',
+          successMessage: 'Invito annullato.',
+          run: async () => {
+            const { error } = await memoryClient.rpc('cancel_memory_collaboration', {
+              p_collaboration_id: share.collaboration_id
+            });
+            return error;
+          }
+        }));
+      } else if (share.action_kind === 'revoke_email_access' || share.action_kind === 'revoke_collaboration_access') {
+        action.textContent = 'Revoca accesso';
+        action.addEventListener('click', () => void runShareAction({
+          confirmation: {
+            variant: 'danger',
+            title: 'Revocare accesso?',
+            message: 'Il destinatario non potrà più aprire questo album.',
+            confirmText: 'Revoca accesso'
+          },
+          subject: 'revocare l’accesso',
+          successMessage: 'Accesso revocato.',
+          run: async () => {
+            const { error } = share.action_kind === 'revoke_email_access'
+              ? await memoryClient.rpc('revoke_memory_share_invitation', { p_id: share.invitation_id })
+              : await memoryClient.rpc('revoke_memory_collaboration', { p_collaboration_id: share.collaboration_id });
+            return error;
+          }
+        }));
+      } else if (share.action_kind === 'archive_abandoned_invitation') {
+        action.textContent = 'Elimina';
+        action.addEventListener('click', () => void runShareAction({
+          confirmation: {
+            title: 'Eliminare la condivisione abbandonata?',
+            message: 'L’invito sarà rimosso solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.',
+            confirmText: 'Elimina'
+          },
+          subject: 'archiviare la condivisione abbandonata',
+          successMessage: 'Condivisione rimossa dall’elenco.',
+          run: async () => {
+            const { error } = await memoryClient.rpc('archive_abandoned_memory_share_invitation', {
+              p_invitation_id: share.invitation_id
+            });
+            return error;
+          }
+        }));
+      } else {
+        return row;
+      }
+      row.append(actions);
+      return row;
+    };
+
+    shareManagement.replaceChildren(...shares.map(createManagementRow));
+    void loadMemorySharingSummary();
+  };
+
   const searchRecipients = async () => {
     const query = search.value.trim();
     results.replaceChildren();
@@ -1122,7 +1260,7 @@ function openMemorySharingDialog() {
     search.value = '';
     results.replaceChildren();
     renderSelectedContact();
-    await refreshEmailManagement();
+    await refreshShareManagement();
     setStatus('Invito consegnato.');
   });
   search.addEventListener('input', () => {
@@ -1130,8 +1268,7 @@ function openMemorySharingDialog() {
     searchTimer = window.setTimeout(() => { void searchRecipients(); }, 250);
   });
   syncInvitationControls();
-  void refreshLegacyManagement();
-  void refreshEmailManagement();
+  void refreshShareManagement();
   dialog.focus();
 }
 
