@@ -21,6 +21,7 @@ let memoryPhotoTagsSaving = false;
 let memoryPhotoShareableAttachments = new Map();
 let memoryPhotoShareOwner = false;
 let memorySharingLoadGeneration = 0;
+let memorySharingActionPending = false;
 
 
 const memoryForm = document.getElementById('memory-form');
@@ -45,10 +46,7 @@ const memoryParticipantsEmpty = document.getElementById('memory-participants-emp
 const memoryParticipantsList = document.getElementById('memory-participants-list');
 const memorySharingSection = document.getElementById('memory-sharing-section');
 const memorySharingSectionMessage = document.getElementById('memory-sharing-section-message');
-const memorySharingActiveSection = document.getElementById('memory-sharing-active-section');
-const memorySharingActiveList = document.getElementById('memory-sharing-active-list');
-const memorySharingPendingSection = document.getElementById('memory-sharing-pending-section');
-const memorySharingPendingList = document.getElementById('memory-sharing-pending-list');
+const memorySharingList = document.getElementById('memory-sharing-list');
 const memorySharingEmpty = document.getElementById('memory-sharing-empty');
 const memoryParticipantSearch = document.getElementById('memory-participant-search');
 const memoryParticipantSearchResults = document.getElementById('memory-participant-search-results');
@@ -766,48 +764,143 @@ async function loadMemorySharingSummary() {
   memorySharingSectionMessage.textContent = 'Caricamento condivisioni…';
   memorySharingSectionMessage.classList.remove('is-error');
 
-  const [collaborationsResult, invitationsResult] = await Promise.allSettled([
-    memoryClient.rpc('get_memory_collaboration_management', { p_memory_id: memoryId }),
-    memoryShareEmailInvitesEnabled
-      ? memoryClient.rpc('get_memory_share_invitation_management', { p_memory_id: memoryId })
-      : Promise.resolve({ data: [], error: null })
-  ]);
+  const { data, error } = await memoryClient.rpc('get_memory_share_management', { p_memory_id: memoryId });
   if (loadGeneration !== memorySharingLoadGeneration || !memoryId || !memoryPhotoShareOwner) return;
 
-  const errors = [];
-  const collaborationData = collaborationsResult.status === 'fulfilled'
-    ? collaborationsResult.value
-    : { data: null, error: collaborationsResult.reason };
-  const invitationData = invitationsResult.status === 'fulfilled'
-    ? invitationsResult.value
-    : { data: null, error: invitationsResult.reason };
-  if (collaborationData.error) errors.push(rpcMessage('caricare gli accessi all’album', collaborationData.error));
-  if (invitationData.error) errors.push(rpcMessage('caricare gli inviti dell’album', invitationData.error));
+  if (error) {
+    memorySharingList.replaceChildren();
+    memorySharingEmpty.hidden = true;
+    memorySharingSectionMessage.textContent = rpcMessage('caricare le condivisioni dell’album', error);
+    memorySharingSectionMessage.classList.add('is-error');
+    return;
+  }
 
-  const activeCollaborators = collaborationData.error ? [] : (Array.isArray(collaborationData.data?.collaborators) ? collaborationData.data.collaborators : []);
-  const pendingCollaborators = collaborationData.error ? [] : (Array.isArray(collaborationData.data?.pending) ? collaborationData.data.pending : []);
-  const pendingEmailInvites = invitationData.error ? [] : (Array.isArray(invitationData.data) ? invitationData.data : [])
-    .filter((invite) => invite?.status === 'pending');
+  const shares = Array.isArray(data) ? data : [];
+  memorySharingList.replaceChildren(...shares.map((share) => createMemoryShareManagementRow(share, {
+    onAction: () => void runMemoryShareManagementAction(share)
+  })));
+  memorySharingEmpty.hidden = Boolean(shares.length);
+  memorySharingSectionMessage.textContent = '';
+  memorySharingSectionMessage.classList.remove('is-error');
+}
 
-  memorySharingActiveList.replaceChildren(...activeCollaborators.map((item) => createMemorySharingRow({
-    display_name: item.display_name,
-    account_type: item.account_type,
-    avatar_path: item.avatar_path
-  }, { status: 'Può visualizzare l’album · Accesso attivo' })));
-  memorySharingPendingList.replaceChildren(
-    ...pendingCollaborators.map((item) => createMemorySharingRow({
-      display_name: item.display_name,
-      account_type: item.account_type,
-      avatar_path: item.avatar_path
-    }, { status: 'Invito FamilArea · In attesa' })),
-    ...pendingEmailInvites.map((invite) => createMemorySharingInvitationRow(invite.recipient_email))
-  );
+function memoryShareManagementStatusLabel(value) {
+  return ({
+    pending: 'In attesa',
+    accepted: 'Accettato',
+    abandoned: 'Abbandonato',
+    declined: 'Rifiutato',
+    cancelled: 'Annullato',
+    revoked: 'Revocato',
+    expired: 'Scaduto',
+    unavailable: 'Accesso non disponibile'
+  })[value] || 'Stato non disponibile';
+}
 
-  memorySharingActiveSection.hidden = activeCollaborators.length === 0;
-  memorySharingPendingSection.hidden = pendingCollaborators.length + pendingEmailInvites.length === 0;
-  memorySharingEmpty.hidden = Boolean(activeCollaborators.length + pendingCollaborators.length + pendingEmailInvites.length) || Boolean(errors.length);
-  memorySharingSectionMessage.textContent = errors.join(' ');
-  memorySharingSectionMessage.classList.toggle('is-error', Boolean(errors.length));
+function memoryShareManagementActionDetails(share) {
+  if (share.action_kind === 'resend_email') {
+    return {
+      label: 'Reinvia email',
+      subject: 'reinviare l’email di invito',
+      successMessage: 'Email di invito reinviata.',
+      run: async () => {
+        const { data, error } = await memoryClient.functions.invoke('send-memory-share-invitation', {
+          body: { invitation_id: share.invitation_id }
+        });
+        return error || !data?.invitation_id || data.status !== 'pending'
+          ? error || new Error('Consegna non confermata')
+          : null;
+      }
+    };
+  }
+  if (share.action_kind === 'cancel_collaboration_invitation') {
+    return {
+      label: 'Annulla invito',
+      confirmation: { title: 'Annullare invito?', message: 'Il destinatario non potrà più accettare questo invito.', confirmText: 'Annulla invito' },
+      subject: 'annullare l’invito',
+      successMessage: 'Invito annullato.',
+      run: async () => (await memoryClient.rpc('cancel_memory_collaboration', { p_collaboration_id: share.collaboration_id })).error
+    };
+  }
+  if (share.action_kind === 'revoke_email_access' || share.action_kind === 'revoke_collaboration_access') {
+    return {
+      label: 'Revoca accesso',
+      confirmation: { variant: 'danger', title: 'Revocare accesso?', message: 'Il destinatario non potrà più aprire questo album.', confirmText: 'Revoca accesso' },
+      subject: 'revocare l’accesso',
+      successMessage: 'Accesso revocato.',
+      run: async () => (share.action_kind === 'revoke_email_access'
+        ? await memoryClient.rpc('revoke_memory_share_invitation', { p_id: share.invitation_id })
+        : await memoryClient.rpc('revoke_memory_collaboration', { p_collaboration_id: share.collaboration_id })).error
+    };
+  }
+  if (share.action_kind === 'archive_abandoned_invitation') {
+    return {
+      label: 'Elimina',
+      confirmation: { title: 'Eliminare la condivisione abbandonata?', message: 'L’invito sarà rimosso solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.', confirmText: 'Elimina' },
+      subject: 'archiviare la condivisione abbandonata',
+      successMessage: 'Condivisione rimossa dall’elenco.',
+      run: async () => (await memoryClient.rpc('archive_abandoned_memory_share_invitation', { p_invitation_id: share.invitation_id })).error
+    };
+  }
+  return null;
+}
+
+function createMemoryShareManagementRow(share, { onAction = null } = {}) {
+  const row = document.createElement('div');
+  row.className = 'fa-v2-list-row memory-share-management-row';
+  const identity = document.createElement('div');
+  identity.className = 'memory-share-management-identity';
+  const name = document.createElement('strong');
+  name.textContent = share.display_name || share.recipient_email || 'Destinatario non disponibile';
+  identity.append(name);
+  if (share.recipient_email) {
+    const email = document.createElement('span');
+    email.className = 'memory-share-management-email';
+    email.textContent = share.recipient_email;
+    identity.append(email);
+  }
+  const state = document.createElement('span');
+  state.className = 'memory-share-management-status';
+  state.textContent = memoryShareManagementStatusLabel(share.status);
+  row.append(identity, state);
+
+  const actionDetails = memoryShareManagementActionDetails(share);
+  if (actionDetails && onAction) {
+    const actions = document.createElement('div');
+    actions.className = 'fa-v2-card-actions';
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'fa-v2-button fa-v2-button--secondary';
+    action.textContent = actionDetails.label;
+    action.addEventListener('click', onAction);
+    actions.append(action);
+    row.append(actions);
+  }
+  return row;
+}
+
+async function runMemoryShareManagementAction(share) {
+  if (memorySharingActionPending) return;
+  const action = memoryShareManagementActionDetails(share);
+  if (!action) return;
+  if (action.confirmation && !await FamilAreaConfirm.confirm(action.confirmation)) return;
+  memorySharingActionPending = true;
+  memorySharingSectionMessage.textContent = 'Aggiornamento condivisione in corso…';
+  memorySharingSectionMessage.classList.remove('is-error');
+  let error = null;
+  try {
+    error = await action.run();
+  } catch (actionError) {
+    error = actionError;
+  }
+  memorySharingActionPending = false;
+  if (error) {
+    memorySharingSectionMessage.textContent = rpcMessage(action.subject, error);
+    memorySharingSectionMessage.classList.add('is-error');
+    return;
+  }
+  await loadMemorySharingSummary();
+  memorySharingSectionMessage.textContent = action.successMessage;
 }
 
 
