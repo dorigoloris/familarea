@@ -22,14 +22,34 @@ function localIso(date, time = '00:00') {
   return new Date(`${date}T${time}`).toISOString();
 }
 
+function addLocalDays(dateValue, days) {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function allDayExclusiveEndIso(inclusiveEndDate) {
+  return localIso(addLocalDays(inclusiveEndDate, 1));
+}
+
+function inclusiveAllDayEndDate(startValue, endValue) {
+  const startDate = localDate(startValue);
+  const endDate = localDate(endValue);
+  return endDate > startDate ? addLocalDays(endDate, -1) : endDate;
+}
+
 function formatWhen(value, endValue, isAllDay) {
   if (!value) return '—';
   const formatter = new Intl.DateTimeFormat('it-IT', isAllDay
     ? { dateStyle: 'long' }
     : { dateStyle: 'long', timeStyle: 'short' });
   const end = endValue ? new Date(endValue) : null;
-  return end && localDate(value) !== localDate(endValue)
-    ? `${formatter.format(new Date(value))} → ${formatter.format(end)}`
+  const displayEnd = end && isAllDay
+    ? new Date(`${inclusiveAllDayEndDate(value, endValue)}T12:00:00`)
+    : end;
+  return displayEnd && localDate(value) !== localDate(endValue)
+    ? `${formatter.format(new Date(value))} → ${formatter.format(displayEnd)}`
     : formatter.format(new Date(value));
 }
 
@@ -166,7 +186,7 @@ function buildCommitmentEditInterval() {
   if (!endDate) throw new Error('Indica la data di fine.');
   if (endDate <= startDate) throw new Error('La data di fine deve essere successiva alla data di inizio.');
   if (!startTime && endTime) throw new Error('Indica prima l’ora di inizio.');
-  if (!startTime) return { startsAt: localIso(startDate), endsAt: localIso(endDate), allDay: true };
+  if (!startTime) return { startsAt: localIso(startDate), endsAt: allDayExclusiveEndIso(endDate), allDay: true };
   return { startsAt: localIso(startDate, startTime), endsAt: localIso(endDate, endTime || startTime), allDay: false };
 }
 
@@ -245,7 +265,7 @@ function buildEditInterval() {
   if (fields.multiDay.checked && !allDay && !endTime) throw new Error('Indica l’ora di fine.');
   const startsAt = localIso(startDate, allDay ? '00:00' : startTime);
   const endsAt = allDay
-    ? (fields.multiDay.checked ? localIso(endDate, '00:00') : startsAt)
+    ? (fields.multiDay.checked ? allDayExclusiveEndIso(endDate) : startsAt)
     : endTime ? localIso(endDate, endTime) : null;
   if (endsAt && (new Date(endsAt) < new Date(startsAt)
     || (new Date(endsAt).getTime() === new Date(startsAt).getTime() && !(allDay && !fields.multiDay.checked)))) {
@@ -368,7 +388,11 @@ async function openEdit() {
   document.getElementById('edit-end').value = eventData.is_all_day || !eventData.ends_at ? '' : localTime(eventData.ends_at);
   document.getElementById('edit-all-day').checked = Boolean(eventData.is_all_day);
   document.getElementById('edit-multi-day').checked = Boolean(eventData.ends_at) && localDate(eventData.starts_at) !== localDate(eventData.ends_at);
-  document.getElementById('edit-end-date').value = eventData.ends_at ? localDate(eventData.ends_at) : localDate(eventData.starts_at);
+  document.getElementById('edit-end-date').value = eventData.ends_at
+    ? (eventData.is_all_day
+      ? inclusiveAllDayEndDate(eventData.starts_at, eventData.ends_at)
+      : localDate(eventData.ends_at))
+    : localDate(eventData.starts_at);
   document.querySelector(`input[name="edit-commitment-when"][value="${commitmentWhenFromEvent()}"]`).checked = true;
   document.getElementById('edit-status').value = statusLabels[eventData.status] ? eventData.status : 'active';
   if (isCommitmentEvent()) configureCommitmentEditForm();

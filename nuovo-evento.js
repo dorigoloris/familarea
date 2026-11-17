@@ -44,6 +44,17 @@ function syncCommitmentWhenLayout() {
   if (isPeriod && !endDateInput.value) endDateInput.value = startDateInput.value;
 }
 
+function addLocalDays(dateValue, days) {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function allDayExclusiveEndIso(inclusiveEndDate) {
+  return localIso(addLocalDays(inclusiveEndDate, 1));
+}
+
 function buildCommitmentInterval() {
   const mode = commitmentWhen();
   const startDate = startDateInput.value;
@@ -67,7 +78,7 @@ function buildCommitmentInterval() {
   if (!endDate) throw new Error('Indica la data di fine.');
   if (endDate <= startDate) throw new Error('La data di fine deve essere successiva alla data di inizio.');
   if (!startTime && endTime) throw new Error('Indica prima l’ora di inizio.');
-  if (!startTime) return { startsAt: localIso(startDate), endsAt: localIso(endDate), allDay: true };
+  if (!startTime) return { startsAt: localIso(startDate), endsAt: allDayExclusiveEndIso(endDate), allDay: true };
   const startsAt = localIso(startDate, startTime);
   const endsAt = localIso(endDate, endTime || startTime);
   return { startsAt, endsAt, allDay: false };
@@ -281,7 +292,7 @@ function buildInterval() {
 
   const startsAt = localIso(startDate, allDay ? '00:00' : startTime);
   const endsAt = allDay
-    ? (multiDayInput.checked ? localIso(endDate, '00:00') : startsAt)
+    ? (multiDayInput.checked ? allDayExclusiveEndIso(endDate) : startsAt)
     : endTime ? localIso(endDate, endTime) : null;
   if (endsAt && (new Date(endsAt) < new Date(startsAt)
     || (new Date(endsAt).getTime() === new Date(startsAt).getTime() && !(allDay && !multiDayInput.checked)))) {

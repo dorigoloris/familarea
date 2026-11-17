@@ -5,15 +5,33 @@ const commitmentsEmpty = document.getElementById('commitments-empty');
 
 function formatDate(value) {
   if (!value) return 'Data non indicata';
-  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('it-IT');
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(...value.split('-').map((part, index) => index === 1 ? Number(part) - 1 : Number(part)))
+    : new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Data non indicata' : date.toLocaleDateString('it-IT');
+}
+
+function localDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function addLocalDays(dateValue, days) {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function formatEventWhen(event) {
   const start = new Date(event.starts_at);
   const date = start.toLocaleDateString('it-IT');
-  if (event.ends_at && formatDate(event.starts_at) !== formatDate(event.ends_at)) {
-    return `${date} → ${formatDate(event.ends_at)}`;
+  const startDate = localDateKey(event.starts_at);
+  const endDate = event.ends_at ? localDateKey(event.ends_at) : '';
+  if (event.ends_at && startDate !== endDate) {
+    const displayEnd = event.is_all_day ? addLocalDays(endDate, -1) : endDate;
+    return `${date} → ${formatDate(displayEnd)}`;
   }
   if (event.is_all_day) return date;
   const startTime = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
