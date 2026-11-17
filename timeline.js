@@ -206,10 +206,13 @@ function renderTimelineCollection() {
     : 'Apri una Timeline per consultare i suoi documenti cronologici.';
   timelineCreate.textContent = '+ Crea nuova Timeline';
   timelineGeneralCard.hidden = selectedTimelineType !== 'memory';
-  timelineCollectionList.replaceChildren(...selectedTimelines.map(createTimelineCard));
-  timelineCollectionEmpty.hidden = selectedTimelines.length > 0 || selectedTimelineType === 'memory';
+  const visibleTimelines = selectedTimelineType === 'memory'
+    ? selectedTimelines.filter((timeline) => !timeline.is_default)
+    : selectedTimelines;
+  timelineCollectionList.replaceChildren(...visibleTimelines.map(createTimelineCard));
+  timelineCollectionEmpty.hidden = visibleTimelines.length > 0 || selectedTimelineType === 'memory';
   timelineCollectionEmpty.replaceChildren();
-  if (!selectedTimelines.length) {
+  if (!visibleTimelines.length) {
     const heading = document.createElement('strong');
     heading.textContent = `Nessuna Timeline ${timelineLabel()}.`;
     const text = document.createElement('span');
