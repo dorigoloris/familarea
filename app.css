@@ -1642,7 +1642,9 @@ html.fa-mfa-pending body > *{visibility:hidden}
 .memory-share-email-dialog h3{margin:var(--fa-v2-space-2) 0 0;color:var(--fa-v2-text);font-size:16px}
 .memory-share-email-dialog .fa-v2-list{display:grid;gap:var(--fa-v2-space-2)}
 .memory-share-email-row{align-items:center}
-.memory-share-email-row .fa-v2-status{margin:3px 0 0}
+.memory-share-recipient-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 7px;min-width:0}
+.memory-share-recipient-line strong{min-width:0;overflow-wrap:anywhere}
+.memory-share-recipient-status{color:var(--fa-v2-muted);font-size:12px;font-weight:500;line-height:1.35}
 .memory-share-email-selected{padding:var(--fa-v2-space-3);border:1px solid #c9dfc9;border-radius:12px;background:#f3f9f1}
 .memory-share-email-selected p{margin:0}
 .memory-share-email-selected strong{display:block;margin-top:3px;color:var(--fa-v2-text)}

@@ -711,13 +711,16 @@ function createMemorySharingRow(account, { status = '', actionLabel = '', action
   avatar.className = 'contact-directory-avatar';
   renderMemorySharingAvatar(avatar, account);
   const details = document.createElement('div');
+  const recipientLine = document.createElement('div');
+  recipientLine.className = 'memory-share-recipient-line';
   const title = document.createElement('strong');
   title.textContent = account.display_name || account.account_name || 'Account FamilArea';
-  const meta = document.createElement('p');
-  meta.className = 'fa-v2-status';
+  const meta = document.createElement('span');
+  meta.className = 'memory-share-recipient-status';
   const accountType = account.account_type === 'organization' ? 'Organizzazione' : 'Persona';
-  meta.textContent = status ? `${accountType} · ${status}` : accountType;
-  details.append(title, meta);
+  meta.textContent = status || accountType;
+  recipientLine.append(title, meta);
+  details.append(recipientLine);
   row.append(avatar, details);
   if (action) {
     const actions = document.createElement('div');
@@ -738,12 +741,15 @@ function createMemorySharingInvitationRow(email) {
   const row = document.createElement('div');
   row.className = 'fa-v2-list-row';
   const details = document.createElement('div');
+  const recipientLine = document.createElement('div');
+  recipientLine.className = 'memory-share-recipient-line';
   const title = document.createElement('strong');
   title.textContent = email || 'Destinatario non disponibile';
-  const meta = document.createElement('p');
-  meta.className = 'fa-v2-status';
-  meta.textContent = 'Invito inviato · In attesa di accettazione';
-  details.append(title, meta);
+  const meta = document.createElement('span');
+  meta.className = 'memory-share-recipient-status';
+  meta.textContent = 'In attesa';
+  recipientLine.append(title, meta);
+  details.append(recipientLine);
   row.append(details);
   return row;
 }
@@ -1025,12 +1031,15 @@ function openMemorySharingDialog() {
       const row = document.createElement('div');
       row.className = 'fa-v2-list-row memory-share-email-row';
       const details = document.createElement('div');
+      const recipientLine = document.createElement('div');
+      recipientLine.className = 'memory-share-recipient-line';
       const email = document.createElement('strong');
       email.textContent = invite.recipient_email;
-      const meta = document.createElement('p');
-      meta.className = 'fa-v2-status';
+      const meta = document.createElement('span');
+      meta.className = 'memory-share-recipient-status';
       meta.textContent = memoryShareInvitationStatusLabel(invite.status, invite.collaboration_status);
-      details.append(email, meta);
+      recipientLine.append(email, meta);
+      details.append(recipientLine);
       row.append(details);
       const isPendingAndValid = invite.status === 'pending'
         && typeof invite.invitation_id === 'string'
