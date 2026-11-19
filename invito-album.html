@@ -11,38 +11,66 @@
   <meta name="theme-color" content="#0d2b4f">
   <title>Invito Album - FamilArea</title>
   <link rel="stylesheet" href="app.css">
+  <style>
+    .album-invite-page{min-height:100vh;padding:0;background:linear-gradient(145deg,#f3f8f4 0%,#f8fafb 54%,#eef5f8 100%)}
+    .album-invite-page .album-invite-shell{display:grid;min-height:100vh;padding:32px 20px;place-items:center}
+    .album-invite-page .album-invite-card{width:min(100%,540px);padding:clamp(28px,5vw,44px);border:1px solid var(--fa-v2-border);border-radius:22px;background:var(--fa-v2-surface);box-shadow:0 16px 42px rgba(25,50,74,.08)}
+    .album-invite-page .album-invite-brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:clamp(28px,5vw,40px);color:var(--fa-v2-text);font-size:22px;font-weight:800;letter-spacing:-1px;text-decoration:none}
+    .album-invite-page .album-invite-brand span{color:var(--fa-v2-primary)}
+    .album-invite-page .album-invite-brand img{display:block;width:34px;height:34px;border-radius:10px;object-fit:cover}
+    .album-invite-page .album-invite-icon{display:grid;width:54px;height:54px;margin-bottom:var(--fa-v2-space-4);place-items:center;border-radius:16px;background:var(--fa-v2-success-bg);color:var(--fa-v2-success);font-size:25px}
+    .album-invite-page .album-invite-eyebrow{margin:0 0 var(--fa-v2-space-2);color:var(--fa-v2-primary-strong);font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    .album-invite-page .album-invite-card h1{margin:0;color:var(--fa-v2-text);font-size:clamp(28px,6vw,34px);line-height:1.12;letter-spacing:-1.1px}
+    .album-invite-page .album-invite-album{margin:var(--fa-v2-space-3) 0 0;color:var(--fa-v2-text);font-size:18px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+    .album-invite-page .album-invite-sender{margin:var(--fa-v2-space-1) 0 0;color:var(--fa-v2-muted);font-size:13px}
+    .album-invite-page .album-invite-intro{margin:var(--fa-v2-space-4) 0 0;color:var(--fa-v2-muted);font-size:15px;line-height:1.55}
+    .album-invite-page .album-invite-message{min-height:20px;margin:var(--fa-v2-space-5) 0 0;padding:0;color:var(--fa-v2-muted);font-size:13px;font-weight:700}
+    .album-invite-page .album-invite-message:empty{display:none}
+    .album-invite-page .album-invite-message.is-error{color:var(--fa-v2-danger)}
+    .album-invite-page .album-invite-state{margin-top:var(--fa-v2-space-5);padding-top:var(--fa-v2-space-5);border-top:1px solid var(--fa-v2-border)}
+    .album-invite-page .album-invite-state[hidden]{display:none}
+    .album-invite-page .album-invite-state h2{margin:0;color:var(--fa-v2-text);font-size:18px;line-height:1.3}
+    .album-invite-page .album-invite-state p{margin:var(--fa-v2-space-2) 0 0;color:var(--fa-v2-muted);font-size:14px;line-height:1.5}
+    .album-invite-page .album-invite-recipient{padding:10px 12px;border-radius:10px;background:#f5f8f6;color:var(--fa-v2-muted)!important;font-size:13px!important}
+    .album-invite-page .album-invite-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:var(--fa-v2-space-5)}
+    .album-invite-page .album-invite-actions .fa-v2-button{margin:0;min-width:124px}
+    .album-invite-page .album-invite-actions .fa-v2-button--primary{box-shadow:0 7px 14px rgba(77,139,79,.18)}
+    @media(max-width:560px){.album-invite-page .album-invite-shell{padding:16px}.album-invite-page .album-invite-card{padding:28px 24px;border-radius:18px}.album-invite-page .album-invite-brand{margin-bottom:30px}.album-invite-page .album-invite-actions{align-items:stretch;flex-direction:column-reverse}.album-invite-page .album-invite-actions .fa-v2-button{width:100%}}
+  </style>
 </head>
-<body class="fa-v2-app">
-  <main class="fa-v2-page fa-v2-page-stack">
-    <header class="fa-section-hero fa-v2-header-card fa-v2-card" aria-labelledby="album-invite-title">
-      <div class="fa-section-hero-content">
-        <h1 id="album-invite-title">Invito a un Album</h1>
-        <p>Accetta solo con l'account registrato con l'indirizzo email invitato.</p>
-      </div>
-    </header>
-    <p id="album-invite-message" class="fa-v2-status" aria-live="polite">Verifica invito...</p>
-    <section id="album-invite-auth" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="album-invite-auth-title" hidden>
-      <div class="fa-v2-section-heading"><h2 id="album-invite-auth-title">Accedi per continuare</h2></div>
-      <p>Accedi o registrati con lo stesso indirizzo email a cui è stato inviato l'invito.</p>
-      <div class="fa-v2-card-actions">
-        <a id="album-invite-register" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a>
-<a id="album-invite-login" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a>
-        <button id="album-invite-switch-account" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Cambia account</button>
-      </div>
-    </section>
-    <section id="album-invite-response" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="album-invite-response-title" hidden>
-      <div class="fa-v2-section-heading"><h2 id="album-invite-response-title">Rispondi all'invito</h2></div>
-      <p id="album-invite-recipient" class="fa-v2-status"></p>
-      <p>Accettando potrai visualizzare solo questo Album condiviso.</p>
-      <div id="album-invite-actions" class="fa-v2-card-actions">
-        <button id="album-invite-decline" class="fa-v2-button fa-v2-button--secondary" type="button">Rifiuta</button>
-        <button id="album-invite-accept" class="fa-v2-button fa-v2-button--primary" type="button">Accetta invito</button>
-      </div>
-    </section>
-    <section id="album-invite-complete" class="fa-v2-section-card fa-v2-card fa-v2-page-stack" aria-labelledby="album-invite-complete-title" hidden>
-      <div class="fa-v2-section-heading"><h2 id="album-invite-complete-title">Invito accettato</h2></div>
-      <p>Puoi ora aprire l'Album nella sezione Album condivisi.</p>
-      <div class="fa-v2-card-actions"><a class="fa-v2-button fa-v2-button--primary" href="timeline.html?type=memory">Apri Album condivisi</a></div>
+<body class="fa-v2-app album-invite-page">
+  <main class="album-invite-shell">
+    <section class="album-invite-card" aria-labelledby="album-invite-title">
+      <a class="album-invite-brand" href="index.html" aria-label="FamilArea, pagina iniziale"><img src="Logo%20Avatar%20Verde.png" alt=""><strong>Famil<span>Area</span></strong></a>
+      <div class="album-invite-icon" aria-hidden="true">&#9829;</div>
+      <p class="album-invite-eyebrow">Album condiviso</p>
+      <h1 id="album-invite-title">Hai ricevuto un invito!</h1>
+      <p id="album-invite-album" class="album-invite-album">Un album FamilArea</p>
+      <p id="album-invite-sender" class="album-invite-sender" hidden></p>
+      <p class="album-invite-intro">Accetta l'invito per visualizzare questo album condiviso con te.</p>
+      <p id="album-invite-message" class="fa-v2-status album-invite-message" aria-live="polite">Verifica invito...</p>
+      <section id="album-invite-auth" class="album-invite-state" aria-labelledby="album-invite-auth-title" hidden>
+        <h2 id="album-invite-auth-title">Accedi per continuare</h2>
+        <p>Accedi o registrati con lo stesso indirizzo email a cui è stato inviato l'invito.</p>
+        <div class="album-invite-actions">
+          <a id="album-invite-register" class="fa-v2-button fa-v2-button--secondary" href="registrati.html">Registrati</a>
+          <a id="album-invite-login" class="fa-v2-button fa-v2-button--primary" href="login.html">Accedi</a>
+          <button id="album-invite-switch-account" class="fa-v2-button fa-v2-button--secondary" type="button" hidden>Cambia account</button>
+        </div>
+      </section>
+      <section id="album-invite-response" class="album-invite-state" aria-labelledby="album-invite-response-title" hidden>
+        <h2 id="album-invite-response-title">Confermi la partecipazione?</h2>
+        <p id="album-invite-recipient" class="album-invite-recipient"></p>
+        <div id="album-invite-actions" class="album-invite-actions">
+          <button id="album-invite-decline" class="fa-v2-button fa-v2-button--secondary" type="button">Rifiuta</button>
+          <button id="album-invite-accept" class="fa-v2-button fa-v2-button--primary" type="button">Accetta invito</button>
+        </div>
+      </section>
+      <section id="album-invite-complete" class="album-invite-state" aria-labelledby="album-invite-complete-title" hidden>
+        <h2 id="album-invite-complete-title">Invito accettato</h2>
+        <p>Puoi ora aprire l'Album nella sezione Album condivisi.</p>
+        <div class="album-invite-actions"><a class="fa-v2-button fa-v2-button--primary" href="timeline.html?type=memory">Apri Album condivisi</a></div>
+      </section>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

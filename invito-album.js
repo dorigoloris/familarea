@@ -8,6 +8,8 @@ const albumInviteAuth = document.getElementById('album-invite-auth');
 const albumInviteResponse = document.getElementById('album-invite-response');
 const albumInviteComplete = document.getElementById('album-invite-complete');
 const albumInviteRecipient = document.getElementById('album-invite-recipient');
+const albumInviteAlbum = document.getElementById('album-invite-album');
+const albumInviteSender = document.getElementById('album-invite-sender');
 const albumInviteAccept = document.getElementById('album-invite-accept');
 const albumInviteDecline = document.getElementById('album-invite-decline');
 const albumInviteSwitchAccount = document.getElementById('album-invite-switch-account');
@@ -55,6 +57,16 @@ function normalizeEmail(value) {
 function setMessage(text, isError = false) {
   albumInviteMessage.textContent = text;
   albumInviteMessage.classList.toggle('is-error', isError);
+}
+
+function setInvitePresentation(invite) {
+  const albumTitle = [invite?.album_title, invite?.memory_title, invite?.title]
+    .find((value) => typeof value === 'string' && value.trim());
+  const senderName = [invite?.sender_name, invite?.owner_display_name]
+    .find((value) => typeof value === 'string' && value.trim());
+  albumInviteAlbum.textContent = albumTitle || 'Un album FamilArea';
+  albumInviteSender.textContent = senderName ? `Condiviso da ${senderName}` : '';
+  albumInviteSender.hidden = !senderName;
 }
 
 function setResponseBusy(busy) {
@@ -111,6 +123,7 @@ async function loadInvite() {
     return;
   }
 
+  setInvitePresentation(data);
   inviteRecipientEmail = normalizeEmail(data.recipient_email);
   const { data: userData, error: userError } = await albumInviteClient.auth.getUser();
   const authenticatedEmail = normalizeEmail(userData?.user?.email);
