@@ -833,11 +833,12 @@ function memoryShareManagementActionDetails(share) {
         : await memoryClient.rpc('revoke_memory_collaboration', { p_collaboration_id: share.collaboration_id })).error
     };
   }
-  if (share.action_kind === 'archive_abandoned_invitation') {
+  if (share.action_kind === 'archive_abandoned_invitation'
+    || (share.source_kind === 'email' && share.invitation_id && share.status === 'revoked')) {
     return {
       label: 'Elimina',
-      confirmation: { title: 'Eliminare la condivisione abbandonata?', message: 'L’invito sarà rimosso solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.', confirmText: 'Elimina' },
-      subject: 'archiviare la condivisione abbandonata',
+      confirmation: { title: 'Eliminare la condivisione inattiva?', message: 'La condivisione sarà rimossa solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.', confirmText: 'Elimina' },
+      subject: 'archiviare la condivisione inattiva',
       successMessage: 'Condivisione rimossa dall’elenco.',
       run: async () => (await memoryClient.rpc('archive_abandoned_memory_share_invitation', { p_invitation_id: share.invitation_id })).error
     };
@@ -1278,15 +1279,16 @@ function openMemorySharingDialog() {
             return error;
           }
         }));
-      } else if (share.action_kind === 'archive_abandoned_invitation') {
+      } else if (share.action_kind === 'archive_abandoned_invitation'
+        || (share.source_kind === 'email' && share.invitation_id && share.status === 'revoked')) {
         action.textContent = 'Elimina';
         action.addEventListener('click', () => void runShareAction({
           confirmation: {
-            title: 'Eliminare la condivisione abbandonata?',
-            message: 'L’invito sarà rimosso solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.',
+            title: 'Eliminare la condivisione inattiva?',
+            message: 'La condivisione sarà rimossa solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.',
             confirmText: 'Elimina'
           },
-          subject: 'archiviare la condivisione abbandonata',
+          subject: 'archiviare la condivisione inattiva',
           successMessage: 'Condivisione rimossa dall’elenco.',
           run: async () => {
             const { error } = await memoryClient.rpc('archive_abandoned_memory_share_invitation', {
