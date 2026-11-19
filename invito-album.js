@@ -10,12 +10,17 @@ const albumInviteComplete = document.getElementById('album-invite-complete');
 const albumInviteRecipient = document.getElementById('album-invite-recipient');
 const albumInviteAlbum = document.getElementById('album-invite-album');
 const albumInviteSender = document.getElementById('album-invite-sender');
+const albumInviteCover = document.getElementById('album-invite-cover');
+const albumInviteCoverImage = document.getElementById('album-invite-cover-image');
+const albumInviteCoverPlaceholder = document.getElementById('album-invite-cover-placeholder');
 const albumInviteAccept = document.getElementById('album-invite-accept');
 const albumInviteDecline = document.getElementById('album-invite-decline');
 const albumInviteSwitchAccount = document.getElementById('album-invite-switch-account');
 
 let responsePending = false;
 let inviteRecipientEmail = '';
+let inviteCoverObjectUrl = '';
+const inviteCoverMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function validToken(value) {
   return /^[A-Za-z0-9_-]{32,128}$/.test(value);
@@ -60,13 +65,47 @@ function setMessage(text, isError = false) {
 }
 
 function setInvitePresentation(invite) {
-  const albumTitle = [invite?.album_title, invite?.memory_title, invite?.title]
-    .find((value) => typeof value === 'string' && value.trim());
-  const senderName = [invite?.sender_name, invite?.owner_display_name]
-    .find((value) => typeof value === 'string' && value.trim());
+  const albumTitle = typeof invite?.album_title === 'string' && invite.album_title.trim()
+    ? invite.album_title.trim()
+    : '';
+  const senderName = typeof invite?.sender_name === 'string' && invite.sender_name.trim()
+    ? invite.sender_name.trim()
+    : '';
   albumInviteAlbum.textContent = albumTitle || 'Un album FamilArea';
-  albumInviteSender.textContent = senderName ? `Condiviso da ${senderName}` : '';
+  albumInviteCoverPlaceholder.textContent = albumTitle || 'Album FamilArea';
+  albumInviteSender.textContent = senderName
+    ? `${senderName} ti invita a visualizzare questo album.`
+    : 'Accetta l’invito per visualizzare questo album condiviso con te.';
   albumInviteSender.hidden = !senderName;
+  albumInviteCover.setAttribute('aria-label', albumTitle ? `Copertina dell’album ${albumTitle}` : 'Copertina dell’album');
+}
+
+function showCoverPlaceholder() {
+  if (inviteCoverObjectUrl) URL.revokeObjectURL(inviteCoverObjectUrl);
+  inviteCoverObjectUrl = '';
+  albumInviteCoverImage.removeAttribute('src');
+  albumInviteCoverImage.hidden = true;
+  albumInviteCoverPlaceholder.hidden = false;
+}
+
+async function loadInviteCover(hasCover, mimeType) {
+  showCoverPlaceholder();
+  if (!hasCover || !inviteCoverMimeTypes.has(mimeType)) return;
+  try {
+    const { data, error } = await albumInviteClient.functions.invoke('memory-share-invitation-cover', {
+      body: { token: albumInviteToken }
+    });
+    if (error || !(data instanceof Blob) || !data.size) return;
+    inviteCoverObjectUrl = URL.createObjectURL(new Blob([data], { type: mimeType }));
+    albumInviteCoverImage.onload = () => {
+      albumInviteCoverPlaceholder.hidden = true;
+      albumInviteCoverImage.hidden = false;
+    };
+    albumInviteCoverImage.onerror = showCoverPlaceholder;
+    albumInviteCoverImage.src = inviteCoverObjectUrl;
+  } catch (_) {
+    showCoverPlaceholder();
+  }
 }
 
 function setResponseBusy(busy) {
@@ -132,6 +171,7 @@ async function loadInvite() {
     return;
   }
 
+  void loadInviteCover(data.has_cover === true, data.cover_mime_type);
   albumInviteRecipient.textContent = `Invito inviato a: ${inviteRecipientEmail}`;
   albumInviteResponse.hidden = false;
   setResponseBusy(false);
@@ -157,4 +197,5 @@ async function respondToInvite(rpcName, successMessage) {
 albumInviteAccept.addEventListener('click', () => void respondToInvite('accept_my_memory_share_invitation', 'Invito accettato.'));
 albumInviteDecline.addEventListener('click', () => void respondToInvite('decline_my_memory_share_invitation', 'Invito rifiutato.'));
 albumInviteSwitchAccount.addEventListener('click', () => void switchAccount());
+window.addEventListener('pagehide', showCoverPlaceholder, { once: true });
 void loadInvite();

@@ -18,12 +18,14 @@
     .album-invite-page .album-invite-brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:clamp(28px,5vw,40px);color:var(--fa-v2-text);font-size:22px;font-weight:800;letter-spacing:-1px;text-decoration:none}
     .album-invite-page .album-invite-brand span{color:var(--fa-v2-primary)}
     .album-invite-page .album-invite-brand img{display:block;width:34px;height:34px;border-radius:10px;object-fit:cover}
-    .album-invite-page .album-invite-icon{display:grid;width:54px;height:54px;margin-bottom:var(--fa-v2-space-4);place-items:center;border-radius:16px;background:var(--fa-v2-success-bg);color:var(--fa-v2-success);font-size:25px}
     .album-invite-page .album-invite-eyebrow{margin:0 0 var(--fa-v2-space-2);color:var(--fa-v2-primary-strong);font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
     .album-invite-page .album-invite-card h1{margin:0;color:var(--fa-v2-text);font-size:clamp(28px,6vw,34px);line-height:1.12;letter-spacing:-1.1px}
-    .album-invite-page .album-invite-album{margin:var(--fa-v2-space-3) 0 0;color:var(--fa-v2-text);font-size:18px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
-    .album-invite-page .album-invite-sender{margin:var(--fa-v2-space-1) 0 0;color:var(--fa-v2-muted);font-size:13px}
-    .album-invite-page .album-invite-intro{margin:var(--fa-v2-space-4) 0 0;color:var(--fa-v2-muted);font-size:15px;line-height:1.55}
+    .album-invite-page .album-invite-cover{display:grid;min-height:190px;margin:var(--fa-v2-space-5) 0 0;place-items:center;overflow:hidden;border:1px solid #dce8df;border-radius:16px;background:linear-gradient(135deg,#e6f1e6,#f4f8f6 55%,#e6eff4);color:var(--fa-v2-primary-strong)}
+    .album-invite-page .album-invite-cover img{display:block;width:100%;height:100%;min-height:190px;object-fit:cover}
+    .album-invite-page .album-invite-cover-placeholder{display:grid;gap:7px;place-items:center;padding:var(--fa-v2-space-4);color:var(--fa-v2-muted);font-size:13px;font-weight:700;text-align:center}
+    .album-invite-page .album-invite-cover-placeholder::before{content:'✦';display:grid;width:42px;height:42px;place-items:center;border-radius:13px;background:#fff;color:var(--fa-v2-primary);font-size:20px;box-shadow:0 3px 10px rgba(25,50,74,.06)}
+    .album-invite-page .album-invite-album{margin:var(--fa-v2-space-4) 0 0;color:var(--fa-v2-text);font-size:20px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+    .album-invite-page .album-invite-sender{margin:var(--fa-v2-space-2) 0 0;color:var(--fa-v2-muted);font-size:15px;line-height:1.5}
     .album-invite-page .album-invite-message{min-height:20px;margin:var(--fa-v2-space-5) 0 0;padding:0;color:var(--fa-v2-muted);font-size:13px;font-weight:700}
     .album-invite-page .album-invite-message:empty{display:none}
     .album-invite-page .album-invite-message.is-error{color:var(--fa-v2-danger)}
@@ -42,12 +44,14 @@
   <main class="album-invite-shell">
     <section class="album-invite-card" aria-labelledby="album-invite-title">
       <a class="album-invite-brand" href="index.html" aria-label="FamilArea, pagina iniziale"><img src="Logo%20Avatar%20Verde.png" alt=""><strong>Famil<span>Area</span></strong></a>
-      <div class="album-invite-icon" aria-hidden="true">&#9829;</div>
       <p class="album-invite-eyebrow">Album condiviso</p>
       <h1 id="album-invite-title">Hai ricevuto un invito!</h1>
+      <div id="album-invite-cover" class="album-invite-cover" aria-label="Copertina dell'album">
+        <div id="album-invite-cover-placeholder" class="album-invite-cover-placeholder">Album FamilArea</div>
+        <img id="album-invite-cover-image" alt="" hidden>
+      </div>
       <p id="album-invite-album" class="album-invite-album">Un album FamilArea</p>
       <p id="album-invite-sender" class="album-invite-sender" hidden></p>
-      <p class="album-invite-intro">Accetta l'invito per visualizzare questo album condiviso con te.</p>
       <p id="album-invite-message" class="fa-v2-status album-invite-message" aria-live="polite">Verifica invito...</p>
       <section id="album-invite-auth" class="album-invite-state" aria-labelledby="album-invite-auth-title" hidden>
         <h2 id="album-invite-auth-title">Accedi per continuare</h2>
