@@ -221,22 +221,25 @@ function renderMemoryParticipants() {
   memoryParticipantsEmpty.hidden = Boolean(memoryParticipants.length) || !memoryId;
   memoryParticipants.forEach((participant) => {
     const row = document.createElement('div');
-    row.className = 'fa-v2-list-row';
+    row.className = 'fa-v2-list-row fa-v2-list-row--compact memory-participant-row';
     const details = document.createElement('div');
+    details.className = 'memory-participant-identity';
     const name = document.createElement('strong');
+    name.className = 'memory-participant-name';
     name.textContent = participantName(participant);
     details.append(name);
     if (participant.email) {
-      const email = document.createElement('p');
-      email.className = 'fa-v2-status';
+      const email = document.createElement('a');
+      email.className = 'memory-participant-email';
+      email.href = `mailto:${participant.email}`;
       email.textContent = participant.email;
       details.append(email);
     }
     const actions = document.createElement('div');
-    actions.className = 'fa-v2-card-actions';
+    actions.className = 'fa-v2-card-actions memory-participant-actions';
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'fa-v2-button fa-v2-button--secondary list-item-delete';
+    remove.className = 'fa-v2-button fa-v2-button--secondary list-item-delete memory-participant-remove';
     remove.textContent = 'Rimuovi dall’album';
     remove.disabled = memoryParticipantsLoading;
     remove.addEventListener('click', () => { void removeMemoryParticipant(participant.contact_id); });
