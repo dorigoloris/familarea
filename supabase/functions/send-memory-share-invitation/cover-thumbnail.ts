@@ -1,4 +1,4 @@
-import { ImageMagick, initializeImageMagick, MagickFormat, ResourceLimits } from "npm:@imagemagick/magick-wasm@0.0.44";
+import { ImageMagick, initializeImageMagick, MagickFormat, MagickReadSettings, ResourceLimits } from "npm:@imagemagick/magick-wasm@0.0.44";
 
 export type MemoryCoverContext = {
   ownerAccountId: unknown;
@@ -35,9 +35,15 @@ type PrivateStorageReader = {
 const bucket = "familarea-attachments";
 const imageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxSourceBytes = 10 * 1024 * 1024;
-// Ten megapixels admits common camera originals such as 3564x2397 while
-// retaining a fixed upper bound before ImageMagick decodes them.
-const maxPixels = 10_000_000;
+// PNG/WebP are decoded at their full raster size, so retain the existing
+// conservative limit. JPEG can use its native DCT downsampling path before
+// ImageMagick allocates its pixel cache, allowing common camera originals.
+const maxRasterPixels = 10_000_000;
+const maxRasterDimension = 6000;
+const maxJpegSourcePixels = 40_000_000;
+const maxJpegSourceDimension = 8000;
+const jpegReadMaxWidth = 1600;
+const jpegReadMaxHeight = 1200;
 const preferredOutputBytes = 100 * 1024;
 const maxOutputBytes = 150 * 1024;
 const maxWidth = 600;
@@ -46,7 +52,7 @@ const photoPreviewPreferredOutputBytes = 36 * 1024;
 const photoPreviewMaxOutputBytes = 60 * 1024;
 const photoPreviewMaxWidth = 160;
 const photoPreviewMaxHeight = 120;
-const maxDecodeDimension = 6000n;
+const maxDecodeDimension = BigInt(maxJpegSourceDimension);
 // This is ImageMagick's pixel-cache cap, not an unrestricted Function-memory
 // allowance. Disk remains disabled, so exceeding it falls back without a photo.
 const maxDecodeMemoryBytes = 96n * 1024n * 1024n;
@@ -69,7 +75,7 @@ function initializeMagick(): Promise<boolean> {
         // requests and are set before the first decoder invocation.
         ResourceLimits.width = maxDecodeDimension;
         ResourceLimits.height = maxDecodeDimension;
-        ResourceLimits.area = BigInt(maxPixels);
+        ResourceLimits.area = BigInt(maxJpegSourcePixels);
         ResourceLimits.listLength = 16n;
         ResourceLimits.memory = maxDecodeMemoryBytes;
         ResourceLimits.maxMemoryRequest = maxDecodeMemoryBytes;
@@ -196,6 +202,31 @@ function decodeFailureCode(error: unknown): "COVER_DECODE_LIMIT_EXCEEDED" | "COV
     ? "COVER_DECODE_LIMIT_EXCEEDED"
     : "COVER_DECODE_FAILED";
 }
+
+function sourcePixelLimit(image: SourceImage) {
+  return image.mimeType === "image/jpeg" ? maxJpegSourcePixels : maxRasterPixels;
+}
+
+function sourceDimensionLimit(image: SourceImage) {
+  return image.mimeType === "image/jpeg" ? maxJpegSourceDimension : maxRasterDimension;
+}
+
+function readSettingsFor(image: SourceImage): MagickReadSettings {
+  const settings = new MagickReadSettings();
+  if (image.mimeType !== "image/jpeg" || !image.width || !image.height) return settings;
+
+  const scale = Math.min(1, jpegReadMaxWidth / image.width, jpegReadMaxHeight / image.height);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  // ImageMagick passes this hint to the JPEG decoder, which can DCT-downsample
+  // before allocating the full source raster. The header validation above is
+  // still authoritative for the source dimensions.
+  settings.width = width;
+  settings.height = height;
+  settings.setDefine("jpeg:size", `${width}x${height}`);
+  return settings;
+}
+
 function toBase64(bytes: Uint8Array) {
   let binary = "";
   for (let offset = 0; offset < bytes.length; offset += 0x8000) {
@@ -242,15 +273,15 @@ async function createMemoryAttachmentThumbnail(
     const sourceImage = inspectCoverImage(sourceBytes);
     if (!sourceImage) return omitCover("COVER_SIGNATURE_INVALID");
     if (sourceImage.mimeType !== attachment.mimeType) return omitCover("COVER_MIME_SIGNATURE_MISMATCH");
-    if ((sourceImage.width && sourceImage.height) && (sourceImage.width < 1 || sourceImage.height < 1 || sourceImage.width > Number(maxDecodeDimension) || sourceImage.height > Number(maxDecodeDimension) || sourceImage.width * sourceImage.height > maxPixels)) return omitCover("COVER_DIMENSIONS_INVALID");
+    if ((sourceImage.width && sourceImage.height) && (sourceImage.width < 1 || sourceImage.height < 1 || sourceImage.width > sourceDimensionLimit(sourceImage) || sourceImage.height > sourceDimensionLimit(sourceImage) || sourceImage.width * sourceImage.height > sourcePixelLimit(sourceImage))) return omitCover("COVER_DIMENSIONS_INVALID");
 
     let jpeg: Uint8Array;
     let phase: "decode" | "transform" | "encode" = "decode";
     let diagnosticCode: string | null = null;
     try {
-      jpeg = ImageMagick.read(sourceBytes, (image): Uint8Array => {
+      jpeg = ImageMagick.read(sourceBytes, readSettingsFor(sourceImage), (image): Uint8Array => {
         phase = "transform";
-        if (image.width < 1 || image.height < 1 || image.width * image.height > maxPixels) {
+        if (image.width < 1 || image.height < 1 || image.width * image.height > maxRasterPixels) {
           diagnosticCode = "COVER_DIMENSIONS_INVALID";
           throw new Error(diagnosticCode);
         }
