@@ -264,6 +264,7 @@ async function loadMemoryParticipants() {
     memoryParticipantsEmpty.hidden = true;
     memoryParticipantsList.replaceChildren();
     memoryParticipantSearchResults.hidden = true;
+    closeMemoryParticipantCreate();
     return;
   }
 
@@ -284,6 +285,8 @@ async function loadMemoryParticipants() {
     memoryParticipantsControls.hidden = true;
     memoryParticipantsEmpty.hidden = true;
     memoryParticipantsList.replaceChildren();
+    memoryParticipantSearchResults.hidden = true;
+    closeMemoryParticipantCreate();
     setParticipantsMessage(rpcMessage('caricare i partecipanti', error), true);
   } finally {
     setParticipantsBusy(false);
