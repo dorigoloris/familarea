@@ -36,6 +36,8 @@ const galleryTitle = document.getElementById('memory-gallery-title');
 const galleryDescription = document.getElementById('memory-gallery-description');
 const galleryShare = document.getElementById('memory-gallery-share');
 const galleryMessage = document.getElementById('memory-gallery-message');
+const galleryParticipantsSection = document.getElementById('memory-gallery-participants-section');
+const galleryParticipants = document.getElementById('memory-gallery-participants');
 const galleryPhotos = document.getElementById('memory-gallery-photos');
 const galleryPhotoStage = document.getElementById('memory-gallery-photo-stage');
 const galleryPrevious = document.getElementById('memory-gallery-previous');
@@ -61,6 +63,7 @@ let galleryPhotoIndex = 0;
 let galleryPreviousFocus = null;
 let lightboxHistoryEntry = false;
 let galleryPhotoLoadGeneration = 0;
+let sharedMemoryOpenGeneration = 0;
 let galleryPhotoSignQueue = [];
 let galleryPhotoSignInFlight = 0;
 let galleryInitialPhotoIndexes = new Set();
@@ -1132,7 +1135,27 @@ function renderGalleryDocuments(documents) {
     galleryDocuments.append(row);
   });
 }
-async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
+
+function resetGalleryParticipants() {
+  galleryParticipants.replaceChildren();
+  galleryParticipantsSection.hidden = true;
+}
+
+function renderGalleryParticipants(participants) {
+  galleryParticipants.replaceChildren();
+  participants.forEach((participant) => {
+    const row = document.createElement('div');
+    row.className = 'fa-v2-list-row fa-v2-list-row--compact';
+    const name = document.createElement('strong');
+    name.textContent = [participant?.first_name, participant?.last_name].filter(Boolean).join(' ') || 'Partecipante senza nome';
+    row.append(name);
+    galleryParticipants.append(row);
+  });
+  galleryParticipantsSection.hidden = participants.length === 0;
+}
+
+async function openMemoryGallery(memory, trigger, { canShare = false, showSharedParticipants = false } = {}) {
+  sharedMemoryOpenGeneration += 1;
   galleryPreviousFocus = trigger;
   galleryModal.hidden = false;
   setTimelineInert(true);
@@ -1152,13 +1175,20 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   galleryPhotoIndex = 0;
   galleryPhotos.hidden = true;
   galleryDocumentsSection.hidden = true;
+  resetGalleryParticipants();
   galleryPhotoStage.replaceChildren();
   galleryThumbnails.replaceChildren();
   galleryDocuments.replaceChildren();
   setGalleryMessage('Caricamento fotografie e documenti...');
 
-  const { data, error } = await timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id });
+  const [attachmentsResult, participantsResult] = await Promise.all([
+    timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id }),
+    showSharedParticipants
+      ? timelineClient.rpc('get_shared_memory_participants', { p_memory_id: memory.id }).catch((error) => ({ data: null, error }))
+      : Promise.resolve({ data: [], error: null })
+  ]);
   if (loadGeneration !== galleryPhotoLoadGeneration || galleryModal.hidden) return;
+  const { data, error } = attachmentsResult;
   if (error) {
     console.error('[FamilArea timeline] gallery attachments failed', error);
     setGalleryMessage('Impossibile caricare gli allegati del ricordo.', true);
@@ -1175,6 +1205,15 @@ async function openMemoryGallery(memory, trigger, { canShare = false } = {}) {
   preloadInitialGalleryPhotos();
   renderGalleryPhoto();
   renderGalleryDocuments(attachments.filter((attachment) => memoryDocumentMimeTypes.has(attachment.mime_type)));
+  if (showSharedParticipants) {
+    if (participantsResult.error || !Array.isArray(participantsResult.data)) {
+      console.error('[FamilArea timeline] gallery participants failed', participantsResult.error);
+      resetGalleryParticipants();
+      setGalleryMessage('Impossibile caricare i partecipanti dell’album condiviso.', true);
+      return;
+    }
+    renderGalleryParticipants(participantsResult.data);
+  }
   setGalleryMessage('');
 }
 
@@ -1184,8 +1223,10 @@ function closeMemoryGallery() {
   galleryModal.hidden = true;
   setTimelineInert(false);
   resetGalleryPhotoLoading();
+  sharedMemoryOpenGeneration += 1;
   galleryPhotosData = [];
   galleryShare.hidden = true;
+  resetGalleryParticipants();
   galleryPreviousFocus?.focus?.();
   galleryPreviousFocus = null;
 }
@@ -1303,14 +1344,16 @@ async function loadGeneralMemoryTimeline() {
 }
 
 async function openSharedMemoryGallery(memory, trigger) {
+  const openGeneration = ++sharedMemoryOpenGeneration;
   const { data, error } = await timelineClient.rpc('get_shared_memory', { p_memory_id: memory.id });
+  if (openGeneration !== sharedMemoryOpenGeneration) return;
   if (error || !data?.id) {
     sharedMemoriesMessage.textContent = error
       ? timelineRpcMessage('aprire l’album condiviso', error)
       : 'Album condiviso non disponibile.';
     return;
   }
-  await openMemoryGallery(data, trigger);
+  await openMemoryGallery(data, trigger, { showSharedParticipants: true });
 }
 
 async function leaveSharedMemory(memory, button) {
