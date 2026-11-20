@@ -560,17 +560,16 @@ function createCoverActions(attachment) {
 
   const action = document.createElement('button');
   action.type = 'button';
-  action.className = 'secondary-button';
 
   if (attachment.id === coverAttachmentId) {
-    const status = document.createElement('span');
-    status.className = 'fa-v2-status';
-    status.textContent = 'Copertina';
-    action.textContent = 'Rimuovi copertina';
-    action.addEventListener('click', async () => updateMemoryCover(null, action));
-    return [status, action];
+    action.className = 'fa-button fa-button-primary';
+    action.textContent = 'Copertina';
+    action.disabled = true;
+    action.setAttribute('aria-current', 'true');
+    return action;
   }
 
+  action.className = 'secondary-button';
   action.textContent = 'Usa come copertina';
   action.addEventListener('click', async () => updateMemoryCover(attachment.id, action));
   return action;
