@@ -3,6 +3,7 @@ const contactId = new URLSearchParams(location.search).get('contact_id');
 const $ = (id) => document.getElementById(id);
 let contact;
 let methods = [];
+let contactSharesLoadGeneration = 0;
 
 function methodType(method) {
   return method.method_type || method.type || '';
@@ -48,6 +49,84 @@ function renderInvitation(email) {
   $('contact-invite-feedback').classList.remove('fa-v2-notice', 'fa-v2-notice--danger');
 }
 
+function contactShareStatusLabel(status) {
+  return ({
+    pending: 'In attesa',
+    accepted: 'Accettata',
+    abandoned: 'Abbandonata',
+    declined: 'Rifiutata',
+    cancelled: 'Annullata',
+    revoked: 'Revocata',
+    expired: 'Scaduta',
+    unavailable: 'Accesso non disponibile'
+  })[status] || 'Stato non disponibile';
+}
+
+function contactShareHref(share) {
+  if (!share?.memory_id) return '';
+  const params = new URLSearchParams({ memory_id: share.memory_id });
+  if (share.timeline_id) params.set('timeline_id', share.timeline_id);
+  return `ricordo.html?${params}`;
+}
+
+function renderContactShares(shares) {
+  const list = $('contact-shares-list');
+  list.replaceChildren();
+  shares.forEach((share) => {
+    const row = document.createElement('div');
+    row.className = 'fa-v2-list-row fa-v2-list-row--compact contact-share-row';
+    const identity = document.createElement('div');
+    identity.className = 'contact-share-identity';
+    const title = document.createElement('strong');
+    title.textContent = share.memory_title || 'Album senza titolo';
+    const meta = document.createElement('span');
+    meta.className = 'contact-share-meta';
+    const photoCount = Number.isInteger(share.photo_count) ? ` · ${share.photo_count} fotograf${share.photo_count === 1 ? 'ia' : 'ie'}` : '';
+    meta.textContent = `${share.share_kind === 'photo' ? 'Fotografie' : 'Album'}${photoCount}`;
+    identity.append(title, meta);
+    const status = document.createElement('span');
+    status.className = 'contact-share-status';
+    status.textContent = contactShareStatusLabel(share.status);
+    row.append(identity, status);
+    const href = contactShareHref(share);
+    if (href) {
+      const actions = document.createElement('div');
+      actions.className = 'fa-v2-card-actions';
+      const open = document.createElement('a');
+      open.className = 'fa-v2-button fa-v2-button--secondary';
+      open.href = href;
+      open.textContent = 'Apri album';
+      actions.append(open);
+      row.append(actions);
+    }
+    list.append(row);
+  });
+  $('contact-shares-empty').hidden = shares.length > 0;
+}
+
+async function loadContactShares() {
+  const loadGeneration = ++contactSharesLoadGeneration;
+  const list = $('contact-shares-list');
+  list.replaceChildren();
+  $('contact-shares-empty').hidden = true;
+  $('contact-shares-message').textContent = 'Caricamento condivisioni...';
+  $('contact-shares-message').classList.remove('is-error');
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_contact_memory_share_summary', { p_contact_id: contactId });
+    if (loadGeneration !== contactSharesLoadGeneration) return;
+    if (error || !Array.isArray(data)) throw error || new Error('Risposta condivisioni incompatibile');
+    renderContactShares(data);
+    $('contact-shares-message').textContent = '';
+  } catch (error) {
+    if (loadGeneration !== contactSharesLoadGeneration) return;
+    console.error('[FamilArea contacts] shares summary failed', error);
+    list.replaceChildren();
+    $('contact-shares-empty').hidden = true;
+    $('contact-shares-message').textContent = 'Impossibile caricare le condivisioni del contatto.';
+    $('contact-shares-message').classList.add('is-error');
+  }
+}
+
 function render() {
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contatto';
   $('contact-name').textContent = name;
@@ -74,6 +153,7 @@ async function load() {
   contact = data.contact;
   methods = data.methods || [];
   render();
+  void loadContactShares();
 }
 
 function openEdit() {

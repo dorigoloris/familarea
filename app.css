@@ -1646,14 +1646,16 @@ html.fa-mfa-pending body > *{visibility:hidden}
 .memory-share-recipient-line strong{min-width:0;overflow-wrap:anywhere}
 .memory-share-recipient-status{color:var(--fa-v2-muted);font-size:12px;font-weight:500;line-height:1.35}
 .memory-share-management-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--fa-v2-space-3)}
-.memory-share-management-identity,.memory-participant-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 7px;min-width:0}
-.memory-share-management-identity strong,.memory-participant-name{min-width:0;overflow-wrap:anywhere}
-.memory-share-management-email,.memory-participant-email{min-width:0;color:var(--fa-v2-muted);font-size:13px;overflow-wrap:anywhere}
+.memory-share-management-identity,.memory-participant-identity,.contact-share-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 7px;min-width:0}
+.memory-share-management-identity strong,.memory-participant-name,.contact-share-identity strong{min-width:0;overflow-wrap:anywhere}
+.memory-share-management-email,.memory-participant-email,.contact-share-meta{min-width:0;color:var(--fa-v2-muted);font-size:13px;overflow-wrap:anywhere}
 .memory-participant-email{text-decoration:none}
 .memory-participant-email:hover,.memory-participant-email:focus-visible{color:var(--fa-v2-primary-strong);text-decoration:underline}
 .memory-share-management-status{color:var(--fa-v2-muted);font-size:12px;font-weight:500;line-height:1.35;white-space:nowrap}
 .memory-share-management-row .fa-v2-card-actions,.memory-participant-actions{margin:0;justify-self:end}
 .memory-participant-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--fa-v2-space-3)}
+.contact-share-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--fa-v2-space-3)}
+.contact-share-status{color:var(--fa-v2-muted);font-size:12px;font-weight:500;line-height:1.35;white-space:nowrap}
 .memory-participant-remove{min-height:30px;padding:0 var(--fa-v2-space-3);font-size:12px;white-space:nowrap}
 .memory-share-email-selected{padding:var(--fa-v2-space-3);border:1px solid #c9dfc9;border-radius:12px;background:#f3f9f1}
 .memory-share-email-selected p{margin:0}
@@ -1661,7 +1663,7 @@ html.fa-mfa-pending body > *{visibility:hidden}
 .memory-share-email-address{margin-top:3px!important;color:var(--fa-v2-muted)}
 .memory-share-email-dialog>label{margin-top:var(--fa-v2-space-1);color:var(--fa-v2-text);font-size:14px;font-weight:700}
 .memory-share-email-dialog>.fa-v2-button--primary{justify-self:start;width:auto;margin:0}
-@media(max-width:600px){.memory-share-email-dialog>.fa-v2-button--primary{justify-self:stretch;width:100%}.memory-share-email-row{align-items:flex-start}.memory-share-email-row .fa-v2-card-actions{margin-left:auto}.memory-share-management-row{grid-template-columns:minmax(0,1fr) auto;align-items:start}.memory-share-management-row .fa-v2-card-actions{grid-column:1/-1;justify-self:start}.memory-share-management-status{padding-top:2px;white-space:normal;text-align:right}.memory-participant-row{gap:var(--fa-v2-space-2)}.memory-participant-identity{min-width:0}.memory-participant-email{overflow-wrap:anywhere}.memory-participant-actions{align-self:center}}
+@media(max-width:600px){.memory-share-email-dialog>.fa-v2-button--primary{justify-self:stretch;width:100%}.memory-share-email-row{align-items:flex-start}.memory-share-email-row .fa-v2-card-actions{margin-left:auto}.memory-share-management-row,.contact-share-row{grid-template-columns:minmax(0,1fr) auto;align-items:start}.memory-share-management-row .fa-v2-card-actions,.contact-share-row .fa-v2-card-actions{grid-column:1/-1;justify-self:start}.memory-share-management-status,.contact-share-status{padding-top:2px;white-space:normal;text-align:right}.memory-participant-row{gap:var(--fa-v2-space-2)}.memory-participant-identity{min-width:0}.memory-participant-email{overflow-wrap:anywhere}.memory-participant-actions{align-self:center}}
 
 /* Selective photo sharing: photo grid with a separate selection row. */
 .memory-share-email-dialog .memory-photo-share-grid{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--fa-v2-space-2)}
