@@ -1154,6 +1154,14 @@ function renderGalleryParticipants(participants) {
   galleryParticipantsSection.hidden = participants.length === 0;
 }
 
+async function loadSharedMemoryParticipants(memoryId) {
+  try {
+    return await timelineClient.rpc('get_shared_memory_participants', { p_memory_id: memoryId });
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 async function openMemoryGallery(memory, trigger, { canShare = false, showSharedParticipants = false } = {}) {
   sharedMemoryOpenGeneration += 1;
   galleryPreviousFocus = trigger;
@@ -1184,7 +1192,7 @@ async function openMemoryGallery(memory, trigger, { canShare = false, showShared
   const [attachmentsResult, participantsResult] = await Promise.all([
     timelineClient.rpc('get_attachments', { p_target_type: 'memory', p_target_id: memory.id }),
     showSharedParticipants
-      ? timelineClient.rpc('get_shared_memory_participants', { p_memory_id: memory.id }).catch((error) => ({ data: null, error }))
+      ? loadSharedMemoryParticipants(memory.id)
       : Promise.resolve({ data: [], error: null })
   ]);
   if (loadGeneration !== galleryPhotoLoadGeneration || galleryModal.hidden) return;
