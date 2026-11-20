@@ -1592,6 +1592,47 @@ a.fa-v2-card-media-layout{
   .fa-v2-memory-timeline-item:nth-child(even) > .fa-v2-deadline-card{grid-column:auto}
 }
 
+/* On small phones, reserve the first row of Timeline cards for the cover and
+   readable text. Keeping actions in the three-column layout leaves no useful
+   width for titles once the Timeline rail is accounted for. */
+@media(max-width:480px){
+  .timeline-page-view .fa-v2-memory-timeline{
+    padding-left:24px;
+  }
+  .timeline-page-view .fa-v2-memory-timeline::before{
+    left:12px;
+  }
+  .timeline-page-view .fa-v2-memory-timeline-item::after{
+    left:-18px;
+  }
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-media-layout{
+    grid-template-columns:72px minmax(0,1fr);
+    grid-template-rows:auto auto;
+    align-items:start;
+    column-gap:var(--fa-v2-space-3);
+    row-gap:var(--fa-v2-space-3);
+  }
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-visual{
+    width:72px;
+    height:72px;
+    border-radius:14px;
+  }
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-content{
+    align-self:center;
+  }
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-title,
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-description{
+    word-break:normal;
+    overflow-wrap:break-word;
+  }
+  .timeline-page-view .fa-v2-memory-timeline .fa-v2-card-actions{
+    grid-column:1 / -1;
+    grid-row:2;
+    justify-self:end;
+    justify-content:flex-end;
+  }
+}
+
 /* Timeline Ricordi: galleria e visualizzatore di allegati privati. */
 .memory-gallery-dialog{width:min(100%,980px);max-height:calc(100vh - 48px);display:grid;gap:var(--fa-v2-space-4)}
 .memory-gallery-header{padding-right:44px}.memory-gallery-header h2{margin:4px 0 8px}.memory-gallery-description,.memory-gallery-message{margin:0;color:var(--fa-v2-muted);line-height:1.5}.memory-gallery-message{min-height:20px;font-size:13px}.memory-gallery-message.is-error{color:#a33d34}.memory-gallery-photos{display:grid;gap:var(--fa-v2-space-3)}
