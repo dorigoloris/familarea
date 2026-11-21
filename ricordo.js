@@ -145,7 +145,7 @@ function populateMemory(memory) {
 
 async function verifyMemoryTimeline(timelineId = requestedTimelineId) {
   if (!timelineId) {
-    throw new Error('Timeline Ricordi non specificata. Torna alla Timeline e seleziona “+ Nuovo album”.');
+    throw new Error('Timeline Ricordi non specificata. Torna ai miei ricordi e seleziona “+ Nuovo album”.');
   }
   const { data, error } = await memoryClient.rpc('get_my_timelines', { p_timeline_type: 'memory' });
   if (error || !Array.isArray(data)) {
