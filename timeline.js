@@ -89,6 +89,7 @@ const selectedTimelineType = ['memory', 'document'].includes(requestedTimelineTy
   ? requestedTimelineType
   : (timelineParams.get('memory_id') ? 'memory' : '');
 let selectedTimelineId = timelineParams.get('timeline_id') || '';
+const requestedSharedCollaborationId = timelineParams.get('shared_collaboration_id') || '';
 const isGeneralMemoryTimeline = selectedTimelineType === 'memory'
   && timelineParams.get('view') === 'general'
   && !selectedTimelineId;
@@ -198,16 +199,16 @@ function createTimelineCard(timeline) {
 function renderTimelineCollection() {
   setRouteView('collection');
   timelineReturn.href = 'timeline.html';
-  timelineReturn.textContent = 'Torna alla Timeline';
-  timelineTitle.textContent = selectedTimelineType === 'memory' ? 'La mia Timeline' : `Timeline ${timelineLabel()}`;
+  timelineReturn.textContent = selectedTimelineType === 'memory' ? 'Torna ai ricordi' : 'Torna alla Timeline';
+  timelineTitle.textContent = selectedTimelineType === 'memory' ? 'I miei ricordi' : `Timeline ${timelineLabel()}`;
   timelineIntro.textContent = selectedTimelineType === 'memory'
     ? 'Scegli un archivio di ricordi.'
     : 'Scegli un archivio di documenti.';
   timelineCollectionTitle.textContent = selectedTimelineType === 'memory' ? 'I miei Album' : `Le tue Timeline ${timelineLabel()}`;
   timelineCollectionIntro.textContent = selectedTimelineType === 'memory'
-    ? 'Apri una Timeline per consultare i suoi ricordi.'
+    ? 'Apri una raccolta per consultare i tuoi ricordi.'
     : 'Apri una Timeline per consultare i suoi documenti cronologici.';
-  timelineCreate.textContent = '+ Crea nuova Timeline';
+  timelineCreate.textContent = selectedTimelineType === 'memory' ? '+ Crea nuova raccolta' : '+ Crea nuova Timeline';
   timelineGeneralCard.hidden = selectedTimelineType !== 'memory';
   const visibleTimelines = selectedTimelineType === 'memory'
     ? selectedTimelines.filter((timeline) => !timeline.is_default)
@@ -264,7 +265,7 @@ function renderTimelineDetail() {
   timelineDetailTitle.textContent = timeline.name;
   timelineDetailDescription.textContent = timeline.description || '';
   timelineReturn.href = timelineHref(selectedTimelineType, null);
-  timelineReturn.textContent = 'Torna alla Timeline';
+  timelineReturn.textContent = selectedTimelineType === 'memory' ? 'Torna ai ricordi' : 'Torna alla Timeline';
   memoryCreateLink.hidden = selectedTimelineType !== 'memory';
   memoryCreateLink.href = `ricordo.html?${new URLSearchParams({ timeline_id: timeline.id })}`;
   timelineDocumentCreateLink.hidden = selectedTimelineType !== 'document';
@@ -281,12 +282,12 @@ function renderTimelineDetail() {
 function renderGeneralMemoryTimeline() {
   generalMemoryTimelineReady = true;
   setRouteView('detail');
-  timelineTitle.textContent = 'Timeline Generale';
+  timelineTitle.textContent = 'I miei ricordi';
   timelineIntro.textContent = 'Tutti i tuoi album personali, in ordine cronologico.';
-  timelineDetailTitle.textContent = 'Timeline Generale';
-  timelineDetailDescription.textContent = 'Gli album condivisi con te non sono inclusi.';
+  timelineDetailTitle.textContent = 'I miei ricordi';
+  timelineDetailDescription.textContent = 'Gli album ricevuti sono disponibili nella sezione dedicata.';
   timelineReturn.href = timelineHref('memory', null);
-  timelineReturn.textContent = 'Torna alle Timeline Ricordi';
+  timelineReturn.textContent = 'Torna ai ricordi';
   const defaultTimeline = selectedTimelines.find((timeline) => timeline.is_default) || null;
   memoryCreateLink.hidden = !defaultTimeline;
   if (defaultTimeline) {
@@ -1434,7 +1435,11 @@ async function loadSharedMemories() {
     : { data: null, error: partialSharesRequest.reason };
   const errors = [];
   const fullShares = Array.isArray(fullSharesResult.data) && !fullSharesResult.error
-    ? fullSharesResult.data
+    ? [...fullSharesResult.data].sort((first, second) => {
+      const firstAcceptedAt = Date.parse(first?.accepted_at || first?.created_at || '') || 0;
+      const secondAcceptedAt = Date.parse(second?.accepted_at || second?.created_at || '') || 0;
+      return secondAcceptedAt - firstAcceptedAt;
+    })
     : [];
   const partialShares = Array.isArray(partialSharesResult.data) && !partialSharesResult.error
     ? partialSharesResult.data.filter(isReceivedMemoryPhotoShare)
@@ -1465,6 +1470,14 @@ async function loadSharedMemories() {
   sharedMemoriesEmpty.hidden = fullCards.length + partialCards.length > 0;
   sharedMemoriesMessage.textContent = errors.join(' ');
   await Promise.all(fullCards.map(({ memory, visual }) => renderMemoryCover(memory, visual)));
+  if (isUuid(requestedSharedCollaborationId)) {
+    const requestedCard = fullCards.find(({ memory }) => memory?.collaboration_id === requestedSharedCollaborationId);
+    if (requestedCard) {
+      await openSharedMemoryGallery(requestedCard.memory, requestedCard.item);
+    } else if (!fullSharesResult.error) {
+      sharedMemoriesMessage.textContent = 'Questo album ricevuto non è disponibile. Puoi scegliere un altro album dall’elenco.';
+    }
+  }
 }
 
 function isTimelineDocumentCardControl(target) { return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [data-card-control]')); }

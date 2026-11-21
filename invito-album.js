@@ -7,6 +7,7 @@ const albumInviteMessage = document.getElementById('album-invite-message');
 const albumInviteAuth = document.getElementById('album-invite-auth');
 const albumInviteResponse = document.getElementById('album-invite-response');
 const albumInviteComplete = document.getElementById('album-invite-complete');
+const albumInviteRecovery = document.getElementById('album-invite-recovery');
 const albumInviteRecipient = document.getElementById('album-invite-recipient');
 const albumInviteAlbum = document.getElementById('album-invite-album');
 const albumInviteSender = document.getElementById('album-invite-sender');
@@ -53,6 +54,13 @@ const albumInviteToken = readInviteToken();
 
 function inviteReturnTo() {
   return 'invito-album.html';
+}
+
+function sharedAlbumHref(collaborationId) {
+  return `timeline.html?${new URLSearchParams({
+    type: 'memory',
+    shared_collaboration_id: collaborationId
+  })}`;
 }
 
 function normalizeEmail(value) {
@@ -128,6 +136,10 @@ function showWrongAccountMessage() {
   setMessage(`Questo invito è destinato a ${inviteRecipientEmail}. Accedi con l’account verificato che usa esattamente questo indirizzo.`, true);
 }
 
+function showRecovery() {
+  albumInviteRecovery.hidden = false;
+}
+
 async function switchAccount() {
   albumInviteSwitchAccount.disabled = true;
   await albumInviteClient.auth.signOut();
@@ -137,6 +149,7 @@ async function switchAccount() {
 async function loadInvite() {
   if (!validToken(albumInviteToken)) {
     setMessage('Il collegamento dell’invito non è valido.', true);
+    showRecovery();
     return;
   }
 
@@ -159,6 +172,7 @@ async function loadInvite() {
   const { data, error } = await albumInviteClient.rpc('get_memory_share_invitation_context', { p_token: albumInviteToken });
   if (error || !data?.recipient_email) {
     setMessage(unavailableMessage(error), true);
+    showRecovery();
     return;
   }
 
@@ -182,7 +196,7 @@ async function respondToInvite(rpcName, successMessage) {
   if (!albumInviteEnabled || responsePending || !validToken(albumInviteToken)) return;
   setResponseBusy(true);
   setMessage('Registrazione della risposta...');
-  const { error } = await albumInviteClient.rpc(rpcName, { p_token: albumInviteToken });
+  const { data, error } = await albumInviteClient.rpc(rpcName, { p_token: albumInviteToken });
   if (error) {
     setResponseBusy(false);
     setMessage(unavailableMessage(error), true);
@@ -190,7 +204,14 @@ async function respondToInvite(rpcName, successMessage) {
   }
   albumInviteResponse.hidden = true;
   clearInviteToken();
-  if (rpcName === 'accept_my_memory_share_invitation') albumInviteComplete.hidden = false;
+  if (rpcName === 'accept_my_memory_share_invitation') {
+    if (typeof data === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data)) {
+      setMessage('Invito accettato. Apertura dell’album...');
+      window.location.replace(sharedAlbumHref(data));
+      return;
+    }
+    albumInviteComplete.hidden = false;
+  }
   setMessage(successMessage);
 }
 

@@ -83,7 +83,7 @@
     topNav.replaceChildren();
     const sharedItems = [
       { label: 'Dashboard', href: 'dashboard.html', active: isPrimaryNavActive('dashboard') },
-      { label: 'Timeline', href: 'timeline.html', active: isPrimaryNavActive('memories') },
+      { label: 'I miei ricordi', href: 'timeline.html', active: isPrimaryNavActive('memories') },
       { label: 'Attività', href: 'attivita-globali.html', active: isPrimaryNavActive('activities') },
       { label: 'Calendario', href: 'calendario.html', active: isPrimaryNavActive('calendar') },
       { label: 'Scadenze', href: 'scadenze.html', active: isPrimaryNavActive('deadlines') },

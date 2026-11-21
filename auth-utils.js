@@ -1,6 +1,7 @@
 (() => {
   const allowedReturnPages = new Set([
     'dashboard.html',
+    'timeline.html',
     'contatto-condiviso.html',
     'invito-album.html',
     'invito-foto.html',
