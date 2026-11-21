@@ -40,6 +40,7 @@ const galleryParticipantsSection = document.getElementById('memory-gallery-parti
 const galleryParticipants = document.getElementById('memory-gallery-participants');
 const galleryPhotos = document.getElementById('memory-gallery-photos');
 const galleryPhotoStage = document.getElementById('memory-gallery-photo-stage');
+const galleryPhotoControls = document.getElementById('memory-gallery-photo-controls');
 const galleryPrevious = document.getElementById('memory-gallery-previous');
 const galleryNext = document.getElementById('memory-gallery-next');
 const galleryPosition = document.getElementById('memory-gallery-position');
@@ -886,6 +887,11 @@ function renderGalleryPhoto() {
   }
   photoButton.addEventListener('click', openLightbox);
   galleryPhotoStage.append(photoButton);
+  if (galleryDialog.classList.contains('memory-gallery-dialog--shared')) {
+    galleryPhotoStage.append(galleryPhotoControls);
+  } else {
+    galleryPhotos.insertBefore(galleryPhotoControls, galleryThumbnails);
+  }
   galleryPosition.textContent = photoPositionText();
   galleryPrevious.disabled = galleryPhotosData.length < 2;
   galleryNext.disabled = galleryPhotosData.length < 2;
@@ -1166,6 +1172,8 @@ async function loadSharedMemoryParticipants(memoryId) {
 async function openMemoryGallery(memory, trigger, { canShare = false, showSharedParticipants = false } = {}) {
   sharedMemoryOpenGeneration += 1;
   galleryPreviousFocus = trigger;
+  galleryModal.classList.toggle('memory-gallery-overlay--shared', showSharedParticipants);
+  galleryDialog.classList.toggle('memory-gallery-dialog--shared', showSharedParticipants);
   galleryModal.hidden = false;
   setTimelineInert(true);
   galleryDialog.focus();
@@ -1230,6 +1238,8 @@ function closeMemoryGallery() {
   closeLightbox();
   if (galleryModal.hidden) return;
   galleryModal.hidden = true;
+  galleryModal.classList.remove('memory-gallery-overlay--shared');
+  galleryDialog.classList.remove('memory-gallery-dialog--shared');
   setTimelineInert(false);
   resetGalleryPhotoLoading();
   sharedMemoryOpenGeneration += 1;
