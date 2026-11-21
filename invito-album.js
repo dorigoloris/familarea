@@ -1,6 +1,8 @@
 const albumInviteClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const albumInviteTokenStorageKey = 'familarea:album-invite-token';
-const albumInviteTokenFromQuery = new URLSearchParams(window.location.search).get('token') || '';
+const albumInviteTokenStoragePrefix = 'familarea:album-invite-token:';
+const albumInviteParams = new URLSearchParams(window.location.search);
+const albumInviteTokenFromQuery = albumInviteParams.get('token') || '';
+const albumInviteResumeFromQuery = albumInviteParams.get('invite') || '';
 // Enabled only after the activation SQL patch and the tested recipient flow are deployed.
 const albumInviteEnabled = true;
 const albumInviteMessage = document.getElementById('album-invite-message');
@@ -21,39 +23,58 @@ const albumInviteSwitchAccount = document.getElementById('album-invite-switch-ac
 let responsePending = false;
 let inviteRecipientEmail = '';
 let inviteCoverObjectUrl = '';
+let albumInviteResumeId = /^[0-9a-f-]{36}$/i.test(albumInviteResumeFromQuery) ? albumInviteResumeFromQuery : '';
 const inviteCoverMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function validToken(value) {
   return /^[A-Za-z0-9_-]{32,128}$/.test(value);
 }
 
+function inviteTokenStorageKey() {
+  return albumInviteResumeId ? `${albumInviteTokenStoragePrefix}${albumInviteResumeId}` : '';
+}
+
+function createInviteResumeId() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function readInviteToken() {
   if (validToken(albumInviteTokenFromQuery)) {
     try {
-      window.sessionStorage.setItem(albumInviteTokenStorageKey, albumInviteTokenFromQuery);
+      albumInviteResumeId = createInviteResumeId();
+      window.sessionStorage.setItem(inviteTokenStorageKey(), albumInviteTokenFromQuery);
       const url = new URL(window.location.href);
       url.searchParams.delete('token');
+      url.searchParams.set('invite', albumInviteResumeId);
       window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
       return albumInviteTokenFromQuery;
     } catch {
       return albumInviteTokenFromQuery;
     }
   }
+  if (albumInviteParams.has('token')) return '';
   try {
-    return window.sessionStorage.getItem(albumInviteTokenStorageKey) || '';
+    return inviteTokenStorageKey() ? window.sessionStorage.getItem(inviteTokenStorageKey()) || '' : '';
   } catch {
     return '';
   }
 }
 
 function clearInviteToken() {
-  try { window.sessionStorage.removeItem(albumInviteTokenStorageKey); } catch {}
+  try {
+    if (inviteTokenStorageKey()) window.sessionStorage.removeItem(inviteTokenStorageKey());
+  } catch {}
 }
 
 const albumInviteToken = readInviteToken();
 
 function inviteReturnTo() {
-  return 'invito-album.html';
+  return albumInviteResumeId ? `invito-album.html?invite=${encodeURIComponent(albumInviteResumeId)}` : 'invito-album.html';
 }
 
 function sharedAlbumHref(collaborationId) {
