@@ -780,7 +780,7 @@ async function loadMemorySharingSummary() {
     return;
   }
 
-  const shares = Array.isArray(data) ? data : [];
+  const shares = (Array.isArray(data) ? data : []).filter((share) => !isInactiveLegacyMemoryShare(share));
   memorySharingList.replaceChildren(...shares.map((share) => createMemoryShareManagementRow(share, {
     onAction: () => void runMemoryShareManagementAction(share)
   })));
@@ -800,6 +800,14 @@ function memoryShareManagementStatusLabel(value) {
     expired: 'Scaduto',
     unavailable: 'Accesso non disponibile'
   })[value] || 'Stato non disponibile';
+}
+
+function isInactiveLegacyMemoryShare(share) {
+  return share?.source_kind === 'collaboration'
+    && !share.invitation_id
+    && share.status === 'revoked'
+    && share.collaboration_status === 'revoked'
+    && !share.action_kind;
 }
 
 function memoryShareManagementActionDetails(share) {
@@ -1184,7 +1192,7 @@ function openMemorySharingDialog() {
       setStatus(rpcMessage('caricare le condivisioni dell’album', error), true);
       return;
     }
-    const shares = Array.isArray(data) ? data : [];
+    const shares = (Array.isArray(data) ? data : []).filter((share) => !isInactiveLegacyMemoryShare(share));
     if (!shares.length) {
       shareManagement.textContent = 'Album non condiviso.';
       void loadMemorySharingSummary();
