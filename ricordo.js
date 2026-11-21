@@ -839,7 +839,7 @@ function memoryShareManagementActionDetails(share) {
     };
   }
   if (share.action_kind === 'archive_abandoned_invitation'
-    || (share.source_kind === 'email' && share.invitation_id && share.status === 'revoked')) {
+    || (share.invitation_id && share.status === 'revoked')) {
     return {
       label: 'Elimina',
       confirmation: { title: 'Eliminare la condivisione inattiva?', message: 'La condivisione sarà rimossa solo da questo elenco. Album, fotografie e storico dell’accesso restano invariati.', confirmText: 'Elimina' },
@@ -1285,7 +1285,7 @@ function openMemorySharingDialog() {
           }
         }));
       } else if (share.action_kind === 'archive_abandoned_invitation'
-        || (share.source_kind === 'email' && share.invitation_id && share.status === 'revoked')) {
+        || (share.invitation_id && share.status === 'revoked')) {
         action.textContent = 'Elimina';
         action.addEventListener('click', () => void runShareAction({
           confirmation: {
