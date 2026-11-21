@@ -1,8 +1,7 @@
 const albumInviteClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const albumInviteTokenStoragePrefix = 'familarea:album-invite-token:';
-const albumInviteParams = new URLSearchParams(window.location.search);
-const albumInviteTokenFromQuery = albumInviteParams.get('token') || '';
-const albumInviteResumeFromQuery = albumInviteParams.get('invite') || '';
+const albumInviteTokenStorageKey = 'familarea:album-invite-token';
+const albumInviteAuthResumeStorageKey = 'familarea:album-invite-auth-resume';
+const albumInviteResumeParameter = 'album_invite_resume';
 // Enabled only after the activation SQL patch and the tested recipient flow are deployed.
 const albumInviteEnabled = true;
 const albumInviteMessage = document.getElementById('album-invite-message');
@@ -23,58 +22,104 @@ const albumInviteSwitchAccount = document.getElementById('album-invite-switch-ac
 let responsePending = false;
 let inviteRecipientEmail = '';
 let inviteCoverObjectUrl = '';
-let albumInviteResumeId = /^[0-9a-f-]{36}$/i.test(albumInviteResumeFromQuery) ? albumInviteResumeFromQuery : '';
+let albumInviteToken = '';
 const inviteCoverMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function validToken(value) {
-  return /^[A-Za-z0-9_-]{32,128}$/.test(value);
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
 }
 
-function inviteTokenStorageKey() {
-  return albumInviteResumeId ? `${albumInviteTokenStoragePrefix}${albumInviteResumeId}` : '';
+function validResumeNonce(value) {
+  return typeof value === 'string' && /^[0-9a-f]{32}$/i.test(value);
 }
 
-function createInviteResumeId() {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+function createInviteResumeNonce() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function removeInviteToken() {
+  albumInviteToken = '';
+  try {
+    window.sessionStorage.removeItem(albumInviteTokenStorageKey);
+    window.sessionStorage.removeItem(albumInviteAuthResumeStorageKey);
+  } catch {
+    // Il token resta soltanto nella memoria della pagina quando sessionStorage non è disponibile.
+  }
+  try {
+    delete window.__familareaAlbumInviteToken;
+  } catch {
+    window.__familareaAlbumInviteToken = undefined;
+  }
+}
+
+function takeInviteAuthReturn() {
+  const url = new URL(window.location.href);
+  const resumeNonce = url.searchParams.get(albumInviteResumeParameter);
+  if (resumeNonce !== null) {
+    url.searchParams.delete(albumInviteResumeParameter);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+  if (!validResumeNonce(resumeNonce)) return false;
+  try {
+    const storedNonce = window.sessionStorage.getItem(albumInviteAuthResumeStorageKey) || '';
+    window.sessionStorage.removeItem(albumInviteAuthResumeStorageKey);
+    return storedNonce === resumeNonce;
+  } catch {
+    return false;
+  }
 }
 
 function readInviteToken() {
-  if (validToken(albumInviteTokenFromQuery)) {
-    try {
-      albumInviteResumeId = createInviteResumeId();
-      window.sessionStorage.setItem(inviteTokenStorageKey(), albumInviteTokenFromQuery);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('token');
-      url.searchParams.set('invite', albumInviteResumeId);
-      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-      return albumInviteTokenFromQuery;
-    } catch {
-      return albumInviteTokenFromQuery;
-    }
-  }
-  if (albumInviteParams.has('token')) return '';
+  const tokenFromUrl = window.__familareaAlbumInviteToken;
+  const cameFromInviteUrl = window.__familareaAlbumInviteTokenFromUrl === true;
+  const returnedFromAuthentication = takeInviteAuthReturn();
   try {
-    return inviteTokenStorageKey() ? window.sessionStorage.getItem(inviteTokenStorageKey()) || '' : '';
+    delete window.__familareaAlbumInviteToken;
+    delete window.__familareaAlbumInviteTokenFromUrl;
   } catch {
+    window.__familareaAlbumInviteToken = undefined;
+    window.__familareaAlbumInviteTokenFromUrl = undefined;
+  }
+  if (cameFromInviteUrl && validToken(tokenFromUrl)) return tokenFromUrl;
+  if (!returnedFromAuthentication) {
+    removeInviteToken();
     return '';
   }
+  try {
+    const token = window.sessionStorage.getItem(albumInviteTokenStorageKey) || '';
+    if (validToken(token)) return token;
+  } catch {
+    // Senza sessionStorage non è possibile riprendere in sicurezza dopo l'autenticazione.
+  }
+  removeInviteToken();
+  return '';
+}
+
+function configureInviteAuthLinks(returnTo = 'invito-album.html') {
+  document.getElementById('album-invite-login').href = window.FamilAreaAuthUtils.loginUrl(returnTo);
+  document.getElementById('album-invite-register').href = `registrati.html?return_to=${encodeURIComponent(window.FamilAreaAuthUtils.safeReturnTo(returnTo))}`;
+}
+
+function prepareInviteAuthenticationReturn() {
+  if (!validToken(albumInviteToken)) return 'invito-album.html';
+  const resumeNonce = createInviteResumeNonce();
+  try {
+    window.sessionStorage.setItem(albumInviteTokenStorageKey, albumInviteToken);
+    window.sessionStorage.setItem(albumInviteAuthResumeStorageKey, resumeNonce);
+    return `invito-album.html?${albumInviteResumeParameter}=${encodeURIComponent(resumeNonce)}`;
+  } catch {
+    removeInviteToken();
+    return 'invito-album.html';
+  }
+}
+
+function configureInviteAuthenticationReturn() {
+  configureInviteAuthLinks(prepareInviteAuthenticationReturn());
 }
 
 function clearInviteToken() {
-  try {
-    if (inviteTokenStorageKey()) window.sessionStorage.removeItem(inviteTokenStorageKey());
-  } catch {}
-}
-
-const albumInviteToken = readInviteToken();
-
-function inviteReturnTo() {
-  return albumInviteResumeId ? `invito-album.html?invite=${encodeURIComponent(albumInviteResumeId)}` : 'invito-album.html';
+  removeInviteToken();
 }
 
 function sharedAlbumHref(collaborationId) {
@@ -151,6 +196,7 @@ function unavailableMessage(error) {
 }
 
 function showWrongAccountMessage() {
+  configureInviteAuthenticationReturn();
   albumInviteResponse.hidden = true;
   albumInviteAuth.hidden = false;
   albumInviteSwitchAccount.hidden = false;
@@ -168,15 +214,14 @@ async function switchAccount() {
 }
 
 async function loadInvite() {
+  albumInviteToken = readInviteToken();
   if (!validToken(albumInviteToken)) {
     setMessage('Il collegamento dell’invito non è valido.', true);
     showRecovery();
     return;
   }
 
-  const returnTo = inviteReturnTo();
-  document.getElementById('album-invite-login').href = window.FamilAreaAuthUtils.loginUrl(returnTo);
-  document.getElementById('album-invite-register').href = `registrati.html?return_to=${encodeURIComponent(window.FamilAreaAuthUtils.safeReturnTo(returnTo))}`;
+  configureInviteAuthenticationReturn();
 
   if (!albumInviteEnabled) {
     setMessage('Gli inviti Album via email sono in preparazione. Nessuna risposta può essere inviata al momento.');

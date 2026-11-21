@@ -3,6 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <script>
+    (() => {
+      const tokenStorageKey = 'familarea:album-invite-token';
+      const authResumeStorageKey = 'familarea:album-invite-auth-resume';
+      const resumeParameter = 'album_invite_resume';
+      const url = new URL(window.location.href);
+      const token = url.searchParams.get('token');
+      if (token === null) return;
+
+      if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
+        try {
+          window.sessionStorage.setItem(tokenStorageKey, token);
+          window.sessionStorage.removeItem(authResumeStorageKey);
+        } catch {
+          // Il token resta soltanto nella memoria della pagina se sessionStorage non è disponibile.
+        }
+        window.__familareaAlbumInviteToken = token;
+        window.__familareaAlbumInviteTokenFromUrl = true;
+      } else {
+        try {
+          window.sessionStorage.removeItem(tokenStorageKey);
+          window.sessionStorage.removeItem(authResumeStorageKey);
+        } catch {
+          // Un URL non valido non può riutilizzare uno stato precedente.
+        }
+        window.__familareaAlbumInviteToken = undefined;
+        window.__familareaAlbumInviteTokenFromUrl = false;
+      }
+
+      url.searchParams.delete('token');
+      url.searchParams.delete(resumeParameter);
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    })();
+  </script>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
